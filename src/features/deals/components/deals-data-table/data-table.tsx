@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import useAuthContext from "@/contexts/auth-context";
 import { useDebounce } from "@/lib/debouncer";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
@@ -28,7 +27,6 @@ import DealsDataLoading from "./data-loading";
 
 export default function DealsDataTable() {
   const router = useRouter();
-  const { user } = useAuthContext();
   const [deals, setDeals] = useState<DealDto[]>([]);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -37,33 +35,30 @@ export default function DealsDataTable() {
 
   const handleFetchDeals = useCallback(
     (signal: AbortSignal, page: number, requsetFilters: DealFilters = {}) => {
-      if (user === null) return;
-
       setLoading(true);
       delayedPromise(
-        user.admin && false
-          ? dealsService.getDealsAdmin()
-          : dealsService.getDeals(
-              {
-                pageSize: 15,
-                page: page,
-                includeRelations: true,
-                includeDeleted: false,
-                filters: { ...requsetFilters },
-              },
-              {
-                signal: signal,
-              }
-            ),
+        dealsService.getDeals(
+          {
+            pageSize: 15,
+            page: page,
+            includeRelations: true,
+            includeDeleted: false,
+            filters: { ...requsetFilters },
+          },
+          {
+            signal: signal,
+          }
+        ),
         500
       )
         .then((data) => {
           setDeals(data.items);
           setTotalPages(data.totalPages);
         })
+        .catch((err) => console.log(err))
         .finally(() => setLoading(false));
     },
-    [user, setDeals, setTotalPages, setLoading]
+    [setDeals, setTotalPages, setLoading]
   );
 
   // Filters
@@ -86,8 +81,8 @@ export default function DealsDataTable() {
   useEffect(() => {
     const controller = new AbortController();
     handleFetchDeals(controller.signal, currentPage, debouncedFilters);
-    return () => controller.abort();
-  }, [user, currentPage, debouncedFilters, handleFetchDeals]);
+    return () => controller.abort("Called fetch with other params");
+  }, [currentPage, debouncedFilters, handleFetchDeals]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

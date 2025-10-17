@@ -1,11 +1,8 @@
 "use client";
 
 import { useDebounce } from "@/lib/debouncer";
-import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
-import CreateDealRequest from "@definitions/requests/create-deal";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type MeasurementUnit = "тонна" | "куб.м" | "шт";
 export type PaymentMethod = "наличный расчет" | "безналичный расчет";
@@ -58,9 +55,6 @@ export type DealDataFormHook = {
     amountPurchaseTotal: number;
     amountSalesTotal: number;
   };
-  error: string;
-  submitting: boolean;
-  handleSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
 const roundWithDecimals = (num: number) =>
@@ -88,8 +82,6 @@ const calculateTotal = (
 };
 
 export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
-  const router = useRouter();
-
   // Primary information
   const [serviceId, setServiceId] = useState<string | undefined>(
     defaultDeal?.serviceId || undefined
@@ -147,9 +139,6 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
 
   const [notes, setNotes] = useState<string>(defaultDeal?.notes || "");
 
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
   // Calculate totals with debounce
   const debounced = useDebounce(
     useMemo(
@@ -173,64 +162,6 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
       ),
     [debounced]
   );
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-
-    if (!serviceId || !customerId || !stageId || !materialId) {
-      setError("необходимо заполнить все обязательные поля");
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const dataToSend: CreateDealRequest = {
-        serviceId: serviceId!,
-        customerId: customerId!,
-        stageId: stageId!,
-        materialId: materialId!,
-        unitMeasurement: unitMeasurement,
-        quantity: quantity,
-        methodReceiving: methodReceiving,
-        paymentMethod: paymentMethod,
-
-        amountPurchaseUnit: Number(amountPurchaseUnit),
-        amountPurchaseTotal: calculatedData.amountPurchaseTotal,
-        amountSalesUnit: Number(amountSalesUnit),
-        amountSalesTotal: calculatedData.amountSalesTotal,
-        amountDelivery: Number(amountDelivery),
-        companyProfit: calculatedData.companyProfit,
-        totalAmount: calculatedData.totalAmount,
-        managerProfit: calculatedData.managerProfit,
-
-        shippingAddress: shippingAddress,
-        deliveryAddress: deliveryAddress,
-        deadline: `${deliveryDate?.getFullYear()}-${(
-          (deliveryDate?.getMonth() || 0) + 1
-        )
-          .toString()
-          .padStart(2, "0")}-${deliveryDate
-          ?.getDate()
-          .toString()
-          .padStart(2, "0")}${deliveryTime}`, // TODO: add deadline input
-        notes: notes,
-        OSSIG: ossig,
-      };
-
-      if (!!defaultDeal && defaultDeal._id) {
-        await dealsService.updateDeal(defaultDeal._id, dataToSend);
-      } else {
-        await dealsService.createDeal(dataToSend);
-      }
-      router.push("/deals");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   useEffect(() => {
     if (!!defaultDeal && defaultDeal.serviceId === serviceId) {
@@ -320,8 +251,5 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     notes,
     setNotes,
     calculatedData,
-    error,
-    submitting,
-    handleSubmit,
   };
 }
