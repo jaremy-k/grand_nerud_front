@@ -16,7 +16,7 @@ import {
   TableBody,
   TableCell,
   TableFooter,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
 import { formatCurrency } from "@/lib/formatters";
@@ -150,6 +150,12 @@ export default function DealDetailPage() {
             <TableCell className="font-medium w-1/3">Доставка</TableCell>
             <TableCell>{formatCurrency(deal.amountDelivery)}</TableCell>
           </TableRow>
+          {deal.ndsAmount > 0 && (
+            <TableRow>
+              <TableCell className="font-medium w-1/3">НДС</TableCell>
+              <TableCell>{formatCurrency(deal.ndsAmount)}</TableCell>
+            </TableRow>
+          )}
         </TableBody>
         <TableFooter>
           <TableRow>
@@ -194,6 +200,26 @@ export default function DealDetailPage() {
             <TableCell className="font-medium w-1/3">Примечания</TableCell>
             <TableCell>{deal.notes || "Нет примечаний"}</TableCell>
           </TableRow>
+          {deal.addExpenses && deal.addExpenses.length > 0 && (
+            <TableRow>
+              <TableCell className="font-medium w-1/3">
+                Дополнительные расходы
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col w-full max-w-sm">
+                  {deal.addExpenses.map((el, idx) => (
+                    <div
+                      key={`extra-expenses-${idx}`}
+                      className="inline-flex justify-between w-full border-b last:border-0 py-1"
+                    >
+                      <div>{el.name}</div>
+                      <div>{formatCurrency(el.amount)}</div>
+                    </div>
+                  ))}
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
       <div className="inline-flex gap-2.5 mt-6">

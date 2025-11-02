@@ -1,5 +1,6 @@
 "use client";
 
+import useAuthContext from "@/contexts/auth-context";
 import { useDebounce } from "@/lib/debouncer";
 import { DealDto } from "@definitions/dto";
 import { useEffect, useMemo, useState } from "react";
@@ -72,6 +73,7 @@ const calculateTotal = (
   quantity: number,
   amountPurchaseUnit: number,
   amountSalesUnit: number,
+  managerShare: number,
   taxPercent: number = 0,
   deliveryPrice: number = 0
 ) => {
@@ -79,7 +81,7 @@ const calculateTotal = (
   const amountSalesTotal = quantity * amountSalesUnit;
   const companyProfit = amountSalesTotal - amountPurchaseTotal;
   const totalAmountWithoutTax = amountSalesTotal + deliveryPrice;
-  const managerProfit = round(companyProfit * 0.5);
+  const managerProfit = round(companyProfit * managerShare);
   const taxAmount = Math.round(totalAmountWithoutTax * taxPercent);
   const totalAmount = totalAmountWithoutTax + taxAmount;
 
@@ -95,6 +97,8 @@ const calculateTotal = (
 };
 
 export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
+  const { user } = useAuthContext();
+
   // Primary information
   const [serviceId, setServiceId] = useState<string | undefined>(
     defaultDeal?.serviceId || undefined
@@ -177,11 +181,13 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     300
   );
   const calculatedData = useMemo(() => {
-    console.log(paymentMethod);
     return calculateTotal(
       Number(debounced.quantity),
       Number(debounced.amountPurchaseUnit),
       Number(debounced.amountSalesUnit),
+      (paymentMethod === "наличный расчет"
+        ? user?.profit?.cash.alone
+        : user?.profit?.nonCash.alone) || 0,
       paymentMethod === "безналичный расчет" ? NDS_PERCENT : 0,
       Number(debounced.amountDelivery)
     );

@@ -9,4 +9,14 @@ export default interface UserDto {
   hashed_password?: string;
   deleted_at?: string | null;
   is_deleted?: boolean | null;
+  profit?: {
+    cash: {
+      alone: number;
+      withPartners: number;
+    };
+    nonCash: {
+      alone: number;
+      withPartners: number;
+    };
+  };
 }
