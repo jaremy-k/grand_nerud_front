@@ -56,8 +56,8 @@ export default function FinancialInformationSection({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="безналичный расчет">Наличные</SelectItem>
-                <SelectItem value="наличный расчет">Безналичные</SelectItem>
+                <SelectItem value="наличный расчет">Наличные</SelectItem>
+                <SelectItem value="безналичный расчет">Безналичные</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

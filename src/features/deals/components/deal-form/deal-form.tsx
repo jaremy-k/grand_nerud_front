@@ -53,6 +53,8 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
         companyProfit: formData.calculatedData.companyProfit,
         totalAmount: formData.calculatedData.totalAmount,
         managerProfit: formData.calculatedData.managerProfit,
+        ndsAmount: formData.calculatedData.taxAmount,
+        ndsPercent: formData.taxPercent,
 
         shippingAddress: formData.shippingAddress,
         deliveryAddress: formData.deliveryAddress,
@@ -66,6 +68,10 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
           .padStart(2, "0")} ${formData.deliveryTime}`, // TODO: add deadline input
         notes: formData.notes,
         OSSIG: formData.ossig,
+        addExpenses: formData.extraExpenses.map((v) => ({
+          name: v.name,
+          amount: Number(v.amount),
+        })),
       };
 
       if (!!defaultDeal && defaultDeal._id) {
@@ -92,11 +98,27 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       <AdditionalInformationSection formData={formData} />
       {!!formData.serviceId && !!formData.customerId && (
         <div className="flex flex-col gap-4">
-          <p className="text-xl text-slate-800">
-            <span className="font-light text-slate-600">Итоговая сумма:</span>{" "}
+          {formData.paymentMethod === "безналичный расчет" && (
+            <div className="flex flex-col gap-2 border-b pb-4">
+              <p className="text-base text-slate-900">
+                <span className="font-light text-slate-700">
+                  Сумма без НДС:
+                </span>{" "}
+                {formData.calculatedData.totalAmountWithoutTax} ₽
+              </p>
+              <p className="text-base text-slate-900">
+                <span className="font-light text-slate-700">
+                  НДС ({formData.taxPercent * 100}%):
+                </span>{" "}
+                {formData.calculatedData.taxAmount} ₽
+              </p>
+            </div>
+          )}
+          <p className="text-xl text-slate-900">
+            <span className="font-light text-slate-700">Итоговая сумма:</span>{" "}
             {formData.calculatedData.totalAmount} ₽
           </p>
-          <div className="inline-flex gap-4">
+          <div className="inline-flex gap-4 mt-1">
             <Button
               type="submit"
               disabled={

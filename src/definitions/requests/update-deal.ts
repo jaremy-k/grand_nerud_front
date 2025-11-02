@@ -15,6 +15,9 @@ export default interface UpdateDealRequest {
   amountDelivery: number;
   companyProfit: number;
 
+  ndsAmount: number;
+  ndsPercent: number;
+
   totalAmount: number;
   managerProfit: number;
 
@@ -27,4 +30,6 @@ export default interface UpdateDealRequest {
   deadline: string | undefined; // ISO date string
   notes: string;
   OSSIG: boolean;
+
+  addExpenses: Array<{ name: string; amount: number }>;
 }

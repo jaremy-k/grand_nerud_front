@@ -22,6 +22,9 @@ export default interface DealDto {
   amountDelivery: number;
   companyProfit: number;
 
+  ndsAmount: number;
+  ndsPercent: number;
+
   totalAmount: number;
   managerProfit: number;
 
@@ -34,6 +37,8 @@ export default interface DealDto {
   deadline: string | null;
   notes: string;
   OSSIG: boolean;
+
+  addExpenses: Array<{ name: string; amount: number }>;
 
   // Populated fields
   user: UserDto | null;

@@ -1,8 +1,11 @@
 "use client";
 
+import useAuthContext from "@/contexts/auth-context";
 import { useDebounce } from "@/lib/debouncer";
 import { DealDto } from "@definitions/dto";
 import { useEffect, useMemo, useState } from "react";
+
+const NDS_PERCENT = 0.2;
 
 export type MeasurementUnit = "тонна" | "куб.м" | "шт";
 export type PaymentMethod = "наличный расчет" | "безналичный расчет";
@@ -30,6 +33,9 @@ export type DealDataFormHook = {
   setAmountDelivery: (val: string) => void;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (val: PaymentMethod) => void;
+  taxPercent: number;
+
+  // Delivery information
   shippingAddress: string;
   setShippingAddress: (val: string) => void;
   methodReceiving: ReceivingMethod;
@@ -46,10 +52,14 @@ export type DealDataFormHook = {
   // Additional information
   notes: string;
   setNotes: (val: string) => void;
+  extraExpenses: Array<{ name: string; amount: string }>;
+  setExtraExpenses: (val: Array<{ name: string; amount: string }>) => void;
 
   // Hook methods and values
   calculatedData: {
+    totalAmountWithoutTax: number;
     totalAmount: number;
+    taxAmount: number;
     companyProfit: number;
     managerProfit: number;
     amountPurchaseTotal: number;
@@ -57,31 +67,38 @@ export type DealDataFormHook = {
   };
 };
 
-const roundWithDecimals = (num: number) =>
-  Math.round((num + Number.EPSILON) * 100) / 100;
+const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 const calculateTotal = (
   quantity: number,
   amountPurchaseUnit: number,
   amountSalesUnit: number,
+  managerShare: number,
+  taxPercent: number = 0,
   deliveryPrice: number = 0
 ) => {
   const amountPurchaseTotal = quantity * amountPurchaseUnit;
   const amountSalesTotal = quantity * amountSalesUnit;
   const companyProfit = amountSalesTotal - amountPurchaseTotal;
-  const totalAmount = amountSalesTotal + deliveryPrice;
-  const managerProfit = roundWithDecimals(companyProfit * 0.5);
+  const totalAmountWithoutTax = amountSalesTotal + deliveryPrice;
+  const managerProfit = round(companyProfit * managerShare);
+  const taxAmount = Math.round(totalAmountWithoutTax * taxPercent);
+  const totalAmount = totalAmountWithoutTax + taxAmount;
 
   return {
-    totalAmount,
     companyProfit,
     managerProfit,
     amountPurchaseTotal,
     amountSalesTotal,
+    taxAmount,
+    totalAmountWithoutTax,
+    totalAmount,
   };
 };
 
 export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
+  const { user } = useAuthContext();
+
   // Primary information
   const [serviceId, setServiceId] = useState<string | undefined>(
     defaultDeal?.serviceId || undefined
@@ -139,6 +156,10 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
 
   const [notes, setNotes] = useState<string>(defaultDeal?.notes || "");
 
+  const [extraExpenses, setExtraExpenses] = useState<
+    Array<{ name: string; amount: string }>
+  >([]);
+
   // Calculate totals with debounce
   const debounced = useDebounce(
     useMemo(
@@ -146,22 +167,31 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
         quantity,
         amountPurchaseUnit,
         amountSalesUnit,
+        paymentMethod,
         amountDelivery,
       }),
-      [quantity, amountPurchaseUnit, amountSalesUnit, amountDelivery]
+      [
+        quantity,
+        amountPurchaseUnit,
+        amountSalesUnit,
+        paymentMethod,
+        amountDelivery,
+      ]
     ),
     300
   );
-  const calculatedData = useMemo(
-    () =>
-      calculateTotal(
-        Number(debounced.quantity),
-        Number(debounced.amountPurchaseUnit),
-        Number(debounced.amountSalesUnit),
-        Number(debounced.amountDelivery)
-      ),
-    [debounced]
-  );
+  const calculatedData = useMemo(() => {
+    return calculateTotal(
+      Number(debounced.quantity),
+      Number(debounced.amountPurchaseUnit),
+      Number(debounced.amountSalesUnit),
+      (paymentMethod === "наличный расчет"
+        ? user?.profit?.cash.alone
+        : user?.profit?.nonCash.alone) || 0,
+      paymentMethod === "безналичный расчет" ? NDS_PERCENT : 0,
+      Number(debounced.amountDelivery)
+    );
+  }, [debounced]);
 
   useEffect(() => {
     if (!!defaultDeal && defaultDeal.serviceId === serviceId) {
@@ -236,6 +266,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     setAmountDelivery,
     paymentMethod,
     setPaymentMethod,
+    taxPercent: NDS_PERCENT,
     methodReceiving,
     setMethodReceiving,
     shippingAddress,
@@ -250,6 +281,8 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     setDeliveryTime,
     notes,
     setNotes,
+    extraExpenses,
+    setExtraExpenses,
     calculatedData,
   };
 }

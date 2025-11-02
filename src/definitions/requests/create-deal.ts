@@ -17,6 +17,9 @@ export default interface CreateDealRequest {
   amountDelivery: number;
   companyProfit: number;
 
+  ndsAmount: number;
+  ndsPercent: number;
+
   totalAmount: number;
   managerProfit: number;
 
@@ -29,4 +32,6 @@ export default interface CreateDealRequest {
   deadline: string | undefined; // ISO date string
   notes: string;
   OSSIG: boolean;
+
+  addExpenses: Array<{ name: string; amount: number }>;
 }
