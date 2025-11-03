@@ -126,6 +126,8 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                 !formData.stageId ||
                 !formData.materialId ||
                 !formData.serviceId ||
+                !formData.deliveryDate ||
+                !formData.deliveryTime ||
                 submiting
               }
             >

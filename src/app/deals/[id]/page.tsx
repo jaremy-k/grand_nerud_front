@@ -16,7 +16,7 @@ import {
   TableBody,
   TableCell,
   TableFooter,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
 import { formatCurrency } from "@/lib/formatters";
@@ -117,7 +117,7 @@ export default function DealDetailPage() {
           <TableRow>
             <TableCell className="font-medium w-1/3">Дата создания</TableCell>
             <TableCell>
-              {new Date(deal.createdAt).toLocaleDateString("ru-RU")}
+              {new Date(deal.createdAt).toLocaleString("ru-RU")}
             </TableCell>
           </TableRow>
         </TableBody>
@@ -188,7 +188,7 @@ export default function DealDetailPage() {
             <TableCell className="font-medium w-1/3">Дедлайн</TableCell>
             <TableCell>
               {deal.deadline
-                ? new Date(deal.deadline).toLocaleDateString("ru-RU")
+                ? new Date(deal.deadline).toLocaleString("ru-RU")
                 : "Не указано"}
             </TableCell>
           </TableRow>

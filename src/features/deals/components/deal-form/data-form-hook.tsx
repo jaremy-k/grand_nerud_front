@@ -158,7 +158,12 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
 
   const [extraExpenses, setExtraExpenses] = useState<
     Array<{ name: string; amount: string }>
-  >([]);
+  >(
+    defaultDeal?.addExpenses.map((el) => ({
+      ...el,
+      amount: el.amount.toString(),
+    })) || []
+  );
 
   // Calculate totals with debounce
   const debounced = useDebounce(
@@ -213,7 +218,6 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
       setMethodReceiving(
         (defaultDeal.methodReceiving as ReceivingMethod) || "самовывоз"
       );
-      setNotes(defaultDeal.notes || "");
       setDeliveryDate(new Date(defaultDeal.deadline || ""));
       setDeliveryTime(
         defaultDeal.deadline ? defaultDeal.deadline.split(" ")[1] : ""
@@ -232,7 +236,6 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     setOssig(false);
     setPaymentMethod("наличный расчет");
     setMethodReceiving("самовывоз");
-    setNotes("");
   }, [serviceId, defaultDeal]);
 
   useEffect(() => {
