@@ -55,7 +55,10 @@ export default function AdditionalInformationSection({
       </FieldDescription>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="deadline">Срок выполнения</FieldLabel>
+          <FieldLabel htmlFor="deadline" className="gap-0.5">
+            Срок выполнения
+            <span className="text-red-600">*</span>
+          </FieldLabel>
           <div className="flex flex-row gap-4 justify-start">
             <div className="flex flex-row gap-2.5">
               <Popover open={open} onOpenChange={setOpen}>
@@ -92,7 +95,7 @@ export default function AdditionalInformationSection({
                 onChange={(e) => formData.setDeliveryTime(e.target.value)}
                 name="time"
                 type="time"
-                step="1"
+                step="60"
                 className="bg-background max-w-[6rem] appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
               />
             </div>
