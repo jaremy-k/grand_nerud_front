@@ -41,7 +41,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
         stageId: formData.stageId!,
         materialId: formData.materialId!,
         unitMeasurement: formData.unitMeasurement,
-        quantity: formData.quantity,
+        quantity: Number(formData.quantity),
         methodReceiving: formData.methodReceiving,
         paymentMethod: formData.paymentMethod,
 

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { DealDataFormHook, ReceivingMethod } from "./data-form-hook";
+import { numberInputFormatter } from "@/lib/input-formatters";
 
 export default function DeliveryInformationSection({
   formData,
@@ -88,8 +89,9 @@ export default function DeliveryInformationSection({
                     name="amountDelivery"
                     value={formData.amountDelivery}
                     onChange={(e) => {
-                      const formatted = e.target.value.replace(/[^0-9.]/g, "");
-                      formData.setAmountDelivery(formatted);
+                      formData.setAmountDelivery(
+                        numberInputFormatter(e.target.value)
+                      );
                     }}
                     placeholder="0.00"
                   />

@@ -23,8 +23,8 @@ export type DealDataFormHook = {
   //
   unitMeasurement: MeasurementUnit;
   setUnitMeasurement: (val: MeasurementUnit) => void;
-  quantity: number;
-  setQuantity: (val: number) => void;
+  quantity: string;
+  setQuantity: (val: string) => void;
   amountPurchaseUnit: string;
   setAmountPurchaseUnit: (val: string) => void;
   amountSalesUnit: string;
@@ -117,7 +117,9 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
   const [unitMeasurement, setUnitMeasurement] = useState<MeasurementUnit>(
     (defaultDeal?.unitMeasurement as MeasurementUnit) || "тонна"
   );
-  const [quantity, setQuantity] = useState<number>(defaultDeal?.quantity || 0);
+  const [quantity, setQuantity] = useState<string>(
+    defaultDeal ? String(defaultDeal.quantity) : "0"
+  );
   const [amountPurchaseUnit, setAmountPurchaseUnit] = useState<string>(
     defaultDeal?.amountPurchaseUnit
       ? String(defaultDeal.amountPurchaseUnit)
@@ -196,7 +198,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
       paymentMethod === "безналичный расчет" ? NDS_PERCENT : 0,
       Number(debounced.amountDelivery)
     );
-  }, [debounced]);
+  }, [debounced, paymentMethod, user]);
 
   useEffect(() => {
     if (!!defaultDeal && defaultDeal.serviceId === serviceId) {
@@ -205,7 +207,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
       setUnitMeasurement(
         (defaultDeal.unitMeasurement as MeasurementUnit) || "тонна"
       );
-      setQuantity(defaultDeal.quantity || 0);
+      setQuantity(String(defaultDeal.quantity || "0"));
       setAmountPurchaseUnit(String(defaultDeal.amountPurchaseUnit || "0"));
       setAmountSalesUnit(String(defaultDeal.amountSalesUnit || "0"));
       setAmountDelivery(String(defaultDeal.amountDelivery || "0"));
@@ -227,7 +229,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
     setStageId("");
     setMaterialId("");
     setUnitMeasurement("тонна");
-    setQuantity(0);
+    setQuantity("0");
     setAmountPurchaseUnit("0");
     setAmountSalesUnit("0");
     setAmountDelivery("0");

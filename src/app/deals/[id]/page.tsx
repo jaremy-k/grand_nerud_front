@@ -19,10 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency, formatINN } from "@/lib/formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
-import { dealsService } from "@/services";
-import { DealDto } from "@definitions/dto";
+import { companiesService, dealsService } from "@/services";
+import { CompanyDto, DealDto } from "@definitions/dto";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -31,6 +31,7 @@ export default function DealDetailPage() {
   const { id } = useParams();
   const { user } = useAuthContext();
   const [deal, setDeal] = useState<DealDto | null>(null);
+  const [customer, setCustomer] = useState<CompanyDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -55,6 +56,13 @@ export default function DealDetailPage() {
       )
       .then(() => setLoading(false));
   }, [id, user]);
+
+  useEffect(() => {
+    if (deal)
+      companiesService
+        .getCompany(deal.customerId)
+        .then((data) => setCustomer(data));
+  }, [deal]);
 
   if (loading) {
     return <div className="text-center py-10">Загрузка данных сделки...</div>;
@@ -90,6 +98,14 @@ export default function DealDetailPage() {
             >
               Основная информация
             </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Клиент</TableCell>
+            <TableCell>{customer?.name}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">ИНН</TableCell>
+            <TableCell>{formatINN(customer?.inn || "")}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Тип услуги</TableCell>

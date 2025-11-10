@@ -40,6 +40,7 @@ import {
 } from "@definitions/dto";
 import { useEffect, useState } from "react";
 import { DealDataFormHook, MeasurementUnit } from "./data-form-hook";
+import { numberInputFormatter } from "@/lib/input-formatters";
 
 export default function PrimaryInformationSection({
   formData,
@@ -67,6 +68,10 @@ export default function PrimaryInformationSection({
     });
   }, []);
 
+  const handleCompanyCreate = (company: CompanyDto) => {
+    setCompanies((c) => [...c, company]);
+  };
+
   return (
     <FieldSet>
       <FieldLegend>Основная информация</FieldLegend>
@@ -82,6 +87,7 @@ export default function PrimaryInformationSection({
             disabled={!!defaultDeal}
             value={formData.customerId}
             onChange={formData.setCustomerId}
+            onCompanyCreate={handleCompanyCreate}
             companies={companies || []}
           />
         </Field>
@@ -203,10 +209,11 @@ export default function PrimaryInformationSection({
                   min={1}
                   step={1}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    if (!isNaN(value) && value >= 0) {
-                      formData.setQuantity(value);
-                    }
+                    formData.setQuantity(
+                      numberInputFormatter(e.target.value, {
+                        integerOnly: true,
+                      })
+                    );
                   }}
                 />
               </Field>
@@ -222,8 +229,9 @@ export default function PrimaryInformationSection({
                     name="amountPerUnit"
                     value={formData.amountPurchaseUnit}
                     onChange={(e) => {
-                      const formatted = e.target.value.replace(/[^0-9.]/g, "");
-                      formData.setAmountPurchaseUnit(formatted);
+                      formData.setAmountPurchaseUnit(
+                        numberInputFormatter(e.target.value)
+                      );
                     }}
                     placeholder="0.00"
                   />
@@ -264,8 +272,9 @@ export default function PrimaryInformationSection({
                     name="amountSale"
                     value={formData.amountSalesUnit}
                     onChange={(e) => {
-                      const formatted = e.target.value.replace(/[^0-9.]/g, "");
-                      formData.setAmountSalesUnit(formatted);
+                      formData.setAmountSalesUnit(
+                        numberInputFormatter(e.target.value)
+                      );
                     }}
                     placeholder="0.00"
                   />

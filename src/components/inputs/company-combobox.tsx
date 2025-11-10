@@ -2,7 +2,7 @@
 
 import { CompanyDto } from "@definitions/dto";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "../ui/button";
 import {
   CommandDialog,
@@ -13,30 +13,33 @@ import {
   CommandList,
 } from "../ui/command";
 import { Input } from "../ui/input";
+import { CreatingModal } from "./creating-modal";
 
 export function CompanyCombobox({
   companies,
   value = "",
   disabled = false,
   onChange = () => {},
+  onCompanyCreate = () => {},
 }: {
   companies: CompanyDto[];
   value?: string;
   disabled?: boolean;
   onChange?: (value: string) => void;
+  onCompanyCreate?: (company: CompanyDto) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [creatingOpen, setCreatingOpen] = useState(false);
 
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
+  const handleCreateCompany = () => {
+    setOpen(false);
+    setCreatingOpen(true);
+  };
+
+  const handleCompanyCreate = (comapny: CompanyDto) => {
+    onCompanyCreate(comapny);
+    onChange(comapny._id);
+  };
 
   return (
     <>
@@ -75,12 +78,22 @@ export function CompanyCombobox({
           </CommandGroup>
         </CommandList>
         <div className="py-2 px-2">
-          <Button variant="outline" className="w-full">
+          <Button
+            type="button"
+            onClick={handleCreateCompany}
+            variant="outline"
+            className="w-full"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Добавить компанию
           </Button>
         </div>
       </CommandDialog>
+      <CreatingModal
+        open={creatingOpen}
+        onCreate={handleCompanyCreate}
+        onClose={() => setCreatingOpen(false)}
+      />
     </>
   );
 }
