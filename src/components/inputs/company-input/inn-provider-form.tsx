@@ -26,8 +26,16 @@ export default function InnProviderForm({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [contacts, setContacts] = useState<any[]>([]);
 
+  const resetFields = () => {
+    setName("");
+    setAbbreviatedName("");
+    setType("");
+    setContacts([]);
+  };
+
   const handleLoadData = () => {
     setSearching(true);
+    resetFields();
     companiesService
       .getCompanyInfoByINN(inn)
       .then((res) => {
