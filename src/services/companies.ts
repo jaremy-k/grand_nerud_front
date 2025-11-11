@@ -10,6 +10,12 @@ export async function getCompany(id: string): Promise<CompanyDto> {
   return secureGetData(`https://appgrand.worldautogroup.ru/companies/${id}`);
 }
 
+export async function getCompanyInfoByINN(inn: string): Promise<CompanyDto> {
+  return secureGetData(
+    `https://appgrand.worldautogroup.ru/companies/get_company_info/${inn}`
+  );
+}
+
 export async function createCompany(
   data: CreateCompanyRequest
 ): Promise<CompanyDto> {

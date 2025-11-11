@@ -3,6 +3,7 @@ export default interface CompanyDto {
   name: string;
   abbreviatedName: string;
   inn: string;
+  type: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contacts: Record<string, any>[];
   deleted_at: string;

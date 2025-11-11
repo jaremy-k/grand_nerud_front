@@ -1,6 +1,6 @@
 "use client";
 
-import { CompanyCombobox } from "@/components/inputs/company-combobox";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
 import {
   Field,
   FieldDescription,
@@ -24,23 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { numberInputFormatter } from "@/lib/input-formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
-import {
-  companiesService,
-  materialsService,
-  servicesService,
-  stagesService,
-} from "@/services";
-import {
-  CompanyDto,
-  DealDto,
-  MaterialDto,
-  ServiceDto,
-  StageDto,
-} from "@definitions/dto";
+import { materialsService, servicesService, stagesService } from "@/services";
+import { DealDto, MaterialDto, ServiceDto, StageDto } from "@definitions/dto";
 import { useEffect, useState } from "react";
 import { DealDataFormHook, MeasurementUnit } from "./data-form-hook";
-import { numberInputFormatter } from "@/lib/input-formatters";
 
 export default function PrimaryInformationSection({
   formData,
@@ -50,7 +39,6 @@ export default function PrimaryInformationSection({
   defaultDeal?: DealDto;
 }) {
   const [services, setServices] = useState<ServiceDto[]>([]);
-  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [stages, setStages] = useState<StageDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
 
@@ -59,18 +47,12 @@ export default function PrimaryInformationSection({
       servicesService.getServices(),
       stagesService.getStages(),
       materialsService.getMaterials(),
-      companiesService.getCompanies(),
-    ]).then(([servicesData, stagesData, materialsData, companiesData]) => {
+    ]).then(([servicesData, stagesData, materialsData]) => {
       setServices(servicesData);
       setStages(stagesData);
       setMaterials(materialsData);
-      setCompanies(companiesData);
     });
   }, []);
-
-  const handleCompanyCreate = (company: CompanyDto) => {
-    setCompanies((c) => [...c, company]);
-  };
 
   return (
     <FieldSet>
@@ -87,8 +69,6 @@ export default function PrimaryInformationSection({
             disabled={!!defaultDeal}
             value={formData.customerId}
             onChange={formData.setCustomerId}
-            onCompanyCreate={handleCompanyCreate}
-            companies={companies || []}
           />
         </Field>
         <Field>
