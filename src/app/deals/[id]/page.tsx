@@ -163,7 +163,9 @@ export default function DealDetailPage() {
             <TableCell>{formatCurrency(deal.companyProfit)}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Доставка</TableCell>
+            <TableCell className="font-medium w-1/3">
+              Оплата перевозщику
+            </TableCell>
             <TableCell>{formatCurrency(deal.amountDelivery)}</TableCell>
           </TableRow>
           {deal.ndsAmount > 0 && (
@@ -175,7 +177,12 @@ export default function DealDetailPage() {
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell className="w-1/3">Итого</TableCell>
+            <TableCell className="w-1/3">
+              Итого
+              {deal.paymentMethod === "безналичный расчет"
+                ? " с учетом НДС 20%"
+                : ""}
+            </TableCell>
             <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>
           </TableRow>
         </TableFooter>

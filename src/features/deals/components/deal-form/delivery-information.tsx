@@ -25,15 +25,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { DealDataFormHook, ReceivingMethod } from "./data-form-hook";
 import { numberInputFormatter } from "@/lib/input-formatters";
+import {
+  DealDataFormHook,
+  ReceivingMethod,
+} from "@features/deals/hooks/deal-form";
 
 export default function DeliveryInformationSection({
   formData,
 }: {
   formData: DealDataFormHook;
 }) {
-  if (!formData.serviceId || !formData.customerId) {
+  const { dealFormData, updateField } = formData;
+
+  if (!dealFormData.serviceId || !dealFormData.customerId) {
     return null;
   }
 
@@ -42,17 +47,17 @@ export default function DeliveryInformationSection({
       <FieldLegend>Доставка</FieldLegend>
       <FieldDescription>Заполните информацию о доставке ниже.</FieldDescription>
       <FieldGroup>
-        {formData.serviceId === "687a88e6b6b13b70b6a575f4" && (
+        {dealFormData.serviceId === "687a88e6b6b13b70b6a575f4" && (
           <div className="flex items-center space-x-2">
             <Switch
-              checked={formData.ossig}
-              onClick={() => formData.setOssig(!formData.ossig)}
+              checked={dealFormData.ossig}
+              onClick={() => updateField("ossig", !dealFormData.ossig)}
               name="ossig"
             />
             <Label htmlFor="ossig">ОССиГ</Label>
           </div>
         )}
-        {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+        {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4">
             <Field>
               <FieldLabel htmlFor="receivingMethod">
@@ -60,9 +65,9 @@ export default function DeliveryInformationSection({
               </FieldLabel>
               <Select
                 name="receivingMethod"
-                value={formData.methodReceiving}
+                value={dealFormData.methodReceiving}
                 onValueChange={(e) =>
-                  formData.setMethodReceiving(e as ReceivingMethod)
+                  updateField("methodReceiving", e as ReceivingMethod)
                 }
               >
                 <SelectTrigger className="w-[180px]">
@@ -76,10 +81,10 @@ export default function DeliveryInformationSection({
                 </SelectContent>
               </Select>
             </Field>
-            {formData.methodReceiving === "доставка" && (
+            {dealFormData.methodReceiving === "доставка" && (
               <Field>
                 <FieldLabel htmlFor="amountDelivery">
-                  Стоимость доставки
+                  Оплата перевозщику
                 </FieldLabel>
                 <InputGroup>
                   <InputGroupAddon>
@@ -87,9 +92,10 @@ export default function DeliveryInformationSection({
                   </InputGroupAddon>
                   <InputGroupInput
                     name="amountDelivery"
-                    value={formData.amountDelivery}
+                    value={dealFormData.amountDelivery}
                     onChange={(e) => {
-                      formData.setAmountDelivery(
+                      updateField(
+                        "amountDelivery",
                         numberInputFormatter(e.target.value)
                       );
                     }}
@@ -104,19 +110,19 @@ export default function DeliveryInformationSection({
           <FieldLabel htmlFor="shippingAddress">Адрес отгрузки</FieldLabel>
           <Input
             name="shippingAddress"
-            value={formData.shippingAddress}
-            onChange={(e) => formData.setShippingAddress(e.target.value)}
+            value={dealFormData.shippingAddress}
+            onChange={(e) => updateField("shippingAddress", e.target.value)}
             type="text"
             placeholder="Введите адрес отгрузки"
           />
         </Field>
-        {formData.methodReceiving === "доставка" && (
+        {dealFormData.methodReceiving === "доставка" && (
           <Field>
             <FieldLabel htmlFor="shippingAddress">Адрес доставки</FieldLabel>
             <Input
               name="shippingAddress"
-              value={formData.deliveryAddress}
-              onChange={(e) => formData.setDeliveryAddress(e.target.value)}
+              value={dealFormData.deliveryAddress}
+              onChange={(e) => updateField("deliveryAddress", e.target.value)}
               type="text"
               placeholder="Введите адрес доставки"
             />

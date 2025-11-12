@@ -28,8 +28,11 @@ import { numberInputFormatter } from "@/lib/input-formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
 import { materialsService, servicesService, stagesService } from "@/services";
 import { DealDto, MaterialDto, ServiceDto, StageDto } from "@definitions/dto";
+import {
+  DealDataFormHook,
+  MeasurementUnit,
+} from "@features/deals/hooks/deal-form";
 import { useEffect, useState } from "react";
-import { DealDataFormHook, MeasurementUnit } from "./data-form-hook";
 
 export default function PrimaryInformationSection({
   formData,
@@ -38,6 +41,7 @@ export default function PrimaryInformationSection({
   formData: DealDataFormHook;
   defaultDeal?: DealDto;
 }) {
+  const { dealFormData, updateField } = formData;
   const [services, setServices] = useState<ServiceDto[]>([]);
   const [stages, setStages] = useState<StageDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
@@ -67,8 +71,8 @@ export default function PrimaryInformationSection({
           </FieldLabel>
           <CompanyCombobox
             disabled={!!defaultDeal}
-            value={formData.customerId}
-            onChange={formData.setCustomerId}
+            value={dealFormData.customerId}
+            onChange={(val) => updateField("customerId", val)}
           />
         </Field>
         <Field>
@@ -77,8 +81,8 @@ export default function PrimaryInformationSection({
             <span className="text-red-600">*</span>
           </FieldLabel>
           <Select
-            value={formData.serviceId}
-            onValueChange={formData.setServiceId}
+            value={dealFormData.serviceId}
+            onValueChange={(val) => updateField("serviceId", val)}
             name="service"
             disabled={!!defaultDeal}
           >
@@ -99,7 +103,7 @@ export default function PrimaryInformationSection({
             </SelectContent>
           </Select>
         </Field>
-        {!!formData.serviceId && !!formData.customerId && (
+        {!!dealFormData.serviceId && !!dealFormData.customerId && (
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-4">
             <Field>
               <FieldLabel htmlFor="stage" className="gap-0.5">
@@ -107,8 +111,8 @@ export default function PrimaryInformationSection({
               </FieldLabel>
               <Select
                 name="stage"
-                value={formData.stageId}
-                onValueChange={formData.setStageId}
+                value={dealFormData.stageId}
+                onValueChange={(val) => updateField("stageId", val)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Выберите этап" />
@@ -131,8 +135,8 @@ export default function PrimaryInformationSection({
               </FieldLabel>
               <Select
                 name="material"
-                value={formData.materialId}
-                onValueChange={formData.setMaterialId}
+                value={dealFormData.materialId}
+                onValueChange={(val) => updateField("materialId", val)}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Выберите материал" />
@@ -153,7 +157,7 @@ export default function PrimaryInformationSection({
             </Field>
           </div>
         )}
-        {!!formData.serviceId && !!formData.customerId && (
+        {!!dealFormData.serviceId && !!dealFormData.customerId && (
           <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
             <div className="grid grid-cols-2 gap-2.5">
               <Field>
@@ -162,9 +166,9 @@ export default function PrimaryInformationSection({
                 </FieldLabel>
                 <Select
                   name="measurementUnit"
-                  value={formData.unitMeasurement}
+                  value={dealFormData.unitMeasurement}
                   onValueChange={(e) =>
-                    formData.setUnitMeasurement(e as MeasurementUnit)
+                    updateField("unitMeasurement", e as MeasurementUnit)
                   }
                 >
                   <SelectTrigger className="w-[180px]">
@@ -185,11 +189,12 @@ export default function PrimaryInformationSection({
                   type="number"
                   name="quantity"
                   placeholder="Введите количество"
-                  value={formData.quantity}
+                  value={dealFormData.quantity}
                   min={1}
                   step={1}
                   onChange={(e) => {
-                    formData.setQuantity(
+                    updateField(
+                      "quantity",
                       numberInputFormatter(e.target.value, {
                         integerOnly: true,
                       })
@@ -198,18 +203,21 @@ export default function PrimaryInformationSection({
                 />
               </Field>
             </div>
-            {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+            {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
               <Field>
-                <FieldLabel htmlFor="amountPerUnit">Цена за единицу</FieldLabel>
+                <FieldLabel htmlFor="amountPerUnit">
+                  Цена за еденицу (закупка)
+                </FieldLabel>
                 <InputGroup>
                   <InputGroupAddon>
                     <InputGroupText>₽</InputGroupText>
                   </InputGroupAddon>
                   <InputGroupInput
                     name="amountPerUnit"
-                    value={formData.amountPurchaseUnit}
+                    value={dealFormData.amountPurchaseUnit}
                     onChange={(e) => {
-                      formData.setAmountPurchaseUnit(
+                      updateField(
+                        "amountPurchaseUnit",
                         numberInputFormatter(e.target.value)
                       );
                     }}
@@ -218,67 +226,29 @@ export default function PrimaryInformationSection({
                 </InputGroup>
               </Field>
             )}
-            {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">
-                  Итоговая сумма закупки
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="purchaseTotal"
-                    value={formData.calculatedData.amountPurchaseTotal}
-                    readOnly
-                    disabled
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
-            )}
+            <Field>
+              <FieldLabel htmlFor="purchaseTotal">
+                Цена за еденицу (продажа)
+              </FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="amountSale"
+                  value={dealFormData.amountSalesUnit}
+                  onChange={(e) => {
+                    updateField(
+                      "amountSalesUnit",
+                      numberInputFormatter(e.target.value)
+                    );
+                  }}
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
           </div>
         )}
-        {formData.serviceId &&
-          formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">Сумма продажи</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="amountSale"
-                    value={formData.amountSalesUnit}
-                    onChange={(e) => {
-                      formData.setAmountSalesUnit(
-                        numberInputFormatter(e.target.value)
-                      );
-                    }}
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">
-                  Итоговая сумма продажи
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="purchaseTotal"
-                    value={formData.calculatedData.amountSalesTotal}
-                    readOnly
-                    disabled
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
-            </div>
-          )}
       </FieldGroup>
     </FieldSet>
   );
