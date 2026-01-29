@@ -1,11 +1,25 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+<<<<<<< HEAD
 import { formatCurrency } from "@/lib/formatters";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
 import { useDataFormHook } from "@features/deals/hooks/deal-form";
+=======
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { dealsService } from "@/services";
+import { DealDto } from "@definitions/dto";
+import { CreateDealRequest } from "@definitions/requests";
+import { BanknoteIcon } from "lucide-react";
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
@@ -90,7 +104,11 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
   };
 
   return (
+<<<<<<< HEAD
     <form onSubmit={handleSubmit} className="flex flex-col gap-8 relative">
+=======
+    <form onSubmit={handleSubmit} className="flex flex-col gap-10">
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
       <PrimaryInformationSection
         formData={formData}
         defaultDeal={defaultDeal}
@@ -98,6 +116,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       <FinancialInformationSection formData={formData} />
       <DeliveryInformationSection formData={formData} />
       <AdditionalInformationSection formData={formData} />
+<<<<<<< HEAD
       {dealFormData.serviceId && dealFormData.customerId && (
         <div className="bg-white sticky bottom-0 left-0 right-0 border-t py-6">
           <div className="flex w-full justify-between items-end">
@@ -178,6 +197,64 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
             </div>
           </div>
         </div>
+=======
+      {!!formData.serviceId && !!formData.customerId && (
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <BanknoteIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Итог по сделке</CardTitle>
+                <CardDescription>
+                  Проверьте суммы и нажмите кнопку для сохранения
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {formData.paymentMethod === "безналичный расчет" && (
+              <div className="flex flex-col gap-2 rounded-lg border bg-background/60 p-4">
+                <p className="text-sm text-muted-foreground">
+                  Сумма без НДС:{" "}
+                  <span className="font-semibold text-foreground">
+                    {formData.calculatedData.totalAmountWithoutTax} ₽
+                  </span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  НДС ({formData.taxPercent * 100}%):{" "}
+                  <span className="font-semibold text-foreground">
+                    {formData.calculatedData.taxAmount} ₽
+                  </span>
+                </p>
+              </div>
+            )}
+            <p className="text-2xl font-semibold tracking-tight">
+              Итоговая сумма:{" "}
+              <span className="text-primary">
+                {formData.calculatedData.totalAmount} ₽
+              </span>
+            </p>
+            <Button
+              type="submit"
+              size="lg"
+              className="min-w-[200px]"
+              disabled={
+                !formData.customerId ||
+                !formData.stageId ||
+                !formData.materialId ||
+                !formData.serviceId ||
+                !formData.deliveryDate ||
+                !formData.deliveryTime ||
+                submiting
+              }
+            >
+              {defaultDeal ? "Обновить сделку" : "Создать сделку"}
+            </Button>
+          </CardContent>
+        </Card>
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
       )}
     </form>
   );

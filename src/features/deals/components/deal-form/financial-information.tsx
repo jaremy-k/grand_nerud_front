@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import {
   Field,
   FieldDescription,
@@ -9,6 +10,9 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+=======
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
 import {
   InputGroup,
   InputGroupAddon,
@@ -23,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+<<<<<<< HEAD
 import {
   Table,
   TableBody,
@@ -36,6 +41,11 @@ import {
   PaymentMethod,
 } from "@features/deals/hooks/deal-form";
 import { PlusIcon } from "lucide-react";
+=======
+import { DealDataFormHook } from "./data-form-hook";
+import { FormSectionCard } from "./form-section-card";
+import { WalletIcon } from "lucide-react";
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
 
 export default function FinancialInformationSection({
   formData,
@@ -48,7 +58,10 @@ export default function FinancialInformationSection({
     return null;
   }
 
+  const inputClass = "h-10 min-w-[200px]";
+
   return (
+<<<<<<< HEAD
     <FieldSet>
       <FieldLegend>Финансовая информация</FieldLegend>
       <FieldDescription>
@@ -192,5 +205,81 @@ export default function FinancialInformationSection({
         </Field>
       </FieldGroup>
     </FieldSet>
+=======
+    <FormSectionCard
+      step={2}
+      title="Финансовая информация"
+      description="Тип расчёта и расчётные суммы"
+      icon={WalletIcon}
+    >
+      <FieldGroup className="gap-6">
+        <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+          <FieldLabel htmlFor="paymentMethod" className="mb-2 block text-sm font-medium">
+            Тип расчёта
+          </FieldLabel>
+          <Select
+            name="paymentMethod"
+            value={formData.paymentMethod}
+            onValueChange={(e) =>
+              formData.setPaymentMethod(
+                e as "безналичный расчет" | "наличный расчет"
+              )
+            }
+          >
+            <SelectTrigger className={inputClass}>
+              <SelectValue placeholder="Выберите тип расчёта" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="наличный расчет">Наличные</SelectItem>
+                <SelectItem value="безналичный расчет">Безналичные</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Расчётные показатели
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Field>
+              <FieldLabel htmlFor="profit" className="mb-2 block text-sm font-medium text-muted-foreground">
+                Маржа фирмы
+              </FieldLabel>
+              <InputGroup className="h-10 bg-muted/50">
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="profit"
+                  value={formData.calculatedData.companyProfit}
+                  disabled
+                  readOnly
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="managerProfit" className="mb-2 block text-sm font-medium text-muted-foreground">
+                Доход менеджера
+              </FieldLabel>
+              <InputGroup className="h-10 bg-muted/50">
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="managerProfit"
+                  value={formData.calculatedData.managerProfit}
+                  disabled
+                  readOnly
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
+          </div>
+        </div>
+      </FieldGroup>
+    </FormSectionCard>
+>>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
   );
 }
