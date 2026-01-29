@@ -1,18 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
 import { useDataFormHook } from "@features/deals/hooks/deal-form";
-import { BanknoteIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
@@ -101,8 +93,11 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       ? calculatedData.amountSalesTotal / (1 + taxPercent)
       : calculatedData.amountSalesTotal;
 
+  const isSalesService =
+    dealFormData.serviceId === "687a88dfb6b13b70b6a575f3";
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-10">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-10 pb-[280px]">
       <PrimaryInformationSection
         formData={formData}
         defaultDeal={defaultDeal}
@@ -111,61 +106,88 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       <DeliveryInformationSection formData={formData} />
       <AdditionalInformationSection formData={formData} />
       {dealFormData.serviceId && dealFormData.customerId && (
-        <Card className="border-primary/20 bg-primary/5 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <BanknoteIcon className="h-5 w-5 text-primary" />
+        <div className="fixed bottom-0 left-0 right-0 z-10 border-t bg-card shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+          <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                {isSalesService && (
+                  <>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">
+                        Итоговая сумма закупки:
+                      </span>
+                      <span className="font-medium">
+                        {calculatedData.amountPurchaseTotal} ₽
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">
+                        Итоговая сумма продажи:
+                      </span>
+                      <span className="font-medium">
+                        {calculatedData.amountSalesTotal} ₽
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">Маржа фирмы:</span>
+                  <span className="font-medium">
+                    {calculatedData.companyProfit} ₽
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">
+                    Доход менеджера:
+                  </span>
+                  <span className="font-medium">
+                    {calculatedData.managerProfit} ₽
+                  </span>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-lg">Итог по сделке</CardTitle>
-                <CardDescription>
-                  Проверьте суммы и нажмите кнопку для сохранения
-                </CardDescription>
+              <div className="flex flex-col gap-3 sm:items-end">
+                {dealFormData.paymentMethod === "безналичный расчет" && (
+                  <div className="flex flex-col gap-0.5 text-right text-sm">
+                    <p className="text-muted-foreground">
+                      Сумма без НДС:{" "}
+                      <span className="font-semibold text-foreground">
+                        {totalAmountWithoutTax.toFixed(2)} ₽
+                      </span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      НДС ({taxPercent * 100}%):{" "}
+                      <span className="font-semibold text-foreground">
+                        {calculatedData.taxAmount} ₽
+                      </span>
+                    </p>
+                  </div>
+                )}
+                <p className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  Итоговая сумма:{" "}
+                  <span className="text-primary">
+                    {calculatedData.amountSalesTotal} ₽
+                  </span>
+                </p>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="min-w-[200px]"
+                  disabled={
+                    !dealFormData.customerId ||
+                    !dealFormData.stageId ||
+                    !dealFormData.materialId ||
+                    !dealFormData.serviceId ||
+                    !dealFormData.deliveryDate ||
+                    !dealFormData.deliveryTime ||
+                    submiting
+                  }
+                >
+                  {defaultDeal ? "Обновить сделку" : "Создать сделку"}
+                </Button>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {dealFormData.paymentMethod === "безналичный расчет" && (
-              <div className="flex flex-col gap-2 rounded-lg border bg-background/60 p-4">
-                <p className="text-sm text-muted-foreground">
-                  Сумма без НДС:{" "}
-                  <span className="font-semibold text-foreground">
-                    {totalAmountWithoutTax.toFixed(2)} ₽
-                  </span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  НДС ({taxPercent * 100}%):{" "}
-                  <span className="font-semibold text-foreground">
-                    {calculatedData.taxAmount} ₽
-                  </span>
-                </p>
-              </div>
-            )}
-            <p className="text-2xl font-semibold tracking-tight">
-              Итоговая сумма:{" "}
-              <span className="text-primary">
-                {calculatedData.amountSalesTotal} ₽
-              </span>
-            </p>
-            <Button
-              type="submit"
-              size="lg"
-              className="min-w-[200px]"
-              disabled={
-                !dealFormData.customerId ||
-                !dealFormData.stageId ||
-                !dealFormData.materialId ||
-                !dealFormData.serviceId ||
-                !dealFormData.deliveryDate ||
-                !dealFormData.deliveryTime ||
-                submiting
-              }
-            >
-              {defaultDeal ? "Обновить сделку" : "Создать сделку"}
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </form>
   );

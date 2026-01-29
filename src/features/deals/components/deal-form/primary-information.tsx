@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { numberInputFormatter } from "@/lib/input-formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
+import { getStageDotClass } from "@features/deals/utils/stage-colors";
 import {
   materialsService,
   servicesService,
@@ -40,7 +41,7 @@ export default function PrimaryInformationSection({
   formData: DealDataFormHook;
   defaultDeal?: DealDto;
 }) {
-  const { dealFormData, updateField, calculatedData } = formData;
+  const { dealFormData, updateField } = formData;
   const [services, setServices] = useState<ServiceDto[]>([]);
   const [stages, setStages] = useState<StageDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
@@ -136,7 +137,18 @@ export default function PrimaryInformationSection({
                     onValueChange={(val) => updateField("stageId", val)}
                   >
                     <SelectTrigger className={inputClass}>
-                      <SelectValue placeholder="Выберите этап" />
+                      <SelectValue placeholder="Выберите этап">
+                        {dealFormData.stageId && stages.find((s) => s._id === dealFormData.stageId) && (
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStageDotClass(dealFormData.stageId)}`}
+                            />
+                            {capitalizeFirstLetter(
+                              stages.find((s) => s._id === dealFormData.stageId)!.name
+                            )}
+                          </span>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -145,7 +157,12 @@ export default function PrimaryInformationSection({
                             key={`stage-${stage._id}`}
                             value={stage._id}
                           >
-                            {capitalizeFirstLetter(stage.name)}
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStageDotClass(stage._id)}`}
+                              />
+                              {capitalizeFirstLetter(stage.name)}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -266,28 +283,6 @@ export default function PrimaryInformationSection({
                     </InputGroup>
                   </Field>
                 )}
-                {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-                  <Field>
-                    <FieldLabel
-                      htmlFor="purchaseTotal"
-                      className="mb-2 block text-sm font-medium text-muted-foreground"
-                    >
-                      Итоговая сумма закупки
-                    </FieldLabel>
-                    <InputGroup className="h-10 bg-muted/50">
-                      <InputGroupAddon>
-                        <InputGroupText>₽</InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        name="purchaseTotal"
-                        value={String(calculatedData.amountPurchaseTotal)}
-                        readOnly
-                        disabled
-                        placeholder="0.00"
-                      />
-                    </InputGroup>
-                  </Field>
-                )}
               </div>
             </div>
 
@@ -317,26 +312,6 @@ export default function PrimaryInformationSection({
                             numberInputFormatter(e.target.value)
                           );
                         }}
-                        placeholder="0.00"
-                      />
-                    </InputGroup>
-                  </Field>
-                  <Field>
-                    <FieldLabel
-                      htmlFor="salesTotal"
-                      className="mb-2 block text-sm font-medium text-muted-foreground"
-                    >
-                      Итоговая сумма продажи
-                    </FieldLabel>
-                    <InputGroup className="h-10 bg-muted/50">
-                      <InputGroupAddon>
-                        <InputGroupText>₽</InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        name="salesTotal"
-                        value={String(calculatedData.amountSalesTotal)}
-                        readOnly
-                        disabled
                         placeholder="0.00"
                       />
                     </InputGroup>

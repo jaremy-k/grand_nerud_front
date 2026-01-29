@@ -25,7 +25,12 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { DealDataFormHook } from "@features/deals/hooks/deal-form";
-import { CalendarDaysIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useState } from "react";
 import { ru } from "react-day-picker/locale";
 import { FormSectionCard } from "./form-section-card";
@@ -127,6 +132,7 @@ export default function AdditionalInformationSection({
                   <TableHead className="w-[140px] font-medium">
                     Сумма
                   </TableHead>
+                  <TableHead className="w-[52px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -172,11 +178,30 @@ export default function AdditionalInformationSection({
                         />
                       </InputGroup>
                     </TableCell>
+                    <TableCell className="w-[52px] p-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          updateField(
+                            "extraExpenses",
+                            dealFormData.extraExpenses.filter(
+                              (_, i) => i !== idx
+                            )
+                          )
+                        }
+                        title="Удалить"
+                      >
+                        <Trash2Icon className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="cursor-pointer bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                     onClick={() =>
                       updateField("extraExpenses", [

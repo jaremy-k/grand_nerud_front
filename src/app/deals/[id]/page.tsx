@@ -21,6 +21,10 @@ import {
 import useAuthContext from "@/contexts/auth-context";
 import { formatCurrency, formatINN } from "@/lib/formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
+import {
+  getStageBadgeClass,
+  getStageDotClass,
+} from "@features/deals/utils/stage-colors";
 import { companiesService, dealsService } from "@/services";
 import { CompanyDto, DealDto } from "@definitions/dto";
 import { useParams, useRouter } from "next/navigation";
@@ -118,9 +122,18 @@ export default function DealDetailPage() {
           <TableRow>
             <TableCell className="font-medium w-1/3">Статус</TableCell>
             <TableCell>
-              {deal.stage
-                ? capitalizeFirstLetter(deal.stage.name)
-                : "Не указано"}
+              {deal.stage ? (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${getStageBadgeClass(deal.stage._id)}`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${getStageDotClass(deal.stage._id)}`}
+                  />
+                  {capitalizeFirstLetter(deal.stage.name)}
+                </span>
+              ) : (
+                "Не указано"
+              )}
             </TableCell>
           </TableRow>
           <TableRow>
