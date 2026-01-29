@@ -27,7 +27,7 @@ export default function FinancialInformationSection({
     return null;
   }
 
-  const inputClass = "h-10 min-w-[200px]";
+  const inputClass = "h-9 min-w-0";
 
   return (
     <FormSectionCard
@@ -36,11 +36,11 @@ export default function FinancialInformationSection({
       description="Тип расчёта"
       icon={WalletIcon}
     >
-      <FieldGroup className="gap-6">
-        <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+      <FieldGroup className="gap-4">
+        <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
           <FieldLabel
             htmlFor="paymentMethod"
-            className="mb-2 block text-sm font-medium"
+            className="mb-1.5 block text-sm font-medium"
           >
             Тип расчёта
           </FieldLabel>

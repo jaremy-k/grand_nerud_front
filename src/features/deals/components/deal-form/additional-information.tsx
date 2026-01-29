@@ -54,12 +54,12 @@ export default function AdditionalInformationSection({
       description="Срок выполнения, примечания и расходы"
       icon={CalendarDaysIcon}
     >
-      <FieldGroup className="gap-6">
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+      <FieldGroup className="gap-4">
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
           <Field>
             <FieldLabel
               htmlFor="deadline"
-              className="mb-2 block text-sm font-medium"
+              className="mb-1.5 block text-sm font-medium"
             >
               Срок выполнения
               <span className="ml-0.5 text-destructive" aria-hidden>*</span>
@@ -70,7 +70,7 @@ export default function AdditionalInformationSection({
                   <Button
                     variant="outline"
                     id="date-picker"
-                    className="h-10 min-w-[180px] justify-between font-normal"
+                    className="h-9 min-w-[160px] justify-between font-normal text-sm"
                   >
                     {dealFormData.deliveryDate
                       ? dealFormData.deliveryDate.toLocaleDateString("ru-RU")
@@ -98,16 +98,16 @@ export default function AdditionalInformationSection({
                 name="time"
                 type="time"
                 step="60"
-                className="h-10 w-[120px] appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                className="h-9 w-[100px] appearance-none text-sm [&::-webkit-calendar-picker-indicator]:hidden"
               />
             </div>
           </Field>
         </div>
 
-        <Field className="rounded-lg border border-border/60 bg-muted/20 p-4">
+        <Field className="rounded-lg border border-border/60 bg-muted/20 p-3">
           <FieldLabel
             htmlFor="notes"
-            className="mb-2 block text-sm font-medium"
+            className="mb-1.5 block text-sm font-medium"
           >
             Примечания
           </FieldLabel>
@@ -116,12 +116,12 @@ export default function AdditionalInformationSection({
             onChange={(e) => updateField("notes", e.target.value)}
             id="notes"
             placeholder="Введите примечания к сделке"
-            className="min-h-[100px] resize-y"
+            className="min-h-[80px] resize-y text-sm"
           />
         </Field>
 
-        <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-          <FieldLabel className="mb-4 block text-sm font-medium">
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+          <FieldLabel className="mb-3 block text-sm font-medium">
             Дополнительные расходы
           </FieldLabel>
           <div className="overflow-hidden rounded-lg border border-border/60">

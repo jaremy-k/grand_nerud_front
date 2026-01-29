@@ -75,7 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    checkAuth();
+    checkAuth().catch(() => {
+      setLoading(false);
+      setUser(null);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

@@ -13,7 +13,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Handshake, House } from "lucide-react";
+import useAuthContext from "@/contexts/auth-context";
+import { BarChart3Icon, Handshake, House } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
@@ -38,6 +39,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { user } = useAuthContext();
 
   return (
     <Sidebar {...props}>
@@ -70,6 +72,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                {user?.admin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === "/admin"}>
+                      <Link href="/admin">
+                        <BarChart3Icon />
+                        Статистика
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

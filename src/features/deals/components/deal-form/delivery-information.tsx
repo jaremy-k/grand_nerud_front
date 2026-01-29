@@ -37,7 +37,7 @@ export default function DeliveryInformationSection({
     return null;
   }
 
-  const inputClass = "h-10 min-w-[200px]";
+  const inputClass = "h-9 min-w-0";
 
   return (
     <FormSectionCard
@@ -46,9 +46,9 @@ export default function DeliveryInformationSection({
       description="Способ получения, адреса и стоимость"
       icon={TruckIcon}
     >
-      <FieldGroup className="gap-6">
+      <FieldGroup className="gap-4">
         {dealFormData.serviceId === "687a88e6b6b13b70b6a575f4" && (
-          <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-4">
+          <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
             <Switch
               checked={dealFormData.ossig}
               onClick={() => updateField("ossig", !dealFormData.ossig)}
@@ -63,15 +63,15 @@ export default function DeliveryInformationSection({
           </div>
         )}
         {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-          <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-            <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Способ получения
             </p>
-            <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-              <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
                 <FieldLabel
                   htmlFor="receivingMethod"
-                  className="mb-2 block text-sm font-medium"
+                  className="mb-1.5 block text-sm font-medium"
                 >
                   Способ получения товара
                 </FieldLabel>
@@ -94,14 +94,14 @@ export default function DeliveryInformationSection({
                 </Select>
               </Field>
               {dealFormData.methodReceiving === "доставка" && (
-                <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+                <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
                   <FieldLabel
                     htmlFor="amountDelivery"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-1.5 block text-sm font-medium"
                   >
                     Стоимость доставки, ₽
                   </FieldLabel>
-                  <InputGroup className="h-10">
+                  <InputGroup className="h-9">
                     <InputGroupAddon>
                       <InputGroupText>₽</InputGroupText>
                     </InputGroupAddon>
@@ -122,15 +122,15 @@ export default function DeliveryInformationSection({
             </div>
           </div>
         )}
-        <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Адреса
           </p>
-          <div className="grid gap-6 sm:grid-cols-1">
+          <div className="grid gap-4 sm:grid-cols-1">
             <Field>
               <FieldLabel
                 htmlFor="shippingAddress"
-                className="mb-2 block text-sm font-medium"
+                className="mb-1.5 block text-sm font-medium"
               >
                 Адрес отгрузки
               </FieldLabel>
@@ -142,14 +142,14 @@ export default function DeliveryInformationSection({
                 }
                 type="text"
                 placeholder="Введите адрес отгрузки"
-                className="h-10"
+                className="h-9"
               />
             </Field>
             {dealFormData.methodReceiving === "доставка" && (
               <Field>
                 <FieldLabel
                   htmlFor="deliveryAddress"
-                  className="mb-2 block text-sm font-medium"
+                  className="mb-1.5 block text-sm font-medium"
                 >
                   Адрес доставки
                 </FieldLabel>
@@ -161,7 +161,7 @@ export default function DeliveryInformationSection({
                   }
                   type="text"
                   placeholder="Введите адрес доставки"
-                  className="h-10"
+                  className="h-9"
                 />
               </Field>
             )}

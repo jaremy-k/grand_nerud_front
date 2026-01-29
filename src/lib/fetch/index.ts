@@ -1,7 +1,7 @@
 import { getCookie } from "../cookies";
 
 export async function getData(url: string, options: RequestInit = {}) {
-  if (window !== undefined) {
+  if (typeof window === "undefined") {
     console.warn("getData should be used in a browser environment only");
   }
 
@@ -26,11 +26,11 @@ export async function getData(url: string, options: RequestInit = {}) {
 }
 
 export async function secureGetData(url: string, options: RequestInit = {}) {
-  if (window !== undefined) {
+  if (typeof window === "undefined") {
     console.warn("secureGetData should be used in a browser environment only");
   }
 
-  const token = getCookie("tg_news_bot_access_token");
+  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
 
   if (!token) {
     throw new Error("No access token");
@@ -63,11 +63,11 @@ export async function securePostData(
   data: any,
   options: RequestInit = {}
 ) {
-  if (window !== undefined) {
+  if (typeof window === "undefined") {
     console.warn("securePostData should be used in a browser environment only");
   }
 
-  const token = getCookie("tg_news_bot_access_token");
+  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
 
   if (!token) {
     throw new Error("No access token");
@@ -94,13 +94,13 @@ export async function securePatchData(
   data: any,
   options: RequestInit = {}
 ) {
-  if (window !== undefined) {
+  if (typeof window === "undefined") {
     console.warn(
       "securePatchData should be used in a browser environment only"
     );
   }
 
-  const token = getCookie("tg_news_bot_access_token");
+  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
 
   if (!token) {
     throw new Error("No access token");
@@ -122,13 +122,13 @@ export async function securePatchData(
 }
 
 export async function secureDeleteData(url: string, options: RequestInit = {}) {
-  if (window !== undefined) {
+  if (typeof window === "undefined") {
     console.warn(
       "secureDeleteData should be used in a browser environment only"
     );
   }
 
-  const token = getCookie("tg_news_bot_access_token");
+  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
 
   if (!token) {
     throw new Error("No access token");

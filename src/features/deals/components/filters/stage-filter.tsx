@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { capitalizeFirstLetter } from "@/lib/typography";
+import { getStageDotClass } from "@features/deals/utils/stage-colors";
 import { stagesService } from "@/services";
 import { useEffect, useState } from "react";
 
@@ -54,7 +55,12 @@ export default function StageFilter({
           {options.map((option) =>
             option ? (
               <SelectItem key={`stage-${option.value}`} value={option.value}>
-                {capitalizeFirstLetter(option.label)}
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStageDotClass(option.value)}`}
+                  />
+                  {capitalizeFirstLetter(option.label)}
+                </span>
               </SelectItem>
             ) : null
           )}

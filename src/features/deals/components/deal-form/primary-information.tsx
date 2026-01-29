@@ -51,17 +51,23 @@ export default function PrimaryInformationSection({
       servicesService.getServices(),
       stagesService.getStages(),
       materialsService.getMaterials(),
-    ]).then(([servicesData, stagesData, materialsData]) => {
-      setServices(servicesData);
-      setStages(stagesData);
-      setMaterials(materialsData);
-    });
+    ])
+      .then(([servicesData, stagesData, materialsData]) => {
+        setServices(servicesData);
+        setStages(stagesData);
+        setMaterials(materialsData);
+      })
+      .catch(() => {
+        setServices([]);
+        setStages([]);
+        setMaterials([]);
+      });
   }, []);
 
   const labelRequired = (
     <span className="ml-0.5 text-destructive" aria-hidden>*</span>
   );
-  const inputClass = "h-10 min-w-[200px]";
+  const inputClass = "h-9 min-w-0";
 
   return (
     <FormSectionCard
@@ -70,12 +76,12 @@ export default function PrimaryInformationSection({
       description="Заказчик, услуга, этап и материал"
       icon={FileTextIcon}
     >
-      <FieldGroup className="gap-6">
-        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-          <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+      <FieldGroup className="gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
             <FieldLabel
               htmlFor="customer"
-              className="mb-2 block text-sm font-medium"
+              className="mb-1.5 block text-sm font-medium"
             >
               Заказчик{labelRequired}
             </FieldLabel>
@@ -88,7 +94,7 @@ export default function PrimaryInformationSection({
           <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
             <FieldLabel
               htmlFor="service"
-              className="mb-2 block text-sm font-medium"
+              className="mb-1.5 block text-sm font-medium"
             >
               Услуга{labelRequired}
             </FieldLabel>
@@ -119,15 +125,15 @@ export default function PrimaryInformationSection({
 
         {!!dealFormData.serviceId && !!dealFormData.customerId && (
           <>
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-              <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Детали сделки
               </p>
-              <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel
                     htmlFor="stage"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-1.5 block text-sm font-medium"
                   >
                     Этап сделки{labelRequired}
                   </FieldLabel>
@@ -172,7 +178,7 @@ export default function PrimaryInformationSection({
                 <Field>
                   <FieldLabel
                     htmlFor="material"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-1.5 block text-sm font-medium"
                   >
                     Материал{labelRequired}
                   </FieldLabel>
@@ -201,15 +207,15 @@ export default function PrimaryInformationSection({
               </div>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-              <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Объём и единицы
               </p>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Field>
                   <FieldLabel
                     htmlFor="measurementUnit"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-1.5 block text-sm font-medium"
                   >
                     Единица измерения
                   </FieldLabel>
@@ -235,7 +241,7 @@ export default function PrimaryInformationSection({
                 <Field>
                   <FieldLabel
                     htmlFor="quantity"
-                    className="mb-2 block text-sm font-medium"
+                    className="mb-1.5 block text-sm font-medium"
                   >
                     Количество
                   </FieldLabel>
@@ -246,7 +252,7 @@ export default function PrimaryInformationSection({
                     value={dealFormData.quantity}
                     min={1}
                     step={1}
-                    className="h-10"
+                    className="h-9"
                     onChange={(e) => {
                       updateField(
                         "quantity",
@@ -261,11 +267,11 @@ export default function PrimaryInformationSection({
                   <Field>
                     <FieldLabel
                       htmlFor="amountPerUnit"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-1.5 block text-sm font-medium"
                     >
                       Цена за единицу, ₽
                     </FieldLabel>
-                    <InputGroup className="h-10">
+                    <InputGroup className="h-9">
                       <InputGroupAddon>
                         <InputGroupText>₽</InputGroupText>
                       </InputGroupAddon>
@@ -287,19 +293,19 @@ export default function PrimaryInformationSection({
             </div>
 
             {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-                <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   Продажа
                 </p>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field>
                     <FieldLabel
                       htmlFor="amountSale"
-                      className="mb-2 block text-sm font-medium"
+                      className="mb-1.5 block text-sm font-medium"
                     >
                       Сумма продажи, ₽
                     </FieldLabel>
-                    <InputGroup className="h-10">
+                    <InputGroup className="h-9">
                       <InputGroupAddon>
                         <InputGroupText>₽</InputGroupText>
                       </InputGroupAddon>

@@ -36,30 +36,32 @@ export function FormSectionCard({
         className
       )}
     >
-      <CardHeader className="pb-4">
-        <div className="flex items-start gap-3">
+      <CardHeader className="pb-3 pt-4">
+        <div className="flex items-center gap-3">
           <div
             className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",
               iconClassName
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4 w-4" />
           </div>
-          <div className="min-w-0 flex-1 space-y-1">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
                 {step}
               </span>
-              <CardTitle className="text-lg">{title}</CardTitle>
+              <CardTitle className="text-base">{title}</CardTitle>
             </div>
             {description && (
-              <CardDescription className="text-sm">{description}</CardDescription>
+              <CardDescription className="mt-0.5 text-xs">
+                {description}
+              </CardDescription>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      <CardContent className="pt-0 pb-4">{children}</CardContent>
     </Card>
   );
 }
