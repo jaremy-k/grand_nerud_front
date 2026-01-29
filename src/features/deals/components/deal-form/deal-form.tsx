@@ -1,9 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
+import { BanknoteIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
@@ -88,7 +96,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-10">
       <PrimaryInformationSection
         formData={formData}
         defaultDeal={defaultDeal}
@@ -97,30 +105,47 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       <DeliveryInformationSection formData={formData} />
       <AdditionalInformationSection formData={formData} />
       {!!formData.serviceId && !!formData.customerId && (
-        <div className="flex flex-col gap-4">
-          {formData.paymentMethod === "безналичный расчет" && (
-            <div className="flex flex-col gap-2 border-b pb-4">
-              <p className="text-base text-slate-900">
-                <span className="font-light text-slate-700">
-                  Сумма без НДС:
-                </span>{" "}
-                {formData.calculatedData.totalAmountWithoutTax} ₽
-              </p>
-              <p className="text-base text-slate-900">
-                <span className="font-light text-slate-700">
-                  НДС ({formData.taxPercent * 100}%):
-                </span>{" "}
-                {formData.calculatedData.taxAmount} ₽
-              </p>
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <BanknoteIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Итог по сделке</CardTitle>
+                <CardDescription>
+                  Проверьте суммы и нажмите кнопку для сохранения
+                </CardDescription>
+              </div>
             </div>
-          )}
-          <p className="text-xl text-slate-900">
-            <span className="font-light text-slate-700">Итоговая сумма:</span>{" "}
-            {formData.calculatedData.totalAmount} ₽
-          </p>
-          <div className="inline-flex gap-4 mt-1">
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {formData.paymentMethod === "безналичный расчет" && (
+              <div className="flex flex-col gap-2 rounded-lg border bg-background/60 p-4">
+                <p className="text-sm text-muted-foreground">
+                  Сумма без НДС:{" "}
+                  <span className="font-semibold text-foreground">
+                    {formData.calculatedData.totalAmountWithoutTax} ₽
+                  </span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  НДС ({formData.taxPercent * 100}%):{" "}
+                  <span className="font-semibold text-foreground">
+                    {formData.calculatedData.taxAmount} ₽
+                  </span>
+                </p>
+              </div>
+            )}
+            <p className="text-2xl font-semibold tracking-tight">
+              Итоговая сумма:{" "}
+              <span className="text-primary">
+                {formData.calculatedData.totalAmount} ₽
+              </span>
+            </p>
             <Button
               type="submit"
+              size="lg"
+              className="min-w-[200px]"
               disabled={
                 !formData.customerId ||
                 !formData.stageId ||
@@ -133,8 +158,8 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
             >
               {defaultDeal ? "Обновить сделку" : "Создать сделку"}
             </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </form>
   );

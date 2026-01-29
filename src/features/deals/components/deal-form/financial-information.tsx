@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
@@ -23,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DealDataFormHook } from "./data-form-hook";
+import { FormSectionCard } from "./form-section-card";
+import { WalletIcon } from "lucide-react";
 
 export default function FinancialInformationSection({
   formData,
@@ -33,15 +28,20 @@ export default function FinancialInformationSection({
     return null;
   }
 
+  const inputClass = "h-10 min-w-[200px]";
+
   return (
-    <FieldSet>
-      <FieldLegend>Финансовая информация</FieldLegend>
-      <FieldDescription>
-        Заполните финансовую информацию о сделке ниже.
-      </FieldDescription>
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="paymentMethod">Тип расчета</FieldLabel>
+    <FormSectionCard
+      step={2}
+      title="Финансовая информация"
+      description="Тип расчёта и расчётные суммы"
+      icon={WalletIcon}
+    >
+      <FieldGroup className="gap-6">
+        <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+          <FieldLabel htmlFor="paymentMethod" className="mb-2 block text-sm font-medium">
+            Тип расчёта
+          </FieldLabel>
           <Select
             name="paymentMethod"
             value={formData.paymentMethod}
@@ -51,8 +51,8 @@ export default function FinancialInformationSection({
               )
             }
           >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Выберите тип расчета" />
+            <SelectTrigger className={inputClass}>
+              <SelectValue placeholder="Выберите тип расчёта" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
@@ -62,39 +62,48 @@ export default function FinancialInformationSection({
             </SelectContent>
           </Select>
         </Field>
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
-          <Field>
-            <FieldLabel htmlFor="profit">Маржа фирмы</FieldLabel>
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>₽</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput
-                name="profit"
-                value={formData.calculatedData.companyProfit}
-                disabled
-                readOnly
-                placeholder="0.00"
-              />
-            </InputGroup>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="managerProfit">Доход менеджера</FieldLabel>
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>₽</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput
-                name="managerProfit"
-                value={formData.calculatedData.managerProfit}
-                disabled
-                readOnly
-                placeholder="0.00"
-              />
-            </InputGroup>
-          </Field>
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Расчётные показатели
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Field>
+              <FieldLabel htmlFor="profit" className="mb-2 block text-sm font-medium text-muted-foreground">
+                Маржа фирмы
+              </FieldLabel>
+              <InputGroup className="h-10 bg-muted/50">
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="profit"
+                  value={formData.calculatedData.companyProfit}
+                  disabled
+                  readOnly
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="managerProfit" className="mb-2 block text-sm font-medium text-muted-foreground">
+                Доход менеджера
+              </FieldLabel>
+              <InputGroup className="h-10 bg-muted/50">
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="managerProfit"
+                  value={formData.calculatedData.managerProfit}
+                  disabled
+                  readOnly
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
+          </div>
         </div>
       </FieldGroup>
-    </FieldSet>
+    </FormSectionCard>
   );
 }

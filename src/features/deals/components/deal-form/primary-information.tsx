@@ -1,14 +1,7 @@
 "use client";
 
 import { CompanyCombobox } from "@/components/inputs/company-combobox";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   InputGroup,
@@ -38,9 +31,11 @@ import {
   ServiceDto,
   StageDto,
 } from "@definitions/dto";
+import { FileTextIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DealDataFormHook, MeasurementUnit } from "./data-form-hook";
 import { numberInputFormatter } from "@/lib/input-formatters";
+import { FormSectionCard } from "./form-section-card";
 
 export default function PrimaryInformationSection({
   formData,
@@ -72,234 +67,254 @@ export default function PrimaryInformationSection({
     setCompanies((c) => [...c, company]);
   };
 
+  const labelRequired = (
+    <span className="ml-0.5 text-destructive" aria-hidden>*</span>
+  );
+  const inputClass = "h-10 min-w-[200px]";
+
   return (
-    <FieldSet>
-      <FieldLegend>Основная информация</FieldLegend>
-      <FieldDescription>
-        Заполните основную информацию о сделке ниже.
-      </FieldDescription>
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="customer" className="gap-0.5">
-            Заказчик<span className="text-red-600">*</span>
-          </FieldLabel>
-          <CompanyCombobox
-            disabled={!!defaultDeal}
-            value={formData.customerId}
-            onChange={formData.setCustomerId}
-            onCompanyCreate={handleCompanyCreate}
-            companies={companies || []}
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="service" className="gap-0.5">
-            Услуга
-            <span className="text-red-600">*</span>
-          </FieldLabel>
-          <Select
-            value={formData.serviceId}
-            onValueChange={formData.setServiceId}
-            name="service"
-            disabled={!!defaultDeal}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Выберите услугу" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {services.map((service) => (
-                  <SelectItem
-                    key={`service-${service._id}`}
-                    value={service._id}
+    <FormSectionCard
+      step={1}
+      title="Основная информация"
+      description="Заказчик, услуга, этап и материал"
+      icon={FileTextIcon}
+    >
+      <FieldGroup className="gap-6">
+        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+          <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+            <FieldLabel htmlFor="customer" className="mb-2 block text-sm font-medium">
+              Заказчик{labelRequired}
+            </FieldLabel>
+            <CompanyCombobox
+              disabled={!!defaultDeal}
+              value={formData.customerId}
+              onChange={formData.setCustomerId}
+              onCompanyCreate={handleCompanyCreate}
+              companies={companies || []}
+            />
+          </Field>
+          <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+            <FieldLabel htmlFor="service" className="mb-2 block text-sm font-medium">
+              Услуга{labelRequired}
+            </FieldLabel>
+            <Select
+              value={formData.serviceId}
+              onValueChange={formData.setServiceId}
+              name="service"
+              disabled={!!defaultDeal}
+            >
+              <SelectTrigger className={inputClass}>
+                <SelectValue placeholder="Выберите услугу" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {services.map((service) => (
+                    <SelectItem key={`service-${service._id}`} value={service._id}>
+                      {capitalizeFirstLetter(service.name)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+
+        {!!formData.serviceId && !!formData.customerId && (
+          <>
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+              <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Детали сделки
+              </p>
+              <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="stage" className="mb-2 block text-sm font-medium">
+                    Этап сделки{labelRequired}
+                  </FieldLabel>
+                  <Select
+                    name="stage"
+                    value={formData.stageId}
+                    onValueChange={formData.setStageId}
                   >
-                    {capitalizeFirstLetter(service.name)}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </Field>
-        {!!formData.serviceId && !!formData.customerId && (
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-4">
-            <Field>
-              <FieldLabel htmlFor="stage" className="gap-0.5">
-                Этап сделки<span className="text-red-600">*</span>
-              </FieldLabel>
-              <Select
-                name="stage"
-                value={formData.stageId}
-                onValueChange={formData.setStageId}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Выберите этап" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {stages.map((stage) => (
-                      <SelectItem key={`stage-${stage._id}`} value={stage._id}>
-                        {capitalizeFirstLetter(stage.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="material" className="gap-0.5">
-                Материал
-                <span className="text-red-600">*</span>
-              </FieldLabel>
-              <Select
-                name="material"
-                value={formData.materialId}
-                onValueChange={formData.setMaterialId}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Выберите материал" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {materials.map((material) => (
-                      <SelectItem
-                        key={`material-${material._id}`}
-                        value={material._id}
-                      >
-                        {capitalizeFirstLetter(material.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-        )}
-        {!!formData.serviceId && !!formData.customerId && (
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
-            <div className="grid grid-cols-2 gap-2.5">
-              <Field>
-                <FieldLabel htmlFor="measurementUnit">
-                  Единица измерения
-                </FieldLabel>
-                <Select
-                  name="measurementUnit"
-                  value={formData.unitMeasurement}
-                  onValueChange={(e) =>
-                    formData.setUnitMeasurement(e as MeasurementUnit)
-                  }
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Выберите единицу измерения" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="тонна">Тонна</SelectItem>
-                      <SelectItem value="куб.м">Кубический метр</SelectItem>
-                      <SelectItem value="шт">Штука</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="quantity">Количество</FieldLabel>
-                <Input
-                  type="number"
-                  name="quantity"
-                  placeholder="Введите количество"
-                  value={formData.quantity}
-                  min={1}
-                  step={1}
-                  onChange={(e) => {
-                    formData.setQuantity(
-                      numberInputFormatter(e.target.value, {
-                        integerOnly: true,
-                      })
-                    );
-                  }}
-                />
-              </Field>
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="Выберите этап" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {stages.map((stage) => (
+                          <SelectItem key={`stage-${stage._id}`} value={stage._id}>
+                            {capitalizeFirstLetter(stage.name)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="material" className="mb-2 block text-sm font-medium">
+                    Материал{labelRequired}
+                  </FieldLabel>
+                  <Select
+                    name="material"
+                    value={formData.materialId}
+                    onValueChange={formData.setMaterialId}
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="Выберите материал" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {materials.map((material) => (
+                          <SelectItem key={`material-${material._id}`} value={material._id}>
+                            {capitalizeFirstLetter(material.name)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
             </div>
-            {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-              <Field>
-                <FieldLabel htmlFor="amountPerUnit">Цена за единицу</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="amountPerUnit"
-                    value={formData.amountPurchaseUnit}
+
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+              <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Объём и единицы
+              </p>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <Field>
+                  <FieldLabel htmlFor="measurementUnit" className="mb-2 block text-sm font-medium">
+                    Единица измерения
+                  </FieldLabel>
+                  <Select
+                    name="measurementUnit"
+                    value={formData.unitMeasurement}
+                    onValueChange={(e) =>
+                      formData.setUnitMeasurement(e as MeasurementUnit)
+                    }
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="Ед. измерения" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="тонна">Тонна</SelectItem>
+                        <SelectItem value="куб.м">Кубический метр</SelectItem>
+                        <SelectItem value="шт">Штука</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="quantity" className="mb-2 block text-sm font-medium">
+                    Количество
+                  </FieldLabel>
+                  <Input
+                    type="number"
+                    name="quantity"
+                    placeholder="0"
+                    value={formData.quantity}
+                    min={1}
+                    step={1}
+                    className="h-10"
                     onChange={(e) => {
-                      formData.setAmountPurchaseUnit(
-                        numberInputFormatter(e.target.value)
+                      formData.setQuantity(
+                        numberInputFormatter(e.target.value, { integerOnly: true })
                       );
                     }}
-                    placeholder="0.00"
                   />
-                </InputGroup>
-              </Field>
-            )}
-            {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">
-                  Итоговая сумма закупки
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="purchaseTotal"
-                    value={formData.calculatedData.amountPurchaseTotal}
-                    readOnly
-                    disabled
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
-            )}
-          </div>
-        )}
-        {formData.serviceId &&
-          formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">Сумма продажи</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="amountSale"
-                    value={formData.amountSalesUnit}
-                    onChange={(e) => {
-                      formData.setAmountSalesUnit(
-                        numberInputFormatter(e.target.value)
-                      );
-                    }}
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="purchaseTotal">
-                  Итоговая сумма продажи
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>₽</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    name="purchaseTotal"
-                    value={formData.calculatedData.amountSalesTotal}
-                    readOnly
-                    disabled
-                    placeholder="0.00"
-                  />
-                </InputGroup>
-              </Field>
+                </Field>
+                {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+                  <Field>
+                    <FieldLabel htmlFor="amountPerUnit" className="mb-2 block text-sm font-medium">
+                      Цена за единицу, ₽
+                    </FieldLabel>
+                    <InputGroup className="h-10">
+                      <InputGroupAddon>
+                        <InputGroupText>₽</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        name="amountPerUnit"
+                        value={formData.amountPurchaseUnit}
+                        onChange={(e) => {
+                          formData.setAmountPurchaseUnit(
+                            numberInputFormatter(e.target.value)
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    </InputGroup>
+                  </Field>
+                )}
+                {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+                  <Field>
+                    <FieldLabel htmlFor="purchaseTotal" className="mb-2 block text-sm font-medium text-muted-foreground">
+                      Итоговая сумма закупки
+                    </FieldLabel>
+                    <InputGroup className="h-10 bg-muted/50">
+                      <InputGroupAddon>
+                        <InputGroupText>₽</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        name="purchaseTotal"
+                        value={formData.calculatedData.amountPurchaseTotal}
+                        readOnly
+                        disabled
+                        placeholder="0.00"
+                      />
+                    </InputGroup>
+                  </Field>
+                )}
+              </div>
             </div>
-          )}
+
+            {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Продажа
+                </p>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <Field>
+                    <FieldLabel htmlFor="amountSale" className="mb-2 block text-sm font-medium">
+                      Сумма продажи, ₽
+                    </FieldLabel>
+                    <InputGroup className="h-10">
+                      <InputGroupAddon>
+                        <InputGroupText>₽</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        name="amountSale"
+                        value={formData.amountSalesUnit}
+                        onChange={(e) => {
+                          formData.setAmountSalesUnit(
+                            numberInputFormatter(e.target.value)
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    </InputGroup>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="salesTotal" className="mb-2 block text-sm font-medium text-muted-foreground">
+                      Итоговая сумма продажи
+                    </FieldLabel>
+                    <InputGroup className="h-10 bg-muted/50">
+                      <InputGroupAddon>
+                        <InputGroupText>₽</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        name="salesTotal"
+                        value={formData.calculatedData.amountSalesTotal}
+                        readOnly
+                        disabled
+                        placeholder="0.00"
+                      />
+                    </InputGroup>
+                  </Field>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </FieldGroup>
-    </FieldSet>
+    </FormSectionCard>
   );
 }
