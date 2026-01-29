@@ -1,13 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
-import { formatCurrency } from "@/lib/formatters";
-import { dealsService } from "@/services";
-import { DealDto } from "@definitions/dto";
-import { CreateDealRequest } from "@definitions/requests";
-import { useDataFormHook } from "@features/deals/hooks/deal-form";
-=======
 import {
   Card,
   CardContent,
@@ -18,8 +11,8 @@ import {
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
+import { useDataFormHook } from "@features/deals/hooks/deal-form";
 import { BanknoteIcon } from "lucide-react";
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
@@ -81,7 +74,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
           .padStart(2, "0")}-${dealFormData.deliveryDate
           ?.getDate()
           .toString()
-          .padStart(2, "0")} ${dealFormData.deliveryTime}`, // TODO: add deadline input
+          .padStart(2, "0")} ${dealFormData.deliveryTime}`,
         notes: dealFormData.notes,
         OSSIG: dealFormData.ossig,
         addExpenses: dealFormData.extraExpenses.map((v) => ({
@@ -103,12 +96,13 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
     }
   };
 
+  const totalAmountWithoutTax =
+    dealFormData.paymentMethod === "безналичный расчет"
+      ? calculatedData.amountSalesTotal / (1 + taxPercent)
+      : calculatedData.amountSalesTotal;
+
   return (
-<<<<<<< HEAD
-    <form onSubmit={handleSubmit} className="flex flex-col gap-8 relative">
-=======
     <form onSubmit={handleSubmit} className="flex flex-col gap-10">
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
       <PrimaryInformationSection
         formData={formData}
         defaultDeal={defaultDeal}
@@ -116,89 +110,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       <FinancialInformationSection formData={formData} />
       <DeliveryInformationSection formData={formData} />
       <AdditionalInformationSection formData={formData} />
-<<<<<<< HEAD
       {dealFormData.serviceId && dealFormData.customerId && (
-        <div className="bg-white sticky bottom-0 left-0 right-0 border-t py-6">
-          <div className="flex w-full justify-between items-end">
-            <div className="flex gap-8">
-              {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-                <table className="table text-sm -ml-2 text-slate-700">
-                  <tbody>
-                    <tr className="group">
-                      <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r">
-                        Итоговая сумма закупки:
-                      </td>
-                      <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r font-medium text-slate-900">
-                        {formatCurrency(
-                          formData.calculatedData.amountPurchaseTotal
-                        )}
-                      </td>
-                    </tr>
-                    <tr className="group">
-                      <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r">
-                        Итоговая сумма продажи:
-                      </td>
-                      <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r font-medium text-slate-900">
-                        {formatCurrency(
-                          formData.calculatedData.amountSalesTotal
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              )}
-              <table className="table text-sm -ml-2 text-slate-700">
-                <tbody>
-                  <tr className="group">
-                    <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r">
-                      Маржа фирмы:
-                    </td>
-                    <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r font-medium text-slate-900">
-                      {formatCurrency(formData.calculatedData.companyProfit)}
-                    </td>
-                  </tr>
-                  <tr className="group">
-                    <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r">
-                      Доход менеджера:
-                    </td>
-                    <td className="py-1.5 px-2.5 group-hover:bg-slate-50 first:rounded-l last:rounded-r font-medium text-slate-900">
-                      {formatCurrency(formData.calculatedData.managerProfit)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="flex flex-row items-end gap-16">
-              <div className="flex flex-col text-slate-900">
-                <p className="text-lg font-medium leading-[1] text-nowrap">
-                  Итоговая сумма:
-                </p>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  С НДС 20%
-                </p>
-                <p className="text-2xl font-medium mt-2">
-                  {formatCurrency(calculatedData.amountSalesTotal)}
-                </p>
-              </div>
-              <Button
-                type="submit"
-                disabled={
-                  !dealFormData.customerId ||
-                  !dealFormData.stageId ||
-                  !dealFormData.materialId ||
-                  !dealFormData.serviceId ||
-                  !dealFormData.deliveryDate ||
-                  !dealFormData.deliveryTime ||
-                  submiting
-                }
-              >
-                {defaultDeal ? "Обновить сделку" : "Создать сделку"}
-              </Button>
-            </div>
-          </div>
-        </div>
-=======
-      {!!formData.serviceId && !!formData.customerId && (
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -214,18 +126,18 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            {formData.paymentMethod === "безналичный расчет" && (
+            {dealFormData.paymentMethod === "безналичный расчет" && (
               <div className="flex flex-col gap-2 rounded-lg border bg-background/60 p-4">
                 <p className="text-sm text-muted-foreground">
                   Сумма без НДС:{" "}
                   <span className="font-semibold text-foreground">
-                    {formData.calculatedData.totalAmountWithoutTax} ₽
+                    {totalAmountWithoutTax.toFixed(2)} ₽
                   </span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  НДС ({formData.taxPercent * 100}%):{" "}
+                  НДС ({taxPercent * 100}%):{" "}
                   <span className="font-semibold text-foreground">
-                    {formData.calculatedData.taxAmount} ₽
+                    {calculatedData.taxAmount} ₽
                   </span>
                 </p>
               </div>
@@ -233,7 +145,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
             <p className="text-2xl font-semibold tracking-tight">
               Итоговая сумма:{" "}
               <span className="text-primary">
-                {formData.calculatedData.totalAmount} ₽
+                {calculatedData.amountSalesTotal} ₽
               </span>
             </p>
             <Button
@@ -241,12 +153,12 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
               size="lg"
               className="min-w-[200px]"
               disabled={
-                !formData.customerId ||
-                !formData.stageId ||
-                !formData.materialId ||
-                !formData.serviceId ||
-                !formData.deliveryDate ||
-                !formData.deliveryTime ||
+                !dealFormData.customerId ||
+                !dealFormData.stageId ||
+                !dealFormData.materialId ||
+                !dealFormData.serviceId ||
+                !dealFormData.deliveryDate ||
+                !dealFormData.deliveryTime ||
                 submiting
               }
             >
@@ -254,7 +166,6 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
             </Button>
           </CardContent>
         </Card>
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
       )}
     </form>
   );

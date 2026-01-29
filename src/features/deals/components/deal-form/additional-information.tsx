@@ -5,23 +5,30 @@ import { Calendar } from "@/components/ui/calendar";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-<<<<<<< HEAD
 import { DealDataFormHook } from "@features/deals/hooks/deal-form";
-import { ChevronDownIcon } from "lucide-react";
-import { useState } from "react";
-import { ru } from "react-day-picker/locale";
-=======
 import { CalendarDaysIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { ru } from "react-day-picker/locale";
-import { DealDataFormHook } from "./data-form-hook";
 import { FormSectionCard } from "./form-section-card";
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
 
 export default function AdditionalInformationSection({
   formData,
@@ -45,7 +52,10 @@ export default function AdditionalInformationSection({
       <FieldGroup className="gap-6">
         <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
           <Field>
-            <FieldLabel htmlFor="deadline" className="mb-2 block text-sm font-medium">
+            <FieldLabel
+              htmlFor="deadline"
+              className="mb-2 block text-sm font-medium"
+            >
               Срок выполнения
               <span className="ml-0.5 text-destructive" aria-hidden>*</span>
             </FieldLabel>
@@ -57,18 +67,16 @@ export default function AdditionalInformationSection({
                     id="date-picker"
                     className="h-10 min-w-[180px] justify-between font-normal"
                   >
-<<<<<<< HEAD
                     {dealFormData.deliveryDate
-                      ? dealFormData.deliveryDate.toLocaleDateString()
-=======
-                    {formData.deliveryDate
-                      ? formData.deliveryDate.toLocaleDateString("ru-RU")
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
+                      ? dealFormData.deliveryDate.toLocaleDateString("ru-RU")
                       : "Выбрать дату"}
                     <ChevronDownIcon className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
                   <Calendar
                     locale={ru}
                     mode="single"
@@ -92,7 +100,10 @@ export default function AdditionalInformationSection({
         </div>
 
         <Field className="rounded-lg border border-border/60 bg-muted/20 p-4">
-          <FieldLabel htmlFor="notes" className="mb-2 block text-sm font-medium">
+          <FieldLabel
+            htmlFor="notes"
+            className="mb-2 block text-sm font-medium"
+          >
             Примечания
           </FieldLabel>
           <Textarea
@@ -103,10 +114,6 @@ export default function AdditionalInformationSection({
             className="min-h-[100px] resize-y"
           />
         </Field>
-<<<<<<< HEAD
-      </FieldGroup>
-    </FieldSet>
-=======
 
         <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
           <FieldLabel className="mb-4 block text-sm font-medium">
@@ -117,11 +124,13 @@ export default function AdditionalInformationSection({
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-medium">Наименование</TableHead>
-                  <TableHead className="w-[140px] font-medium">Сумма</TableHead>
+                  <TableHead className="w-[140px] font-medium">
+                    Сумма
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {formData.extraExpenses.map((el, idx) => (
+                {dealFormData.extraExpenses.map((el, idx) => (
                   <TableRow key={`extra-expenses-${idx}`}>
                     <TableCell>
                       <Input
@@ -130,8 +139,9 @@ export default function AdditionalInformationSection({
                         value={el.name}
                         className="h-9 border-0 bg-transparent focus-visible:ring-0"
                         onChange={(e) =>
-                          formData.setExtraExpenses(
-                            formData.extraExpenses.map((v, i) =>
+                          updateField(
+                            "extraExpenses",
+                            dealFormData.extraExpenses.map((v, i) =>
                               i !== idx ? v : { ...v, name: e.target.value }
                             )
                           )
@@ -151,8 +161,9 @@ export default function AdditionalInformationSection({
                               .replace(/[^0-9.]/g, "")
                               .replace(/(\..*)\./g, "$1")
                               .replace(/(\.\d{2})\d+$/, "$1");
-                            formData.setExtraExpenses(
-                              formData.extraExpenses.map((v, i) =>
+                            updateField(
+                              "extraExpenses",
+                              dealFormData.extraExpenses.map((v, i) =>
                                 i !== idx ? v : { ...v, amount: formatted }
                               )
                             );
@@ -168,8 +179,8 @@ export default function AdditionalInformationSection({
                     colSpan={2}
                     className="cursor-pointer bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                     onClick={() =>
-                      formData.setExtraExpenses([
-                        ...formData.extraExpenses,
+                      updateField("extraExpenses", [
+                        ...dealFormData.extraExpenses,
                         { name: "", amount: "" },
                       ])
                     }
@@ -186,6 +197,5 @@ export default function AdditionalInformationSection({
         </div>
       </FieldGroup>
     </FormSectionCard>
->>>>>>> 266d4ce2dfe6edb8ff22fc65a123ff6f1d7beeba
   );
 }
