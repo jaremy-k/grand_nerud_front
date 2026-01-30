@@ -59,22 +59,21 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
 
         shippingAddress: dealFormData.shippingAddress,
         deliveryAddress: dealFormData.deliveryAddress,
-        deadline: dealFormData.deliveryDate
-          ? `${dealFormData.deliveryDate.getFullYear()}-${(
-              dealFormData.deliveryDate.getMonth() + 1
-            )
-              .toString()
-              .padStart(2, "0")}-${dealFormData.deliveryDate
-              .getDate()
-              .toString()
-              .padStart(2, "0")} 00:00`
-          : undefined,
         notes: dealFormData.notes,
         OSSIG: dealFormData.ossig,
         addExpenses: dealFormData.extraExpenses.map((v) => ({
           name: v.name,
           amount: Number(v.amount),
         })),
+        deliveredQuantity: dealFormData.deliveredQuantity
+          .filter((dq) => dq.date && dq.quantity)
+          .map((dq) => ({
+            quantity: Number(dq.quantity),
+            unit: dealFormData.unitMeasurement,
+            date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
+              .toString()
+              .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
+          })),
       };
 
       if (!!defaultDeal && defaultDeal._id) {
@@ -191,7 +190,6 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     !dealFormData.stageId ||
                     !dealFormData.materialId ||
                     !dealFormData.serviceId ||
-                    !dealFormData.deliveryDate ||
                     submiting
                   }
               >

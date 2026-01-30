@@ -39,17 +39,16 @@ export default function useDataFormHook(
     deliveryAddress: defaultDeal?.deliveryAddress || "",
     shippingAddress: defaultDeal?.shippingAddress || "",
     ossig: defaultDeal?.OSSIG || false,
-    deliveryDate: defaultDeal?.deadline
-      ? new Date(defaultDeal.deadline.split("T")[0])
-      : undefined,
-    deliveryTime: defaultDeal?.deadline
-      ? defaultDeal.deadline.split(" ")[1]
-      : "",
     notes: defaultDeal?.notes || "",
     extraExpenses:
-      defaultDeal?.addExpenses.map((el) => ({
+      defaultDeal?.addExpenses?.map((el) => ({
         ...el,
         amount: el.amount.toString(),
+      })) || [],
+    deliveredQuantity:
+      defaultDeal?.deliveredQuantity?.map((el) => ({
+        quantity: String(el.quantity || ""),
+        date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
       })) || [],
   });
 
@@ -118,10 +117,11 @@ export default function useDataFormHook(
         deliveryAddress: defaultDeal.deliveryAddress || "",
         shippingAddress: defaultDeal.shippingAddress || "",
         ossig: defaultDeal.OSSIG || false,
-        deliveryDate: new Date(defaultDeal.deadline || ""),
-        deliveryTime: defaultDeal.deadline
-          ? defaultDeal.deadline.split(" ")[1]
-          : "",
+        deliveredQuantity:
+          defaultDeal?.deliveredQuantity?.map((el) => ({
+            quantity: String(el.quantity || ""),
+            date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
+          })) || [],
       }));
 
       return;

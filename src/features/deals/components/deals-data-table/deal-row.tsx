@@ -51,9 +51,9 @@ export default function DealRow({ deal }: { deal: DealDto }) {
       <TableCell>{new Date(deal.createdAt).toLocaleDateString()}</TableCell>
       <TableCell>
         <div className="inline-flex w-full justify-between items-center">
-          {deal.deadline
-            ? new Date(deal.deadline).toLocaleDateString()
-            : "Не указано"}
+          {deal.deliveredQuantity && deal.deliveredQuantity.length > 0
+            ? `${deal.deliveredQuantity.length} доставок`
+            : "Нет доставок"}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">

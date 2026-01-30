@@ -33,7 +33,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { ru } from "react-day-picker/locale";
+import { format } from "date-fns";
 import { FormSectionCard } from "./form-section-card";
+import { numberInputFormatter } from "@/lib/input-formatters";
 
 export default function AdditionalInformationSection({
   formData,
@@ -41,7 +43,7 @@ export default function AdditionalInformationSection({
   formData: DealDataFormHook;
 }) {
   const { dealFormData, updateField } = formData;
-  const [open, setOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState<number | null>(null);
 
   if (!dealFormData.serviceId || !dealFormData.customerId) {
     return null;
@@ -51,48 +53,10 @@ export default function AdditionalInformationSection({
     <FormSectionCard
       step={4}
       title="Дополнительно"
-      description="Срок выполнения, примечания и расходы"
+      description="Примечания, расходы и доставленные количества"
       icon={CalendarDaysIcon}
     >
       <FieldGroup className="gap-4">
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-          <Field>
-            <FieldLabel
-              htmlFor="deadline"
-              className="mb-1.5 block text-sm font-medium"
-            >
-              Срок выполнения
-              <span className="ml-0.5 text-destructive" aria-hidden>*</span>
-            </FieldLabel>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  id="date-picker"
-                  className="h-9 min-w-[160px] justify-between font-normal text-sm"
-                >
-                  {dealFormData.deliveryDate
-                    ? dealFormData.deliveryDate.toLocaleDateString("ru-RU")
-                    : "Выбрать дату"}
-                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-              >
-                <Calendar
-                  locale={ru}
-                  mode="single"
-                  onSelect={(date) => {
-                    updateField("deliveryDate", date);
-                    setOpen(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-          </Field>
-        </div>
 
         <Field className="rounded-lg border border-border/60 bg-muted/20 p-3">
           <FieldLabel
@@ -203,6 +167,144 @@ export default function AdditionalInformationSection({
                     <span className="inline-flex items-center gap-2">
                       <PlusIcon className="h-4 w-4" />
                       Добавить расход
+                    </span>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+          <FieldLabel className="mb-3 block text-sm font-medium">
+            Доставленные количества
+          </FieldLabel>
+          <div className="overflow-hidden rounded-lg border border-border/60">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-medium">Количество</TableHead>
+                  <TableHead className="font-medium">Единица</TableHead>
+                  <TableHead className="font-medium">Дата доставки</TableHead>
+                  <TableHead className="w-[52px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dealFormData.deliveredQuantity.map((el, idx) => (
+                  <TableRow key={`delivered-quantity-${idx}`}>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={el.quantity}
+                        min={0}
+                        step={1}
+                        className="h-9 border-0 bg-transparent focus-visible:ring-0"
+                        onChange={(e) =>
+                          updateField(
+                            "deliveredQuantity",
+                            dealFormData.deliveredQuantity.map((v, i) =>
+                              i !== idx
+                                ? v
+                                : {
+                                    ...v,
+                                    quantity: numberInputFormatter(
+                                      e.target.value,
+                                      { integerOnly: true }
+                                    ),
+                                  }
+                            )
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-9 flex items-center px-2 text-sm text-muted-foreground">
+                        {dealFormData.unitMeasurement === "тонна"
+                          ? "тонн"
+                          : dealFormData.unitMeasurement === "куб.м"
+                            ? "куб.м"
+                            : dealFormData.unitMeasurement === "шт"
+                              ? "шт"
+                              : dealFormData.unitMeasurement}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Popover
+                        open={datePickerOpen === idx}
+                        onOpenChange={(open) =>
+                          setDatePickerOpen(open ? idx : null)
+                        }
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-9 w-full justify-between border-0 bg-transparent font-normal shadow-none hover:bg-muted/50"
+                          >
+                            {el.date
+                              ? format(el.date, "d MMM yyyy", {
+                                  locale: ru,
+                                })
+                              : "Выбрать дату"}
+                            <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto overflow-hidden p-0"
+                          align="start"
+                        >
+                          <Calendar
+                            locale={ru}
+                            mode="single"
+                            selected={el.date}
+                            onSelect={(date) => {
+                              updateField(
+                                "deliveredQuantity",
+                                dealFormData.deliveredQuantity.map((v, i) =>
+                                  i !== idx ? v : { ...v, date }
+                                )
+                              );
+                              setDatePickerOpen(null);
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
+                    <TableCell className="w-[52px] p-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          updateField(
+                            "deliveredQuantity",
+                            dealFormData.deliveredQuantity.filter(
+                              (_, i) => i !== idx
+                            )
+                          )
+                        }
+                        title="Удалить"
+                      >
+                        <Trash2Icon className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="cursor-pointer bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                    onClick={() =>
+                      updateField("deliveredQuantity", [
+                        ...dealFormData.deliveredQuantity,
+                        { quantity: "", date: undefined },
+                      ])
+                    }
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <PlusIcon className="h-4 w-4" />
+                      Добавить доставку
                     </span>
                   </TableCell>
                 </TableRow>

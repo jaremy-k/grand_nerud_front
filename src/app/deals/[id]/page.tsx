@@ -220,14 +220,34 @@ export default function DealDetailPage() {
             </TableCell>
             <TableCell>{capitalizeFirstLetter(deal.methodReceiving)}</TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell className="font-medium w-1/3">Дедлайн</TableCell>
-            <TableCell>
-              {deal.deadline
-                ? new Date(deal.deadline).toLocaleString("ru-RU")
-                : "Не указано"}
-            </TableCell>
-          </TableRow>
+          {deal.deliveredQuantity && deal.deliveredQuantity.length > 0 && (
+            <TableRow>
+              <TableCell className="font-medium w-1/3">
+                Доставленные количества
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col w-full max-w-sm gap-2">
+                  {deal.deliveredQuantity.map((dq, idx) => (
+                    <div
+                      key={`delivered-quantity-${idx}`}
+                      className="inline-flex justify-between w-full border-b last:border-0 py-1"
+                    >
+                      <span>
+                        {dq.quantity} {dq.unit}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {dq.date
+                          ? new Date(dq.date.split(" ")[0]).toLocaleDateString(
+                              "ru-RU"
+                            )
+                          : "Не указано"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
           <TableRow>
             <TableCell className="font-medium w-1/3">ОССиГ</TableCell>
             <TableCell>{deal.OSSIG ? "Да" : "Нет"}</TableCell>

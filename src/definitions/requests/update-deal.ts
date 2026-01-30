@@ -27,9 +27,9 @@ export default interface UpdateDealRequest {
   methodReceiving: "самовывоз" | "доставка";
   deliveryAddress: string;
 
-  deadline: string | undefined; // ISO date string
   notes: string;
   OSSIG: boolean;
 
   addExpenses: Array<{ name: string; amount: number }>;
+  deliveredQuantity: Array<{ quantity: number; unit: string; date: string }>; // date format: "YYYY-MM-DD 00:00"
 }

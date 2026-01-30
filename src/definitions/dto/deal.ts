@@ -34,11 +34,11 @@ export default interface DealDto {
   methodReceiving: string;
   deliveryAddress: string | null;
 
-  deadline: string | null;
   notes: string;
   OSSIG: boolean;
 
   addExpenses: Array<{ name: string; amount: number }>;
+  deliveredQuantity?: Array<{ quantity: number; unit: string; date: string }>;
 
   // Populated fields
   user: UserDto | null;
