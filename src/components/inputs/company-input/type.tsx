@@ -6,6 +6,9 @@ const buttonStyle = (active: boolean) =>
     active ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-950"
   );
 
+/** Значение объединённой вкладки ИП + Юр. лицо (только для фильтра/выбора типа формы) */
+export const IP_AND_LEGAL_TYPE = "ip_and_legal";
+
 export default function TypeSelector({
   value,
   onChange,
@@ -15,6 +18,11 @@ export default function TypeSelector({
   onChange: (val: string) => void;
   withoutAny?: boolean;
 }) {
+  const isIpAndLegal =
+    value === IP_AND_LEGAL_TYPE ||
+    value === "Индивидуальный предприниматель" ||
+    value === "Юридическое лицо";
+
   return (
     <div className="flex gap-0.5 bg-slate-100 rounded-md">
       {!withoutAny && (
@@ -35,17 +43,10 @@ export default function TypeSelector({
       </button>
       <button
         type="button"
-        onClick={() => onChange("Индивидуальный предприниматель")}
-        className={buttonStyle(value === "Индивидуальный предприниматель")}
+        onClick={() => onChange(IP_AND_LEGAL_TYPE)}
+        className={buttonStyle(isIpAndLegal)}
       >
-        Индив. пр.
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("Юридическое лицо")}
-        className={buttonStyle(value === "Юридическое лицо")}
-      >
-        Юр. лицо
+        ИП и Юр. лицо
       </button>
     </div>
   );

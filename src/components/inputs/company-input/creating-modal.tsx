@@ -10,7 +10,7 @@ import { CreateCompanyRequest } from "@definitions/requests";
 import { useState } from "react";
 import InnProviderForm from "./inn-provider-form";
 import ManualForm from "./manual-form";
-import TypeSelector from "./type";
+import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
 
 export function CreatingModal({
   open,
@@ -25,7 +25,7 @@ export function CreatingModal({
 }) {
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const [type, setType] = useState<string>("Юридическое лицо");
+  const [type, setType] = useState<string>(IP_AND_LEGAL_TYPE);
 
   const hanleCancel = () => {
     onCancel();
@@ -63,14 +63,9 @@ export function CreatingModal({
             disabled={submitting}
           />
         )}
-        {type === "Индивидуальный предприниматель" && (
-          <InnProviderForm
-            onSubmit={handleSubmit}
-            onCancel={hanleCancel}
-            disabled={submitting}
-          />
-        )}
-        {type === "Юридическое лицо" && (
+        {(type === IP_AND_LEGAL_TYPE ||
+          type === "Индивидуальный предприниматель" ||
+          type === "Юридическое лицо") && (
           <InnProviderForm
             withShortName
             onSubmit={handleSubmit}

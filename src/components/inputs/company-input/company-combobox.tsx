@@ -24,7 +24,7 @@ import {
 import { Input } from "../../ui/input";
 import CompanyButton from "./company-card";
 import { CreatingModal } from "./creating-modal";
-import TypeSelector from "./type";
+import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
 
 export function CompanyCombobox({
   value = "",
@@ -52,9 +52,17 @@ export function CompanyCombobox({
 
   useEffect(() => {
     const loweredSearch = searchValue.toLowerCase();
+    const matchType =
+      type === "all"
+        ? () => true
+        : type === IP_AND_LEGAL_TYPE
+          ? (el: CompanyDto) =>
+              el.type === "Индивидуальный предприниматель" ||
+              el.type === "Юридическое лицо"
+          : (el: CompanyDto) => el.type === type;
     const filteredData = companies.filter(
       (el) =>
-        (type === "all" || el.type === type) &&
+        matchType(el) &&
         (el.name.toLowerCase().includes(loweredSearch) ||
           (el.inn && el.inn.toString().includes(loweredSearch)) ||
           (el.abbreviatedName &&
