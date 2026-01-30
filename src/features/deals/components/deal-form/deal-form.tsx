@@ -59,14 +59,16 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
 
         shippingAddress: dealFormData.shippingAddress,
         deliveryAddress: dealFormData.deliveryAddress,
-        deadline: `${dealFormData.deliveryDate?.getFullYear()}-${(
-          (dealFormData.deliveryDate?.getMonth() || 0) + 1
-        )
-          .toString()
-          .padStart(2, "0")}-${dealFormData.deliveryDate
-          ?.getDate()
-          .toString()
-          .padStart(2, "0")} ${dealFormData.deliveryTime}`,
+        deadline: dealFormData.deliveryDate
+          ? `${dealFormData.deliveryDate.getFullYear()}-${(
+              dealFormData.deliveryDate.getMonth() + 1
+            )
+              .toString()
+              .padStart(2, "0")}-${dealFormData.deliveryDate
+              .getDate()
+              .toString()
+              .padStart(2, "0")} 00:00`
+          : undefined,
         notes: dealFormData.notes,
         OSSIG: dealFormData.ossig,
         addExpenses: dealFormData.extraExpenses.map((v) => ({
@@ -185,14 +187,13 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                 size="lg"
                 className="mt-5 w-full"
                 disabled={
-                  !dealFormData.customerId ||
-                  !dealFormData.stageId ||
-                  !dealFormData.materialId ||
-                  !dealFormData.serviceId ||
-                  !dealFormData.deliveryDate ||
-                  !dealFormData.deliveryTime ||
-                  submiting
-                }
+                    !dealFormData.customerId ||
+                    !dealFormData.stageId ||
+                    !dealFormData.materialId ||
+                    !dealFormData.serviceId ||
+                    !dealFormData.deliveryDate ||
+                    submiting
+                  }
               >
                 {defaultDeal ? "Обновить сделку" : "Создать сделку"}
               </Button>

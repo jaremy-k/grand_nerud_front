@@ -64,43 +64,33 @@ export default function AdditionalInformationSection({
               Срок выполнения
               <span className="ml-0.5 text-destructive" aria-hidden>*</span>
             </FieldLabel>
-            <div className="flex flex-wrap items-center gap-3">
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    id="date-picker"
-                    className="h-9 min-w-[160px] justify-between font-normal text-sm"
-                  >
-                    {dealFormData.deliveryDate
-                      ? dealFormData.deliveryDate.toLocaleDateString("ru-RU")
-                      : "Выбрать дату"}
-                    <ChevronDownIcon className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto overflow-hidden p-0"
-                  align="start"
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  id="date-picker"
+                  className="h-9 min-w-[160px] justify-between font-normal text-sm"
                 >
-                  <Calendar
-                    locale={ru}
-                    mode="single"
-                    onSelect={(date) => {
-                      updateField("deliveryDate", date);
-                      setOpen(false);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Input
-                value={dealFormData.deliveryTime}
-                onChange={(e) => updateField("deliveryTime", e.target.value)}
-                name="time"
-                type="time"
-                step="60"
-                className="h-9 w-[100px] appearance-none text-sm [&::-webkit-calendar-picker-indicator]:hidden"
-              />
-            </div>
+                  {dealFormData.deliveryDate
+                    ? dealFormData.deliveryDate.toLocaleDateString("ru-RU")
+                    : "Выбрать дату"}
+                  <ChevronDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="start"
+              >
+                <Calendar
+                  locale={ru}
+                  mode="single"
+                  onSelect={(date) => {
+                    updateField("deliveryDate", date);
+                    setOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
           </Field>
         </div>
 
