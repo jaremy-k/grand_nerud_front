@@ -14,7 +14,7 @@ export function Header() {
         <SidebarMenuButton size="lg" asChild>
           <Link href="/">
             <div className="flex flex-col gap-0.5 leading-none text-lg">
-              <span className="font-medium">Гранд-неруд CRM</span>
+              <span className="font-medium">Гранд Неруд Групп</span>
             </div>
           </Link>
         </SidebarMenuButton>

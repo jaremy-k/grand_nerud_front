@@ -12,21 +12,24 @@ const STAGE_PALETTE = [
   { dot: "bg-slate-500", badge: "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300" },
 ] as const;
 
-function hashStageId(id: string): number {
+function hashStageId(id: string | null | undefined): number {
+  const s = id ?? "";
   let h = 0;
-  for (let i = 0; i < id.length; i++) {
-    h = (h << 5) - h + id.charCodeAt(i);
+  for (let i = 0; i < s.length; i++) {
+    h = (h << 5) - h + s.charCodeAt(i);
     h |= 0;
   }
   return Math.abs(h);
 }
 
-export function getStageDotClass(stageId: string): string {
+export function getStageDotClass(stageId: string | null | undefined): string {
   const index = hashStageId(stageId) % STAGE_PALETTE.length;
   return STAGE_PALETTE[index].dot;
 }
 
-export function getStageBadgeClass(stageId: string): string {
+export function getStageBadgeClass(
+  stageId: string | null | undefined
+): string {
   const index = hashStageId(stageId) % STAGE_PALETTE.length;
   return STAGE_PALETTE[index].badge;
 }

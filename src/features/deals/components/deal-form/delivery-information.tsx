@@ -1,6 +1,7 @@
 "use client";
 
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { isSalesService, isTransportService } from "@/config/services";
 import { Input } from "@/components/ui/input";
 import {
   InputGroup,
@@ -47,7 +48,7 @@ export default function DeliveryInformationSection({
       icon={TruckIcon}
     >
       <FieldGroup className="gap-4">
-        {dealFormData.serviceId === "687a88e6b6b13b70b6a575f4" && (
+        {isTransportService(dealFormData.serviceId) && (
           <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
             <Switch
               checked={dealFormData.ossig}
@@ -62,7 +63,7 @@ export default function DeliveryInformationSection({
             </Label>
           </div>
         )}
-        {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+        {isSalesService(dealFormData.serviceId) && (
           <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
             <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Способ получения

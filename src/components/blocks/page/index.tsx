@@ -13,9 +13,11 @@ import { Fragment } from "react";
 export default function Page({
   children,
   breadcrumbLinks = [],
+  headerActions,
 }: {
   children: React.ReactNode;
   breadcrumbLinks?: Array<{ href: string; label: string }>;
+  headerActions?: React.ReactNode;
 }) {
   return (
     <>
@@ -47,8 +49,17 @@ export default function Page({
               )}
           </BreadcrumbList>
         </Breadcrumb>
+        {headerActions && (
+          <>
+            <Separator
+              orientation="vertical"
+              className="mx-2 data-[orientation=vertical]:h-4"
+            />
+            {headerActions}
+          </>
+        )}
       </header>
-      <div className="px-4">{children}</div>
+      <div className="min-w-0 flex-1 px-4">{children}</div>
     </>
   );
 }

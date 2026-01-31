@@ -10,9 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { capitalizeFirstLetter } from "@/lib/typography";
+import { useStages } from "@features/deals/hooks/use-stages";
 import { getStageDotClass } from "@features/deals/utils/stage-colors";
-import { stagesService } from "@/services";
-import { useEffect, useState } from "react";
 
 export default function StageFilter({
   value,
@@ -21,25 +20,7 @@ export default function StageFilter({
   value: string;
   onChange: (val: string) => void;
 }) {
-  const [options, setOptions] = useState<{ label: string; value: string }[]>(
-    []
-  );
-
-  useEffect(() => {
-    stagesService
-      .getStages()
-      .then((stages) =>
-        setOptions(
-          stages.map((stage) => ({
-            label: stage.name,
-            value: stage._id,
-          }))
-        )
-      )
-      .catch((err) =>
-        console.log(err instanceof Error ? err.message : "Failed to load deals")
-      );
-  }, []);
+  const { stages } = useStages();
 
   return (
     <Select value={value} onValueChange={onChange}>
@@ -52,18 +33,16 @@ export default function StageFilter({
           <SelectItem key="all" value="all">
             Все стадии
           </SelectItem>
-          {options.map((option) =>
-            option ? (
-              <SelectItem key={`stage-${option.value}`} value={option.value}>
-                <span className="flex items-center gap-2">
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStageDotClass(option.value)}`}
-                  />
-                  {capitalizeFirstLetter(option.label)}
-                </span>
-              </SelectItem>
-            ) : null
-          )}
+          {stages.map((stage) => (
+            <SelectItem key={`stage-${stage._id}`} value={stage._id}>
+              <span className="flex items-center gap-2">
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStageDotClass(stage._id)}`}
+                />
+                {capitalizeFirstLetter(stage.name)}
+              </span>
+            </SelectItem>
+          ))}
         </SelectGroup>
       </SelectContent>
     </Select>

@@ -11,13 +11,21 @@ export async function getCompany(id: string): Promise<CompanyDto> {
 }
 
 export async function getCompanyInfoByINN(inn: string): Promise<CompanyDto> {
+  const cleanedInn = inn.replace(/\D/g, "");
   return secureGetData(
-    `https://appgrand.worldautogroup.ru/companies/get_company_info/${inn}`
+    `https://appgrand.worldautogroup.ru/companies/get_company_info/${cleanedInn}`
   );
 }
 
 export async function createCompany(
   data: CreateCompanyRequest
 ): Promise<CompanyDto> {
-  return securePostData("https://appgrand.worldautogroup.ru/companies", data);
+  const payload: CreateCompanyRequest = {
+    ...data,
+    inn:
+      data.inn != null && data.inn !== ""
+        ? data.inn.replace(/\D/g, "")
+        : data.inn,
+  };
+  return securePostData("https://appgrand.worldautogroup.ru/companies", payload);
 }

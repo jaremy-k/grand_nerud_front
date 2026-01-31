@@ -78,9 +78,17 @@ export function CompanyCombobox({
     setCreatingOpen(true);
   };
 
-  const handleCompanyCreate = (comapny: CompanyDto) => {
-    setCompanies((c) => [...c, comapny]);
-    onChange(comapny._id);
+  const handleCompanyCreate = (company: CompanyDto) => {
+    setCompanies((c) => {
+      const idx = c.findIndex((el) => el._id === company._id);
+      if (idx >= 0) {
+        const next = [...c];
+        next[idx] = company;
+        return next;
+      }
+      return [...c, company];
+    });
+    onChange(company._id);
   };
 
   return (

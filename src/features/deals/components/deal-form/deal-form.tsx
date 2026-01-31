@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { isSalesService } from "@/config/services";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
@@ -94,17 +95,23 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       ? calculatedData.amountSalesTotal / (1 + taxPercent)
       : calculatedData.amountSalesTotal;
 
-  const isSalesService =
-    dealFormData.serviceId === "687a88dfb6b13b70b6a575f3";
+  const showSalesFields = isSalesService(dealFormData.serviceId);
 
   const showSummary =
     dealFormData.serviceId && dealFormData.customerId;
 
+  const managerSharePercent =
+    (Number(dealFormData.managerShare) * 100).toFixed(0);
+  const extraExpensesSum = dealFormData.extraExpenses.reduce(
+    (s, e) => s + Number(e.amount || 0),
+    0
+  );
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
-        {/* Основная колонка — поля формы */}
-        <div className="min-w-0 space-y-6">
+        {/* Основная колонка — поля формы; отступ снизу на мобиле под фиксированную панель */}
+        <div className="min-w-0 space-y-6 pb-[380px] xl:pb-0">
           <PrimaryInformationSection
             formData={formData}
             defaultDeal={defaultDeal}
@@ -114,61 +121,94 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
           <AdditionalInformationSection formData={formData} />
         </div>
 
-        {/* Боковая панель — итог по сделке (липкая на десктопе) */}
+        {/* Боковая панель — итог по сделке: на мобиле фиксирована внизу, на xl — липкая справа */}
         {showSummary && (
-          <aside className="mt-6 xl:mt-0 xl:sticky xl:top-4">
-            <div className="rounded-xl border bg-card p-5 shadow-sm">
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <aside className="fixed bottom-0 left-0 right-0 z-10 mt-6 border-t bg-card shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] xl:bottom-auto xl:mt-0 xl:border-t-0 xl:shadow-none xl:sticky xl:top-4">
+            <div className="max-h-[70dvh] overflow-y-auto rounded-t-xl border-x border-t border-b-0 bg-card p-4 xl:max-h-none xl:rounded-xl xl:border xl:border-b xl:p-5 xl:shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground xl:mb-4">
                 Итог по сделке
               </h3>
               <dl className="space-y-3 text-sm">
-                {isSalesService && (
+                {showSalesFields && (
                   <>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">
-                        Сумма закупки
-                      </dt>
-                      <dd className="font-medium tabular-nums">
-                        {calculatedData.amountPurchaseTotal} ₽
-                      </dd>
+                    <div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">
+                          Сумма закупки
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {calculatedData.amountPurchaseTotal} ₽
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground/80">
+                        Цена закупки × Количество
+                      </p>
                     </div>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">
-                        Сумма продажи
-                      </dt>
-                      <dd className="font-medium tabular-nums">
-                        {calculatedData.amountSalesTotal} ₽
-                      </dd>
+                    <div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">
+                          Сумма продажи
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {calculatedData.amountSalesTotal} ₽
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground/80">
+                        Цена продажи × Количество
+                      </p>
                     </div>
                   </>
                 )}
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Маржа фирмы</dt>
-                  <dd className="font-medium tabular-nums">
-                    {calculatedData.companyProfit} ₽
-                  </dd>
+                <div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Маржа фирмы</dt>
+                    <dd className="font-medium tabular-nums">
+                      {calculatedData.companyProfit} ₽
+                    </dd>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground/80">
+                    Сумма продажи − Сумма закупки − Доставка
+                  </p>
                 </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-muted-foreground">Доход менеджера</dt>
-                  <dd className="font-medium tabular-nums">
-                    {calculatedData.managerProfit} ₽
-                  </dd>
+                <div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Доход менеджера</dt>
+                    <dd className="font-medium tabular-nums">
+                      {calculatedData.managerProfit} ₽
+                    </dd>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground/80">
+                    Маржа × {managerSharePercent}% − Доп. расходы
+                    {extraExpensesSum > 0
+                      ? ` (${extraExpensesSum} ₽)`
+                      : ""}
+                  </p>
                 </div>
                 {dealFormData.paymentMethod === "безналичный расчет" && (
                   <>
-                    <div className="flex justify-between gap-2 border-t pt-3">
-                      <dt className="text-muted-foreground">Без НДС</dt>
-                      <dd className="font-medium tabular-nums">
-                        {totalAmountWithoutTax.toFixed(2)} ₽
-                      </dd>
+                    <div>
+                      <div className="flex justify-between gap-2 border-t pt-3">
+                        <dt className="text-muted-foreground">Без НДС</dt>
+                        <dd className="font-medium tabular-nums">
+                          {totalAmountWithoutTax.toFixed(2)} ₽
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground/80">
+                        Сумма продажи ÷ (1 + НДС {taxPercent * 100}%)
+                      </p>
                     </div>
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">
-                        НДС {taxPercent * 100}%
-                      </dt>
-                      <dd className="font-medium tabular-nums">
-                        {calculatedData.taxAmount} ₽
-                      </dd>
+                    <div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">
+                          НДС {taxPercent * 100}%
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {calculatedData.taxAmount} ₽
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground/80">
+                        (Сумма продажи ÷ (1 + НДС)) × НДС
+                      </p>
                     </div>
                   </>
                 )}
@@ -184,14 +224,14 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
               <Button
                 type="submit"
                 size="lg"
-                className="mt-5 w-full"
+                className="mt-4 w-full xl:mt-5"
                 disabled={
-                    !dealFormData.customerId ||
-                    !dealFormData.stageId ||
-                    !dealFormData.materialId ||
-                    !dealFormData.serviceId ||
-                    submiting
-                  }
+                  !dealFormData.customerId ||
+                  !dealFormData.stageId ||
+                  !dealFormData.materialId ||
+                  !dealFormData.serviceId ||
+                  submiting
+                }
               >
                 {defaultDeal ? "Обновить сделку" : "Создать сделку"}
               </Button>

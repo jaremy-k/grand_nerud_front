@@ -1,6 +1,7 @@
 "use client";
 
 import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
+import { isSalesService } from "@/config/services";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -263,13 +264,21 @@ export default function PrimaryInformationSection({
                     }}
                   />
                 </Field>
-                {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+              </div>
+            </div>
+
+            {isSalesService(dealFormData.serviceId) && (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Продажа
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field>
                     <FieldLabel
                       htmlFor="amountPerUnit"
                       className="mb-1.5 block text-sm font-medium"
                     >
-                      Цена за единицу, ₽
+                      Стоимость закупки (за единицу), ₽
                     </FieldLabel>
                     <InputGroup className="h-9">
                       <InputGroupAddon>
@@ -288,22 +297,16 @@ export default function PrimaryInformationSection({
                       />
                     </InputGroup>
                   </Field>
-                )}
-              </div>
-            </div>
-
-            {dealFormData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Продажа
-                </p>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field>
                     <FieldLabel
                       htmlFor="amountSale"
                       className="mb-1.5 block text-sm font-medium"
                     >
-                      Сумма продажи, ₽
+                      Стоимость{" "}
+                      <span className="font-semibold text-primary">
+                        продажи
+                      </span>{" "}
+                      (за единицу), ₽
                     </FieldLabel>
                     <InputGroup className="h-9">
                       <InputGroupAddon>
