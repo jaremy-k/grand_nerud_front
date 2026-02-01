@@ -18,6 +18,7 @@ import { dealsService, usersService } from "@/services";
 import { DealDto, UserDto } from "@definitions/dto";
 import {
   BarChart3Icon,
+  Box,
   CalendarIcon,
   TrendingUpIcon,
   UsersIcon,
@@ -70,18 +71,42 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const [usersRes, dealsRes] = await Promise.all([
+      const [usersRes, dealsRes] = await Promise.allSettled([
         usersService.getUsers(),
-        dealsService.getDealsAdmin(),
+        dealsService
+          .getDealsAdmin()
+          .catch(() =>
+            dealsService.getDeals({
+              pageSize: 500,
+              page: 1,
+              includeRelations: true,
+              includeDeleted: false,
+            })
+          ),
       ]);
-      setUsers(usersRes);
-      const dealsList = Array.isArray(dealsRes)
-        ? dealsRes
-        : (dealsRes as { items?: DealDto[] }).items ?? [];
-      setDeals(dealsList);
+      if (usersRes.status === "fulfilled") setUsers(usersRes.value);
+      else setUsers([]);
+      if (dealsRes.status === "fulfilled") {
+        const res = dealsRes.value;
+        const dealsList = Array.isArray(res)
+          ? res
+          : (res as { items?: DealDto[] }).items ?? [];
+        setDeals(dealsList);
+      } else {
+        setDeals([]);
+        const msg =
+          dealsRes.reason?.message === "Not Found"
+            ? "Сервис статистики недоступен"
+            : "Не удалось загрузить данные. Проверьте доступ к API статистики.";
+        setError(msg);
+      }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось загрузить данные"
+        err instanceof Error
+          ? err.message === "Not Found"
+            ? "Сервис статистики недоступен"
+            : err.message
+          : "Не удалось загрузить данные"
       );
     } finally {
       setLoading(false);
@@ -149,6 +174,19 @@ export default function AdminDashboardPage() {
     return acc;
   }, {});
 
+  // По материалам
+  const byMaterial = filteredDeals.reduce<
+    Record<string, { count: number; sum: number; name?: string }>
+  >((acc, d) => {
+    const key = d.material?._id ?? d.materialId ?? "—";
+    const name = d.material?.name ?? "Без материала";
+    if (!acc[key]) acc[key] = { count: 0, sum: 0, name };
+    acc[key].count += 1;
+    acc[key].sum += d.totalAmount ?? d.amountSalesTotal ?? 0;
+    acc[key].name = name;
+    return acc;
+  }, {});
+
   // По менеджерам
   const byUser = filteredDeals.reduce<
     Record<string, { count: number; sum: number; name?: string }>
@@ -181,6 +219,10 @@ export default function AdminDashboardPage() {
   const maxByStage = Math.max(...Object.values(byStage).map((v) => v.count), 1);
   const maxByService = Math.max(
     ...Object.values(byService).map((v) => v.count),
+    1
+  );
+  const maxByMaterial = Math.max(
+    ...Object.values(byMaterial).map((v) => v.count),
     1
   );
   const maxByUser = Math.max(...Object.values(byUser).map((v) => v.count), 1);
@@ -227,7 +269,9 @@ export default function AdminDashboardPage() {
 
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+            {error === "Not Found"
+              ? "Сервис статистики недоступен"
+              : error}
           </div>
         )}
 
@@ -311,7 +355,7 @@ export default function AdminDashboardPage() {
               )}
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {/* По этапам */}
               <section className="rounded-xl border bg-card p-4 shadow-sm">
                 <h2 className="mb-4 text-base font-semibold">
@@ -370,6 +414,40 @@ export default function AdminDashboardPage() {
                           className="h-2 rounded bg-muted"
                           style={{
                             width: `${(v.count / maxByService) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* По материалам */}
+              <section className="rounded-xl border bg-card p-4 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                  <Box className="h-4 w-4" />
+                  По материалам
+                </h2>
+                {Object.entries(byMaterial).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Нет данных</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(byMaterial).map(([id, v]) => (
+                      <div key={id} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>
+                            {v.name
+                              ? capitalizeFirstLetter(v.name)
+                              : id}
+                          </span>
+                          <span className="tabular-nums">
+                            {v.count} шт · {formatCurrency(v.sum)}
+                          </span>
+                        </div>
+                        <div
+                          className="h-2 rounded bg-muted"
+                          style={{
+                            width: `${(v.count / maxByMaterial) * 100}%`,
                           }}
                         />
                       </div>
