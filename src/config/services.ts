@@ -5,12 +5,17 @@
 export const SERVICE_IDS = {
   /** Продажа — показываются цены закупки/продажи, способ получения */
   SALES: "687a88dfb6b13b70b6a575f3",
+  /** Продажа с доставкой — показываются те же поля, что и в продаже сырья */
+  SALES_WITH_DELIVERY: "698de8bf1c3ac72cbdc1ff5b",
   /** Перевозка — показывается чекбокс ОССиГ */
   TRANSPORT: "687a88e6b6b13b70b6a575f4",
 } as const;
 
 export function isSalesService(serviceId: string | undefined): boolean {
-  return serviceId === SERVICE_IDS.SALES;
+  return (
+    serviceId === SERVICE_IDS.SALES ||
+    serviceId === SERVICE_IDS.SALES_WITH_DELIVERY
+  );
 }
 
 export function isTransportService(serviceId: string | undefined): boolean {
