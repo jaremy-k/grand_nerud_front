@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/formatters";
 import { isSalesService } from "@/config/services";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
@@ -137,7 +138,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                           Сумма от клиента
                         </dt>
                         <dd className="font-medium tabular-nums">
-                          {calculatedData.amountSalesTotal} ₽
+                          {formatCurrency(calculatedData.amountSalesTotal)}
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
@@ -150,7 +151,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                           Сумма у карьера
                         </dt>
                         <dd className="font-medium tabular-nums">
-                          {calculatedData.amountPurchaseTotal} ₽
+                          {formatCurrency(calculatedData.amountPurchaseTotal)}
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
@@ -163,7 +164,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">Маржа</dt>
                     <dd className="font-medium tabular-nums">
-                      {calculatedData.companyProfit} ₽
+                      {formatCurrency(calculatedData.companyProfit)}
                     </dd>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground/80">
@@ -174,13 +175,13 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                   <div className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">Доход менеджера</dt>
                     <dd className="font-medium tabular-nums">
-                      {calculatedData.managerProfit} ₽
+                      {formatCurrency(calculatedData.managerProfit)}
                     </dd>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground/80">
                     Маржа × {managerSharePercent}% − Доп. расходы
                     {extraExpensesSum > 0
-                      ? ` (${extraExpensesSum} ₽)`
+                      ? ` (${formatCurrency(extraExpensesSum)})`
                       : ""}
                   </p>
                 </div>
@@ -190,7 +191,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                       <div className="flex justify-between gap-2 border-t pt-3">
                         <dt className="text-muted-foreground">Без НДС</dt>
                         <dd className="font-medium tabular-nums">
-                          {totalAmountWithoutTax.toFixed(2)} ₽
+                          {formatCurrency(totalAmountWithoutTax)}
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
@@ -203,7 +204,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                           НДС {taxPercent * 100}%
                         </dt>
                         <dd className="font-medium tabular-nums">
-                          {calculatedData.taxAmount} ₽
+                          {formatCurrency(calculatedData.taxAmount)}
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
@@ -217,7 +218,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     Итоговая сумма
                   </dt>
                   <dd className="text-lg font-semibold tabular-nums text-primary">
-                    {calculatedData.amountSalesTotal} ₽
+                    {formatCurrency(calculatedData.amountSalesTotal)}
                   </dd>
                 </div>
               </dl>
