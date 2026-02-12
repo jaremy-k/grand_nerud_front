@@ -162,17 +162,15 @@ export default function DealDetailPage() {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Сумма закупки</TableCell>
-            <TableCell>{formatCurrency(deal.amountPurchaseTotal)}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="font-medium w-1/3">Сумма продажи</TableCell>
+            <TableCell className="font-medium w-1/3">Сумма от клиента</TableCell>
             <TableCell>{formatCurrency(deal.amountSalesTotal)}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">
-              Прибыль компании
-            </TableCell>
+            <TableCell className="font-medium w-1/3">Сумма у карьера</TableCell>
+            <TableCell>{formatCurrency(deal.amountPurchaseTotal)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Маржа</TableCell>
             <TableCell>{formatCurrency(deal.companyProfit)}</TableCell>
           </TableRow>
           <TableRow>

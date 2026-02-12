@@ -134,40 +134,40 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     <div>
                       <div className="flex justify-between gap-2">
                         <dt className="text-muted-foreground">
-                          Сумма закупки
-                        </dt>
-                        <dd className="font-medium tabular-nums">
-                          {calculatedData.amountPurchaseTotal} ₽
-                        </dd>
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground/80">
-                        Цена закупки × Количество
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex justify-between gap-2">
-                        <dt className="text-muted-foreground">
-                          Сумма продажи
+                          Сумма от клиента
                         </dt>
                         <dd className="font-medium tabular-nums">
                           {calculatedData.amountSalesTotal} ₽
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
-                        Цена продажи × Количество
+                        Цена клиента × Количество
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">
+                          Сумма у карьера
+                        </dt>
+                        <dd className="font-medium tabular-nums">
+                          {calculatedData.amountPurchaseTotal} ₽
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground/80">
+                        Цена у карьера × Количество
                       </p>
                     </div>
                   </>
                 )}
                 <div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">Маржа фирмы</dt>
+                    <dt className="text-muted-foreground">Маржа</dt>
                     <dd className="font-medium tabular-nums">
                       {calculatedData.companyProfit} ₽
                     </dd>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground/80">
-                    Сумма продажи − Сумма закупки − Доставка
+                    Сумма от клиента − Сумма у карьера − Доставка
                   </p>
                 </div>
                 <div>
@@ -194,7 +194,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
-                        Сумма продажи ÷ (1 + НДС {taxPercent * 100}%)
+                        Сумма от клиента ÷ (1 + НДС {taxPercent * 100}%)
                       </p>
                     </div>
                     <div>
@@ -207,7 +207,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
-                        (Сумма продажи ÷ (1 + НДС)) × НДС
+                        (Сумма от клиента ÷ (1 + НДС)) × НДС
                       </p>
                     </div>
                   </>

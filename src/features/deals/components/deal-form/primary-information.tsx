@@ -274,10 +274,37 @@ export default function PrimaryInformationSection({
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <Field>
                     <FieldLabel
+                      htmlFor="amountSale"
+                      className="mb-1.5 block text-sm font-medium"
+                    >
+                      <span className="font-semibold text-primary">
+                        Цена клиента
+                      </span>{" "}
+                      (за ед.), ₽
+                    </FieldLabel>
+                    <InputGroup className="h-9">
+                      <InputGroupAddon>
+                        <InputGroupText>₽</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        name="amountSale"
+                        value={dealFormData.amountSalesUnit}
+                        onChange={(e) => {
+                          updateField(
+                            "amountSalesUnit",
+                            numberInputFormatter(e.target.value)
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    </InputGroup>
+                  </Field>
+                  <Field>
+                    <FieldLabel
                       htmlFor="amountPerUnit"
                       className="mb-1.5 block text-sm font-medium"
                     >
-                      Стоимость закупки (за единицу), ₽
+                      Цена у карьера (за ед.), ₽
                     </FieldLabel>
                     <InputGroup className="h-9">
                       <InputGroupAddon>
@@ -296,33 +323,28 @@ export default function PrimaryInformationSection({
                       />
                     </InputGroup>
                   </Field>
-                  <Field>
-                    <FieldLabel
-                      htmlFor="amountSale"
-                      className="mb-1.5 block text-sm font-medium"
-                    >
-                      Стоимость{" "}
-                      <span className="font-semibold text-primary">
-                        продажи
-                      </span>{" "}
-                      (за единицу), ₽
+                  <Field className="flex flex-col justify-end">
+                    <FieldLabel className="mb-1.5 block text-sm font-medium text-muted-foreground">
+                      Маржа
                     </FieldLabel>
-                    <InputGroup className="h-9">
-                      <InputGroupAddon>
-                        <InputGroupText>₽</InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        name="amountSale"
-                        value={dealFormData.amountSalesUnit}
-                        onChange={(e) => {
-                          updateField(
-                            "amountSalesUnit",
-                            numberInputFormatter(e.target.value)
-                          );
-                        }}
-                        placeholder="0.00"
-                      />
-                    </InputGroup>
+                    <p className="text-sm font-semibold tabular-nums text-primary">
+                      {(
+                        Number(dealFormData.amountSalesUnit || 0) -
+                        Number(dealFormData.amountPurchaseUnit || 0)
+                      ).toLocaleString("ru-RU")}{" "}
+                      ₽/ед.
+                      {Number(dealFormData.quantity || 0) > 0 && (
+                        <span className="ml-1 font-normal text-muted-foreground">
+                          (итого:{" "}
+                          {(
+                            (Number(dealFormData.amountSalesUnit || 0) -
+                              Number(dealFormData.amountPurchaseUnit || 0)) *
+                            Number(dealFormData.quantity || 0)
+                          ).toLocaleString("ru-RU")}{" "}
+                          ₽)
+                        </span>
+                      )}
+                    </p>
                   </Field>
                 </div>
               </div>
