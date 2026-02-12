@@ -13,6 +13,7 @@ export type DealDataFormHook = {
   ) => void;
 
   taxPercent: number;
+  isDirty: boolean;
 
   // Hook methods and values
   calculatedData: {

@@ -17,7 +17,7 @@ import PrimaryInformationSection from "./primary-information";
 export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
   const router = useRouter();
   const formData = useDataFormHook(defaultDeal);
-  const { dealFormData, calculatedData, taxPercent } = formData;
+  const { dealFormData, calculatedData, taxPercent, isDirty } = formData;
   const [submiting, setSubmiting] = useState(false);
   const [error, setError] = useState<string | null>(); //eslint-disable-line @typescript-eslint/no-unused-vars
 
@@ -231,7 +231,8 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                   !dealFormData.stageId ||
                   !dealFormData.materialId ||
                   !dealFormData.serviceId ||
-                  submiting
+                  submiting ||
+                  (!!defaultDeal && !isDirty)
                 }
               >
                 {defaultDeal ? "Обновить сделку" : "Создать сделку"}

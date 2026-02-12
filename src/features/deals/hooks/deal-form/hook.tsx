@@ -1,11 +1,14 @@
 "use client";
 
 import useAuthContext from "@/contexts/auth-context";
-import { isTransportService } from "@/config/services";
+import {
+  isSalesService,
+  isTransportService,
+} from "@/config/services";
 import { dealCalculator } from "@/lib/calculators";
 import { useDebounce } from "@/lib/debouncer";
 import { DealDto } from "@definitions/dto";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DealDataFormHook,
   DealFormData,
@@ -15,6 +18,78 @@ import {
 } from "./types";
 
 const NDS_PERCENT = 0.2;
+
+function dealToFormData(d: DealDto): DealFormData {
+  return {
+    serviceId: d.serviceId,
+    customerId: d.customerId,
+    stageId: d.stageId,
+    materialId: d.materialId ?? undefined,
+    unitMeasurement: (d.unitMeasurement as MeasurementUnit) || "тонна",
+    quantity: String(d.quantity || "0"),
+    managerShare: "0",
+    amountPurchaseUnit: String(d.amountPurchaseUnit || "0"),
+    amountSalesUnit: String(d.amountSalesUnit || "0"),
+    amountDelivery: String(d.amountDelivery || "0"),
+    paymentMethod: (d.paymentMethod as PaymentMethod) || "наличный расчет",
+    methodReceiving: (d.methodReceiving as ReceivingMethod) || "самовывоз",
+    deliveryAddress: d.deliveryAddress || "",
+    shippingAddress: d.shippingAddress || "",
+    ossig: d.OSSIG || false,
+    notes: d.notes || "",
+    extraExpenses:
+      d.addExpenses?.map((el) => ({
+        ...el,
+        amount: el.amount.toString(),
+      })) || [],
+    deliveredQuantity:
+      d.deliveredQuantity?.map((el) => ({
+        quantity: String(el.quantity || ""),
+        date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
+      })) || [],
+  };
+}
+
+function isFormDataEqual(a: DealFormData, b: DealFormData): boolean {
+  if (
+    a.serviceId !== b.serviceId ||
+    a.customerId !== b.customerId ||
+    a.stageId !== b.stageId ||
+    a.materialId !== b.materialId ||
+    a.unitMeasurement !== b.unitMeasurement ||
+    a.quantity !== b.quantity ||
+    a.amountPurchaseUnit !== b.amountPurchaseUnit ||
+    a.amountSalesUnit !== b.amountSalesUnit ||
+    a.amountDelivery !== b.amountDelivery ||
+    a.paymentMethod !== b.paymentMethod ||
+    a.methodReceiving !== b.methodReceiving ||
+    a.deliveryAddress !== b.deliveryAddress ||
+    a.shippingAddress !== b.shippingAddress ||
+    a.ossig !== b.ossig ||
+    a.notes !== b.notes
+  ) {
+    return false;
+  }
+  if (a.extraExpenses.length !== b.extraExpenses.length) return false;
+  for (let i = 0; i < a.extraExpenses.length; i++) {
+    if (
+      a.extraExpenses[i].name !== b.extraExpenses[i].name ||
+      a.extraExpenses[i].amount !== b.extraExpenses[i].amount
+    ) {
+      return false;
+    }
+  }
+  if (a.deliveredQuantity.length !== b.deliveredQuantity.length) return false;
+  for (let i = 0; i < a.deliveredQuantity.length; i++) {
+    const da = a.deliveredQuantity[i];
+    const db = b.deliveredQuantity[i];
+    if (da.quantity !== db.quantity) return false;
+    const dateA = da.date ? da.date.toISOString().slice(0, 10) : "";
+    const dateB = db.date ? db.date.toISOString().slice(0, 10) : "";
+    if (dateA !== dateB) return false;
+  }
+  return true;
+}
 
 export default function useDataFormHook(
   defaultDeal?: DealDto
@@ -99,8 +174,23 @@ export default function useDataFormHook(
     );
   }, [debounced, dealFormData.paymentMethod]);
 
+  const prevServiceIdRef = useRef<string | undefined>(defaultDeal?.serviceId);
+
+  // При смене услуги: сбрасываем поля только при переходе между разными типами
+  // (продажа ↔ доставка). При переключении Продажа ↔ Продажа с доставкой — сохраняем данные.
   useEffect(() => {
-    if (!!defaultDeal && defaultDeal.serviceId === dealFormData.serviceId) {
+    if (!dealFormData.serviceId) return;
+
+    const prevServiceId = prevServiceIdRef.current;
+    const currServiceId = dealFormData.serviceId;
+    const prevWasSales = isSalesService(prevServiceId);
+    const currIsSales = isSalesService(currServiceId);
+    const currIsTransport = isTransportService(currServiceId);
+
+    prevServiceIdRef.current = currServiceId;
+
+    // Редактирование: если услуга не менялась — синхронизируем с defaultDeal
+    if (defaultDeal && defaultDeal.serviceId === currServiceId) {
       setDealFormData((c) => ({
         ...c,
         stageId: defaultDeal.stageId || undefined,
@@ -115,7 +205,7 @@ export default function useDataFormHook(
           (defaultDeal.paymentMethod as PaymentMethod) || "наличный расчет",
         methodReceiving:
           (defaultDeal.methodReceiving as ReceivingMethod) ||
-          (isTransportService(dealFormData.serviceId) ? "доставка" : "самовывоз"),
+          (currIsTransport ? "доставка" : "самовывоз"),
         deliveryAddress: defaultDeal.deliveryAddress || "",
         shippingAddress: defaultDeal.shippingAddress || "",
         ossig: defaultDeal.OSSIG || false,
@@ -125,26 +215,29 @@ export default function useDataFormHook(
             date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
           })) || [],
       }));
-
       return;
     }
-    setDealFormData((c) => ({
-      ...c,
-      stageId: "",
-      materialId: "",
-      unitMeasurement: "тонна",
-      quantity: "0",
-      amountPurchaseUnit: "0",
-      amountSalesUnit: "0",
-      amountDelivery: "0",
-      paymentMethod: "наличный расчет",
-      methodReceiving: isTransportService(dealFormData.serviceId)
-        ? "доставка"
-        : "самовывоз",
-      deliveryAddress: "",
-      shippingAddress: "",
-      ossig: false,
-    }));
+
+    // Смена типа услуги: сбрасываем только при переходе продажа ↔ доставка
+    const switchedBetweenSalesAndTransport = prevWasSales !== currIsSales;
+
+    if (switchedBetweenSalesAndTransport) {
+      setDealFormData((c) => ({
+        ...c,
+        stageId: "",
+        materialId: "",
+        unitMeasurement: "тонна",
+        quantity: "0",
+        amountPurchaseUnit: "0",
+        amountSalesUnit: "0",
+        amountDelivery: "0",
+        paymentMethod: "наличный расчет",
+        methodReceiving: currIsTransport ? "доставка" : "самовывоз",
+        deliveryAddress: "",
+        shippingAddress: "",
+        ossig: false,
+      }));
+    }
   }, [dealFormData.serviceId, defaultDeal]);
 
   // Автоматически устанавливаем "доставка" для услуги перевозки
@@ -180,11 +273,20 @@ export default function useDataFormHook(
     );
   }, [dealFormData.paymentMethod, user, updateField]);
 
+  const initialFormData = useMemo(
+    () => (defaultDeal ? dealToFormData(defaultDeal) : null),
+    [defaultDeal?._id]
+  );
+
+  const isDirty =
+    !initialFormData || !isFormDataEqual(dealFormData, initialFormData);
+
   return {
     dealFormData,
     updateField,
 
     taxPercent: NDS_PERCENT,
     calculatedData,
+    isDirty,
   };
 }
