@@ -28,6 +28,8 @@ import { DealDataFormHook } from "@features/deals/hooks/deal-form";
 import {
   CalendarDaysIcon,
   ChevronDownIcon,
+  Minus,
+  Plus,
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -192,31 +194,70 @@ export default function AdditionalInformationSection({
               <TableBody>
                 {dealFormData.deliveredQuantity.map((el, idx) => (
                   <TableRow key={`delivered-quantity-${idx}`}>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        value={el.quantity}
-                        min={0}
-                        step={1}
-                        className="h-9 border-0 bg-transparent focus-visible:ring-0"
-                        onChange={(e) =>
-                          updateField(
-                            "deliveredQuantity",
-                            dealFormData.deliveredQuantity.map((v, i) =>
-                              i !== idx
-                                ? v
-                                : {
-                                    ...v,
-                                    quantity: numberInputFormatter(
-                                      e.target.value,
-                                      { integerOnly: true }
-                                    ),
-                                  }
+                    <TableCell className="p-2">
+                      <div className="inline-flex h-9 w-full max-w-[140px] items-stretch overflow-hidden rounded-lg border border-input bg-background shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <button
+                          type="button"
+                          aria-label="Уменьшить"
+                          disabled={Number(el.quantity || 0) <= 0}
+                          onClick={() => {
+                            const n = Number(el.quantity || 0);
+                            updateField(
+                              "deliveredQuantity",
+                              dealFormData.deliveredQuantity.map((v, i) =>
+                                i !== idx
+                                  ? v
+                                  : { ...v, quantity: String(Math.max(0, n - 1)) }
+                              )
+                            );
+                          }}
+                          className="flex h-full min-w-9 flex-1 items-center justify-center border-r border-input bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 active:bg-muted/80"
+                        >
+                          <Minus className="size-4" strokeWidth={2.5} />
+                        </button>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={el.quantity}
+                          min={0}
+                          step={1}
+                          onChange={(e) =>
+                            updateField(
+                              "deliveredQuantity",
+                              dealFormData.deliveredQuantity.map((v, i) =>
+                                i !== idx
+                                  ? v
+                                  : {
+                                      ...v,
+                                      quantity: numberInputFormatter(
+                                        e.target.value,
+                                        { integerOnly: true }
+                                      ),
+                                    }
+                              )
                             )
-                          )
-                        }
-                      />
+                          }
+                          className="min-w-0 flex-1 border-0 bg-transparent px-2 py-0 text-center text-sm font-semibold tabular-nums outline-none placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Увеличить"
+                          onClick={() => {
+                            const n = Number(el.quantity || 0);
+                            updateField(
+                              "deliveredQuantity",
+                              dealFormData.deliveredQuantity.map((v, i) =>
+                                i !== idx
+                                  ? v
+                                  : { ...v, quantity: String(Math.max(0, n + 1)) }
+                              )
+                            );
+                          }}
+                          className="flex h-full min-w-9 flex-1 items-center justify-center border-l border-input bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80"
+                        >
+                          <Plus className="size-4" strokeWidth={2.5} />
+                        </button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="h-9 flex items-center px-2 text-sm text-muted-foreground">

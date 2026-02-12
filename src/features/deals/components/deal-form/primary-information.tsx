@@ -3,7 +3,6 @@
 import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
 import { isSalesService } from "@/config/services";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -31,7 +30,7 @@ import {
   DealDataFormHook,
   MeasurementUnit,
 } from "@features/deals/hooks/deal-form";
-import { FileTextIcon } from "lucide-react";
+import { FileTextIcon, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FormSectionCard } from "./form-section-card";
 
@@ -245,23 +244,49 @@ export default function PrimaryInformationSection({
                   >
                     Количество
                   </FieldLabel>
-                  <Input
-                    type="number"
-                    name="quantity"
-                    placeholder="0"
-                    value={dealFormData.quantity}
-                    min={1}
-                    step={1}
-                    className="h-9"
-                    onChange={(e) => {
-                      updateField(
-                        "quantity",
-                        numberInputFormatter(e.target.value, {
-                          integerOnly: true,
-                        })
-                      );
-                    }}
-                  />
+                  <div className="inline-flex h-10 w-full max-w-[160px] items-stretch overflow-hidden rounded-lg border border-input bg-background shadow-sm transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <button
+                      type="button"
+                      aria-label="Уменьшить"
+                      disabled={Number(dealFormData.quantity || 0) <= 1}
+                      onClick={() => {
+                        const n = Number(dealFormData.quantity || 0);
+                        updateField("quantity", String(Math.max(1, n - 1)));
+                      }}
+                      className="flex h-full min-w-10 flex-1 items-center justify-center border-r border-input bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 active:bg-muted/80"
+                    >
+                      <Minus className="size-4" strokeWidth={2.5} />
+                    </button>
+                    <input
+                      type="number"
+                      name="quantity"
+                      id="quantity"
+                      placeholder="0"
+                      value={dealFormData.quantity}
+                      min={1}
+                      step={1}
+                      onChange={(e) => {
+                        updateField(
+                          "quantity",
+                          numberInputFormatter(e.target.value, {
+                            integerOnly: true,
+                          })
+                        );
+                      }}
+                      className="min-w-0 flex-1 border-0 bg-transparent px-2 py-0 text-center text-base font-semibold tabular-nums outline-none placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Увеличить"
+                      onClick={() => {
+                        const n = Number(dealFormData.quantity || 0);
+                        updateField("quantity", String(Math.max(1, n + 1)));
+                      }}
+                      className="flex h-full min-w-10 flex-1 items-center justify-center border-l border-input bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80"
+                    >
+                      <Plus className="size-4" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </Field>
               </div>
             </div>
