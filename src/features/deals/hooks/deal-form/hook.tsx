@@ -1,6 +1,7 @@
 "use client";
 
 import useAuthContext from "@/contexts/auth-context";
+import { isTransportService } from "@/config/services";
 import { dealCalculator } from "@/lib/calculators";
 import { useDebounce } from "@/lib/debouncer";
 import { DealDto } from "@definitions/dto";
@@ -113,7 +114,8 @@ export default function useDataFormHook(
         paymentMethod:
           (defaultDeal.paymentMethod as PaymentMethod) || "наличный расчет",
         methodReceiving:
-          (defaultDeal.methodReceiving as ReceivingMethod) || "самовывоз",
+          (defaultDeal.methodReceiving as ReceivingMethod) ||
+          (isTransportService(dealFormData.serviceId) ? "доставка" : "самовывоз"),
         deliveryAddress: defaultDeal.deliveryAddress || "",
         shippingAddress: defaultDeal.shippingAddress || "",
         ossig: defaultDeal.OSSIG || false,
@@ -136,12 +138,25 @@ export default function useDataFormHook(
       amountSalesUnit: "0",
       amountDelivery: "0",
       paymentMethod: "наличный расчет",
-      methodReceiving: "самовывоз",
+      methodReceiving: isTransportService(dealFormData.serviceId)
+        ? "доставка"
+        : "самовывоз",
       deliveryAddress: "",
       shippingAddress: "",
       ossig: false,
     }));
   }, [dealFormData.serviceId, defaultDeal]);
+
+  // Автоматически устанавливаем "доставка" для услуги перевозки
+  useEffect(() => {
+    if (
+      dealFormData.serviceId &&
+      isTransportService(dealFormData.serviceId) &&
+      dealFormData.methodReceiving !== "доставка"
+    ) {
+      updateField("methodReceiving", "доставка");
+    }
+  }, [dealFormData.serviceId, dealFormData.methodReceiving, updateField]);
 
   useEffect(() => {
     if (

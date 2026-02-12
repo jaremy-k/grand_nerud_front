@@ -146,7 +146,8 @@ export default function DeliveryInformationSection({
                 className="h-9"
               />
             </Field>
-            {dealFormData.methodReceiving === "доставка" && (
+            {(dealFormData.methodReceiving === "доставка" ||
+              isTransportService(dealFormData.serviceId)) && (
               <Field>
                 <FieldLabel
                   htmlFor="deliveryAddress"
@@ -168,6 +169,37 @@ export default function DeliveryInformationSection({
             )}
           </div>
         </div>
+        {isTransportService(dealFormData.serviceId) && (
+          <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Стоимость доставки
+            </p>
+            <Field>
+              <FieldLabel
+                htmlFor="amountDelivery"
+                className="mb-1.5 block text-sm font-medium"
+              >
+                Стоимость доставки, ₽
+              </FieldLabel>
+              <InputGroup className="h-9">
+                <InputGroupAddon>
+                  <InputGroupText>₽</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  name="amountDelivery"
+                  value={dealFormData.amountDelivery}
+                  onChange={(e) => {
+                    updateField(
+                      "amountDelivery",
+                      numberInputFormatter(e.target.value)
+                    );
+                  }}
+                  placeholder="0.00"
+                />
+              </InputGroup>
+            </Field>
+          </div>
+        )}
       </FieldGroup>
     </FormSectionCard>
   );
