@@ -103,7 +103,6 @@ export default function PrimaryInformationSection({
               value={dealFormData.serviceId}
               onValueChange={(val) => updateField("serviceId", val)}
               name="service"
-              disabled={!!defaultDeal}
             >
               <SelectTrigger className={inputClass}>
                 <SelectValue placeholder="Выберите услугу" />
