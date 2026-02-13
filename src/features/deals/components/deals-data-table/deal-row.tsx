@@ -108,12 +108,9 @@ export default function DealRow({
       </TableCell>
       <TableCell>{deal.user?.name}</TableCell>
       <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>
-      <TableCell>{new Date(deal.createdAt).toLocaleDateString()}</TableCell>
       <TableCell>
-        <div className="inline-flex w-full justify-between items-center">
-          {deal.deliveredQuantity && deal.deliveredQuantity.length > 0
-            ? `${deal.deliveredQuantity.length} доставок`
-            : "Нет доставок"}
+        <div className="inline-flex w-full justify-between items-center gap-2">
+          {new Date(deal.createdAt).toLocaleDateString()}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
