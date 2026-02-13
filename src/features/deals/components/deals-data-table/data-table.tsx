@@ -266,6 +266,7 @@ export default function DealsDataTable({
               <TableHead>Статус</TableHead>
               <TableHead>Менеджер</TableHead>
               <TableHead>Сумма</TableHead>
+              <TableHead>Доход менеджера</TableHead>
               <TableHead>Дата создания</TableHead>
             </TableRow>
           </TableHeader>

@@ -108,6 +108,7 @@ export default function DealRow({
       </TableCell>
       <TableCell>{deal.user?.name}</TableCell>
       <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>
+      <TableCell>{formatCurrency(deal.managerProfit ?? 0)}</TableCell>
       <TableCell>
         <div className="inline-flex w-full justify-between items-center gap-2">
           {new Date(deal.createdAt).toLocaleDateString()}
