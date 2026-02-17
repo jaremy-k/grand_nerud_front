@@ -129,6 +129,36 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground xl:mb-4">
                 Итог по сделке
               </h3>
+              <div className="mb-4 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className="flex justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">
+                    Предполагаемая прибыль
+                  </span>
+                  <span className="font-semibold tabular-nums text-primary">
+                    {formatCurrency(calculatedData.companyProfit)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">
+                    Фактическая прибыль
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    {calculatedData.totalDeliveredQuantity > 0
+                      ? formatCurrency(calculatedData.actualCompanyProfit)
+                      : "—"}
+                  </span>
+                </div>
+                {calculatedData.totalDeliveredQuantity > 0 && (
+                  <p className="text-xs text-muted-foreground/80">
+                    Доставлено: {calculatedData.totalDeliveredQuantity.toLocaleString("ru-RU")}{" "}
+                    {dealFormData.unitMeasurement === "тонна"
+                      ? "тонн"
+                      : dealFormData.unitMeasurement === "куб.м"
+                        ? "куб.м"
+                        : "ед."}
+                  </p>
+                )}
+              </div>
               <dl className="space-y-3 text-sm">
                 {showSalesFields && (
                   <>
@@ -148,14 +178,14 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     <div>
                       <div className="flex justify-between gap-2">
                         <dt className="text-muted-foreground">
-                          Сумма у карьера
+                          Сумма закупки
                         </dt>
                         <dd className="font-medium tabular-nums">
                           {formatCurrency(calculatedData.amountPurchaseTotal)}
                         </dd>
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground/80">
-                        Цена у карьера × Количество
+                        Закупка × Количество
                       </p>
                     </div>
                   </>
@@ -168,7 +198,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     </dd>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground/80">
-                    Сумма от клиента − Сумма у карьера − Доставка
+                    Сумма от клиента − Закупка − Доставка − Доп. расходы
                   </p>
                 </div>
                 <div>
@@ -179,10 +209,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     </dd>
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground/80">
-                    Маржа × {managerSharePercent}% − Доп. расходы
-                    {extraExpensesSum > 0
-                      ? ` (${formatCurrency(extraExpensesSum)})`
-                      : ""}
+                    Маржа × {managerSharePercent}%
                   </p>
                 </div>
                 {dealFormData.paymentMethod === "безналичный расчет" && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { Page } from "@/components/blocks";
+import { actualProfitCalculator } from "@/lib/calculators";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -80,6 +81,20 @@ export default function DealDetailPage() {
     return <div className="text-center py-10">Сделка не найдена</div>;
   }
 
+  const totalDelivered =
+    deal.deliveredQuantity?.reduce((s, dq) => s + (dq.quantity || 0), 0) ?? 0;
+  const actualProfit =
+    totalDelivered > 0 && deal.quantity > 0
+      ? actualProfitCalculator(
+          totalDelivered,
+          deal.quantity,
+          deal.amountPurchaseUnit ?? 0,
+          deal.amountSalesUnit ?? 0,
+          deal.amountDelivery ?? 0,
+          deal.addExpenses ?? []
+        )
+      : null;
+
   return (
     <Page
       breadcrumbLinks={[
@@ -93,6 +108,38 @@ export default function DealDetailPage() {
         },
       ]}
     >
+      {actualProfit && (
+        <div className="mb-6 flex justify-end">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <div className="flex gap-6">
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Предполагаемая прибыль
+                </p>
+                <p className="text-lg font-semibold tabular-nums text-primary">
+                  {formatCurrency(deal.companyProfit ?? 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Фактическая прибыль
+                </p>
+                <p className="text-lg font-semibold tabular-nums">
+                  {formatCurrency(actualProfit.actualCompanyProfit)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Доставлено: {totalDelivered.toLocaleString("ru-RU")}{" "}
+                  {deal.unitMeasurement === "тонна"
+                    ? "тонн"
+                    : deal.unitMeasurement === "куб.м"
+                      ? "куб.м"
+                      : "ед."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <Table>
         <TableBody>
           <TableRow>
@@ -166,7 +213,7 @@ export default function DealDetailPage() {
             <TableCell>{formatCurrency(deal.amountSalesTotal)}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Сумма у карьера</TableCell>
+            <TableCell className="font-medium w-1/3">Сумма закупки</TableCell>
             <TableCell>{formatCurrency(deal.amountPurchaseTotal)}</TableCell>
           </TableRow>
           <TableRow>
@@ -191,7 +238,7 @@ export default function DealDetailPage() {
             <TableCell className="w-1/3">
               Итого
               {deal.paymentMethod === "безналичный расчет"
-                ? " с учетом НДС 20%"
+                ? ` с учетом НДС ${Math.round((deal.ndsPercent ?? 0.22) * 100)}%`
                 : ""}
             </TableCell>
             <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>

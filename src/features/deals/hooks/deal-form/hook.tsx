@@ -5,7 +5,10 @@ import {
   isSalesService,
   isTransportService,
 } from "@/config/services";
-import { dealCalculator } from "@/lib/calculators";
+import {
+  actualProfitCalculator,
+  dealCalculator,
+} from "@/lib/calculators";
 import { useDebounce } from "@/lib/debouncer";
 import { DealDto } from "@definitions/dto";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +20,7 @@ import {
   ReceivingMethod,
 } from "./types";
 
-const NDS_PERCENT = 0.2;
+const NDS_PERCENT = 0.22;
 
 function dealToFormData(d: DealDto): DealFormData {
   return {
@@ -162,8 +165,17 @@ export default function useDataFormHook(
     ),
     300
   );
+  const totalDeliveredQuantity = useMemo(
+    () =>
+      dealFormData.deliveredQuantity.reduce(
+        (sum, dq) => sum + Number(dq.quantity || 0),
+        0
+      ),
+    [dealFormData.deliveredQuantity]
+  );
+
   const calculatedData = useMemo(() => {
-    return dealCalculator(
+    const planned = dealCalculator(
       Number(debounced.quantity),
       Number(debounced.amountPurchaseUnit),
       Number(debounced.amountSalesUnit),
@@ -172,7 +184,25 @@ export default function useDataFormHook(
       Number(debounced.amountDelivery),
       debounced.extraExpenses
     );
-  }, [debounced, dealFormData.paymentMethod]);
+    const actual = actualProfitCalculator(
+      totalDeliveredQuantity,
+      Number(debounced.quantity),
+      Number(debounced.amountPurchaseUnit),
+      Number(debounced.amountSalesUnit),
+      Number(debounced.amountDelivery),
+      debounced.extraExpenses
+    );
+    return {
+      ...planned,
+      actualCompanyProfit: actual.actualCompanyProfit,
+      actualAmountSalesTotal: actual.actualAmountSalesTotal,
+      totalDeliveredQuantity,
+    };
+  }, [
+    debounced,
+    dealFormData.paymentMethod,
+    totalDeliveredQuantity,
+  ]);
 
   const prevServiceIdRef = useRef<string | undefined>(defaultDeal?.serviceId);
 

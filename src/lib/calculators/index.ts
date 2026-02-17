@@ -12,10 +12,16 @@ export function dealCalculator(
   const amountSalesTotal = amountSalesUnit * quantity;
   const amountPurchaseTotal = amountPurchaseUnit * quantity;
   const taxAmount = (amountSalesTotal / (1 + taxPercent)) * taxPercent;
-  const companyProfit = amountSalesTotal - amountPurchaseTotal - deliveryPrice;
-  const managerProfit =
-    companyProfit * managerShare -
-    extraExpenses.reduce((pv, el) => pv + Number(el.amount), 0);
+  const extraExpensesSum = extraExpenses.reduce(
+    (pv, el) => pv + Number(el.amount),
+    0
+  );
+  const companyProfit =
+    amountSalesTotal -
+    amountPurchaseTotal -
+    deliveryPrice -
+    extraExpensesSum;
+  const managerProfit = companyProfit * managerShare;
 
   return {
     taxAmount,
@@ -23,5 +29,40 @@ export function dealCalculator(
     managerProfit,
     amountPurchaseTotal,
     amountSalesTotal,
+  };
+}
+
+export function actualProfitCalculator(
+  totalDeliveredQuantity: number,
+  quantity: number,
+  amountPurchaseUnit: number,
+  amountSalesUnit: number,
+  deliveryPrice: number,
+  extraExpenses: ExtraExpenses[]
+) {
+  if (totalDeliveredQuantity <= 0 || quantity <= 0) {
+    return {
+      actualAmountSalesTotal: 0,
+      actualAmountPurchaseTotal: 0,
+      actualCompanyProfit: 0,
+    };
+  }
+  const share = totalDeliveredQuantity / quantity;
+  const actualAmountSalesTotal = amountSalesUnit * totalDeliveredQuantity;
+  const actualAmountPurchaseTotal = amountPurchaseUnit * totalDeliveredQuantity;
+  const extraExpensesSum = extraExpenses.reduce(
+    (pv, el) => pv + Number(el.amount),
+    0
+  );
+  const actualCompanyProfit =
+    actualAmountSalesTotal -
+    actualAmountPurchaseTotal -
+    deliveryPrice * share -
+    extraExpensesSum * share;
+
+  return {
+    actualAmountSalesTotal,
+    actualAmountPurchaseTotal,
+    actualCompanyProfit,
   };
 }

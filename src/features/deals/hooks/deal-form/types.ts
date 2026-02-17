@@ -22,6 +22,12 @@ export type DealDataFormHook = {
     managerProfit: number;
     amountPurchaseTotal: number;
     amountSalesTotal: number;
+    /** Фактическая прибыль по доставленным количествам */
+    actualCompanyProfit: number;
+    /** Фактическая сумма от клиента по доставленным */
+    actualAmountSalesTotal: number;
+    /** Сумма доставленного объёма */
+    totalDeliveredQuantity: number;
   };
 };
 

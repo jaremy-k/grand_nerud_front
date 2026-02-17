@@ -329,7 +329,7 @@ export default function PrimaryInformationSection({
                       htmlFor="amountPerUnit"
                       className="mb-1.5 block text-sm font-medium"
                     >
-                      Цена у карьера (за ед.), ₽
+                      Закупка (за ед.), ₽
                     </FieldLabel>
                     <InputGroup className="h-9">
                       <InputGroupAddon>

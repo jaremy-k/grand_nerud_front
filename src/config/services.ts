@@ -7,6 +7,8 @@ export const SERVICE_IDS = {
   SALES: "687a88dfb6b13b70b6a575f3",
   /** Продажа с доставкой — показываются те же поля, что и в продаже сырья */
   SALES_WITH_DELIVERY: "698de8bf1c3ac72cbdc1ff5b",
+  /** Утилизация — те же поля, что и в продаже (сумма от клиента, закупка, доставка и т.д.) */
+  UTILIZATION: "687a88e6b6b13b70b6a575f4",
   /** Доставка — показывается чекбокс ОССиГ, стоимость доставки и адрес доставки */
   TRANSPORT: "687a88e9b6b13b70b6a575f5",
 } as const;
@@ -14,7 +16,8 @@ export const SERVICE_IDS = {
 export function isSalesService(serviceId: string | undefined): boolean {
   return (
     serviceId === SERVICE_IDS.SALES ||
-    serviceId === SERVICE_IDS.SALES_WITH_DELIVERY
+    serviceId === SERVICE_IDS.SALES_WITH_DELIVERY ||
+    serviceId === SERVICE_IDS.UTILIZATION
   );
 }
 
