@@ -91,7 +91,7 @@ export default function DealDetailPage() {
           deal.amountPurchaseUnit ?? 0,
           deal.amountSalesUnit ?? 0,
           deal.amountDelivery ?? 0,
-          deal.addExpenses ?? []
+          (deal.addExpenses ?? []).map((e) => ({ name: e.name, amount: String(e.amount) }))
         )
       : null;
 
