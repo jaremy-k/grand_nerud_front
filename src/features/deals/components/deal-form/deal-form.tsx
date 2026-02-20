@@ -69,13 +69,21 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
         })),
         deliveredQuantity: dealFormData.deliveredQuantity
           .filter((dq) => dq.date && dq.quantity)
-          .map((dq) => ({
-            quantity: Number(dq.quantity),
-            unit: dealFormData.unitMeasurement,
-            date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
-              .toString()
-              .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
-          })),
+          .map((dq) => {
+            const amountPurchaseNum = dq.amountPurchase
+              ? Number(dq.amountPurchase)
+              : undefined;
+            return {
+              quantity: Number(dq.quantity),
+              unit: dealFormData.unitMeasurement,
+              date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
+                .toString()
+                .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
+              ...(amountPurchaseNum != null && !Number.isNaN(amountPurchaseNum)
+                ? { amountPurchase: amountPurchaseNum }
+                : {}),
+            };
+          }),
       };
 
       if (!!defaultDeal && defaultDeal._id) {
@@ -240,13 +248,22 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                     </div>
                   </>
                 )}
-                <div className="flex justify-between gap-2 border-t pt-3">
-                  <dt className="font-semibold text-foreground">
-                    Итоговая сумма
-                  </dt>
-                  <dd className="text-lg font-semibold tabular-nums text-primary">
-                    {formatCurrency(calculatedData.amountSalesTotal)}
-                  </dd>
+                <div>
+                  <div className="flex justify-between gap-2 border-t pt-3">
+                    <dt className="font-semibold text-foreground">
+                      Итоговая сумма
+                    </dt>
+                    <dd className="text-lg font-semibold tabular-nums text-primary">
+                      {calculatedData.totalDeliveredQuantity > 0
+                        ? formatCurrency(calculatedData.actualAmountSalesTotal)
+                        : formatCurrency(calculatedData.amountSalesTotal)}
+                    </dd>
+                  </div>
+                  {calculatedData.totalDeliveredQuantity > 0 && (
+                    <p className="mt-0.5 text-xs text-muted-foreground/80">
+                      По доставленным объёмам
+                    </p>
+                  )}
                 </div>
               </dl>
               <Button

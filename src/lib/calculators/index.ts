@@ -32,14 +32,20 @@ export function dealCalculator(
   };
 }
 
+export type DeliveredItem = { quantity: number; amountPurchase?: number };
+
 export function actualProfitCalculator(
-  totalDeliveredQuantity: number,
+  deliveredItems: DeliveredItem[],
   quantity: number,
   amountPurchaseUnit: number,
   amountSalesUnit: number,
   deliveryPrice: number,
   extraExpenses: ExtraExpenses[]
 ) {
+  const totalDeliveredQuantity = deliveredItems.reduce(
+    (s, d) => s + d.quantity,
+    0
+  );
   if (totalDeliveredQuantity <= 0 || quantity <= 0) {
     return {
       actualAmountSalesTotal: 0,
@@ -49,7 +55,11 @@ export function actualProfitCalculator(
   }
   const share = totalDeliveredQuantity / quantity;
   const actualAmountSalesTotal = amountSalesUnit * totalDeliveredQuantity;
-  const actualAmountPurchaseTotal = amountPurchaseUnit * totalDeliveredQuantity;
+  const actualAmountPurchaseTotal = deliveredItems.reduce((s, d) => {
+    const cost =
+      d.amountPurchase != null ? d.amountPurchase : amountPurchaseUnit * d.quantity;
+    return s + cost;
+  }, 0);
   const extraExpensesSum = extraExpenses.reduce(
     (pv, el) => pv + Number(el.amount),
     0

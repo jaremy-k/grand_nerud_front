@@ -81,17 +81,24 @@ export default function DealDetailPage() {
     return <div className="text-center py-10">Сделка не найдена</div>;
   }
 
-  const totalDelivered =
-    deal.deliveredQuantity?.reduce((s, dq) => s + (dq.quantity || 0), 0) ?? 0;
+  const deliveredItems =
+    deal.deliveredQuantity?.map((dq) => ({
+      quantity: dq.quantity || 0,
+      amountPurchase: dq.amountPurchase,
+    })) ?? [];
+  const totalDelivered = deliveredItems.reduce((s, d) => s + d.quantity, 0);
   const actualProfit =
     totalDelivered > 0 && deal.quantity > 0
       ? actualProfitCalculator(
-          totalDelivered,
+          deliveredItems,
           deal.quantity,
           deal.amountPurchaseUnit ?? 0,
           deal.amountSalesUnit ?? 0,
           deal.amountDelivery ?? 0,
-          (deal.addExpenses ?? []).map((e) => ({ name: e.name, amount: String(e.amount) }))
+          (deal.addExpenses ?? []).map((e) => ({
+            name: e.name,
+            amount: String(e.amount),
+          }))
         )
       : null;
 
@@ -275,11 +282,16 @@ export default function DealDetailPage() {
                   {deal.deliveredQuantity.map((dq, idx) => (
                     <div
                       key={`delivered-quantity-${idx}`}
-                      className="inline-flex justify-between w-full border-b last:border-0 py-1"
+                      className="inline-flex justify-between items-center w-full border-b last:border-0 py-1 gap-2"
                     >
                       <span>
                         {dq.quantity} {dq.unit}
                       </span>
+                      {dq.amountPurchase != null && (
+                        <span className="text-muted-foreground">
+                          Закупка: {formatCurrency(dq.amountPurchase)}
+                        </span>
+                      )}
                       <span className="text-muted-foreground">
                         {dq.date
                           ? new Date(dq.date.split(" ")[0]).toLocaleDateString(

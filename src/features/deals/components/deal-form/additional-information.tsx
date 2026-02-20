@@ -187,6 +187,7 @@ export default function AdditionalInformationSection({
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-medium">Количество</TableHead>
                   <TableHead className="font-medium">Единица</TableHead>
+                  <TableHead className="font-medium">Сумма закупки</TableHead>
                   <TableHead className="font-medium">Дата доставки</TableHead>
                   <TableHead className="w-[52px]"></TableHead>
                 </TableRow>
@@ -270,6 +271,30 @@ export default function AdditionalInformationSection({
                               : dealFormData.unitMeasurement}
                       </div>
                     </TableCell>
+                    <TableCell className="p-2">
+                      <InputGroup className="h-9 max-w-[120px]">
+                        <InputGroupAddon>
+                          <InputGroupText>₽</InputGroupText>
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          value={el.amountPurchase ?? ""}
+                          className="h-9"
+                          onChange={(e) => {
+                            const formatted = e.target.value
+                              .replace(/[^0-9.]/g, "")
+                              .replace(/(\..*)\./g, "$1")
+                              .replace(/(\.\d{2})\d+$/, "$1");
+                            updateField(
+                              "deliveredQuantity",
+                              dealFormData.deliveredQuantity.map((v, i) =>
+                                i !== idx ? v : { ...v, amountPurchase: formatted }
+                              )
+                            );
+                          }}
+                          placeholder="0"
+                        />
+                      </InputGroup>
+                    </TableCell>
                     <TableCell>
                       <Popover
                         open={datePickerOpen === idx}
@@ -334,12 +359,12 @@ export default function AdditionalInformationSection({
                 ))}
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="cursor-pointer bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                     onClick={() =>
                       updateField("deliveredQuantity", [
                         ...dealFormData.deliveredQuantity,
-                        { quantity: "", date: undefined },
+                        { quantity: "", date: undefined, amountPurchase: "" },
                       ])
                     }
                   >

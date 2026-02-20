@@ -49,6 +49,7 @@ function dealToFormData(d: DealDto): DealFormData {
       d.deliveredQuantity?.map((el) => ({
         quantity: String(el.quantity || ""),
         date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
+        amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
       })) || [],
   };
 }
@@ -86,7 +87,8 @@ function isFormDataEqual(a: DealFormData, b: DealFormData): boolean {
   for (let i = 0; i < a.deliveredQuantity.length; i++) {
     const da = a.deliveredQuantity[i];
     const db = b.deliveredQuantity[i];
-    if (da.quantity !== db.quantity) return false;
+    if (da.quantity !== db.quantity || da.amountPurchase !== db.amountPurchase)
+      return false;
     const dateA = da.date ? da.date.toISOString().slice(0, 10) : "";
     const dateB = db.date ? db.date.toISOString().slice(0, 10) : "";
     if (dateA !== dateB) return false;
@@ -128,6 +130,7 @@ export default function useDataFormHook(
       defaultDeal?.deliveredQuantity?.map((el) => ({
         quantity: String(el.quantity || ""),
         date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
+        amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
       })) || [],
   });
 
@@ -165,13 +168,22 @@ export default function useDataFormHook(
     ),
     300
   );
+  const deliveredItemsForCalc = useMemo(
+    () =>
+      dealFormData.deliveredQuantity
+        .filter((dq) => Number(dq.quantity || 0) > 0)
+        .map((dq) => ({
+          quantity: Number(dq.quantity),
+          amountPurchase: dq.amountPurchase
+            ? Number(dq.amountPurchase)
+            : undefined,
+        })),
+    [dealFormData.deliveredQuantity]
+  );
   const totalDeliveredQuantity = useMemo(
     () =>
-      dealFormData.deliveredQuantity.reduce(
-        (sum, dq) => sum + Number(dq.quantity || 0),
-        0
-      ),
-    [dealFormData.deliveredQuantity]
+      deliveredItemsForCalc.reduce((sum, d) => sum + d.quantity, 0),
+    [deliveredItemsForCalc]
   );
 
   const calculatedData = useMemo(() => {
@@ -185,7 +197,7 @@ export default function useDataFormHook(
       debounced.extraExpenses
     );
     const actual = actualProfitCalculator(
-      totalDeliveredQuantity,
+      deliveredItemsForCalc,
       Number(debounced.quantity),
       Number(debounced.amountPurchaseUnit),
       Number(debounced.amountSalesUnit),
@@ -201,7 +213,7 @@ export default function useDataFormHook(
   }, [
     debounced,
     dealFormData.paymentMethod,
-    totalDeliveredQuantity,
+    deliveredItemsForCalc,
   ]);
 
   const prevServiceIdRef = useRef<string | undefined>(defaultDeal?.serviceId);
@@ -243,6 +255,7 @@ export default function useDataFormHook(
           defaultDeal?.deliveredQuantity?.map((el) => ({
             quantity: String(el.quantity || ""),
             date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
+            amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
           })) || [],
       }));
       return;

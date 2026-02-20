@@ -3,7 +3,11 @@ export type PaymentMethod = "наличный расчет" | "безналич�
 export type ReceivingMethod = "самовывоз" | "доставка";
 
 export type ExtraExpenses = { name: string; amount: string };
-export type DeliveredQuantity = { quantity: string; date: Date | undefined };
+export type DeliveredQuantity = {
+  quantity: string;
+  date: Date | undefined;
+  amountPurchase: string;
+};
 
 export type DealDataFormHook = {
   dealFormData: DealFormData;

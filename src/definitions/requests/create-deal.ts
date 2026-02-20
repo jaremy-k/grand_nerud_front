@@ -33,5 +33,10 @@ export default interface CreateDealRequest {
   OSSIG: boolean;
 
   addExpenses: Array<{ name: string; amount: number }>;
-  deliveredQuantity: Array<{ quantity: number; unit: string; date: string }>; // date format: "YYYY-MM-DD 00:00"
+  deliveredQuantity: Array<{
+    quantity: number;
+    unit: string;
+    date: string;
+    amountPurchase?: number;
+  }>; // date format: "YYYY-MM-DD 00:00"
 }

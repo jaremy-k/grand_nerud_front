@@ -38,6 +38,7 @@ export function buildUpdateDealRequestFromDeal(
       quantity: dq.quantity,
       unit: dq.unit,
       date: dq.date?.includes(" ") ? dq.date : `${dq.date} 00:00`,
+      ...(dq.amountPurchase != null ? { amountPurchase: dq.amountPurchase } : {}),
     })),
   };
   return { ...base, ...overrides };

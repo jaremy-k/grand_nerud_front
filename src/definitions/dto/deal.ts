@@ -38,7 +38,12 @@ export default interface DealDto {
   OSSIG: boolean;
 
   addExpenses: Array<{ name: string; amount: number }>;
-  deliveredQuantity?: Array<{ quantity: number; unit: string; date: string }>;
+  deliveredQuantity?: Array<{
+    quantity: number;
+    unit: string;
+    date: string;
+    amountPurchase?: number;
+  }>;
 
   // Populated fields
   user: UserDto | null;
