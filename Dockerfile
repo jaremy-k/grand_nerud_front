@@ -6,6 +6,12 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+ARG VITE_API_URL
+ARG VITE_COOKIE_DOMAIN
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_COOKIE_DOMAIN=$VITE_COOKIE_DOMAIN
+
 RUN npm run build
 
 FROM nginx:alpine
