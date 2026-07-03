@@ -1,3 +1,4 @@
+import { apiPath } from "@/lib/api";
 import {
   secureDeleteData,
   secureGetData,
@@ -37,42 +38,35 @@ export async function getDeals(
   );
 
   return secureGetData(
-    `https://appgrand.worldautogroup.ru/deals?sortBy=${sortBy}&sortOrder=${sortOrder}&page_size=${pageSize}&page=${page}&includeDeleted=${
-      params.includeDeleted === false ? "False" : "True"
-    }&includeRelations=${params.includeRelations ? "True" : "False"}${filters}`,
+    apiPath(
+      `/deals?sortBy=${sortBy}&sortOrder=${sortOrder}&page_size=${pageSize}&page=${page}&includeDeleted=${
+        params.includeDeleted === false ? "false" : "true"
+      }&includeRelations=${params.includeRelations ? "true" : "false"}${filters}`
+    ),
     options
   );
 }
 
-export async function getDealsAdmin(): Promise<{
-  items: DealDto[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}> {
-  return secureGetData("https://appgrand.worldautogroup.ru/deals/admin/get");
+export async function getDealsAdmin(): Promise<DealDto[]> {
+  return secureGetData(apiPath("/deals/admin/all"));
 }
 
 export async function createDeal(
   dealData: CreateDealRequest
 ): Promise<DealDto> {
-  return securePostData("https://appgrand.worldautogroup.ru/deals", {
+  return securePostData(apiPath("/deals"), {
     ...dealData,
   });
 }
 
 export async function getDeal(id: string): Promise<DealDto> {
-  return secureGetData(`https://appgrand.worldautogroup.ru/deals/${id}`);
+  return secureGetData(apiPath(`/deals/${id}`));
 }
 
 export async function updateDeal(id: string, body: UpdateDealRequest) {
-  return securePatchData(
-    `https://appgrand.worldautogroup.ru/deals/${id}`,
-    body
-  );
+  return securePatchData(apiPath(`/deals/${id}`), body);
 }
 
 export async function deleteDeal(id: string) {
-  return secureDeleteData(`https://appgrand.worldautogroup.ru/deals/${id}`);
+  return secureDeleteData(apiPath(`/deals/${id}`));
 }

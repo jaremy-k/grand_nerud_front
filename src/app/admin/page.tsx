@@ -73,25 +73,12 @@ export default function AdminDashboardPage() {
     try {
       const [usersRes, dealsRes] = await Promise.allSettled([
         usersService.getUsers(),
-        dealsService
-          .getDealsAdmin()
-          .catch(() =>
-            dealsService.getDeals({
-              pageSize: 500,
-              page: 1,
-              includeRelations: true,
-              includeDeleted: false,
-            })
-          ),
+        dealsService.getDealsAdmin(),
       ]);
       if (usersRes.status === "fulfilled") setUsers(usersRes.value);
       else setUsers([]);
       if (dealsRes.status === "fulfilled") {
-        const res = dealsRes.value;
-        const dealsList = Array.isArray(res)
-          ? res
-          : (res as { items?: DealDto[] }).items ?? [];
-        setDeals(dealsList);
+        setDeals(dealsRes.value);
       } else {
         setDeals([]);
         const msg =

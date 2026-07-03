@@ -7,19 +7,69 @@ import DashboardPage from "@/app/dashboard/page";
 import LoginPage from "@/app/login/page";
 import HomePage from "@/app/page";
 import NotFoundPage from "@/app/not-found";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Route, Routes } from "react-router-dom";
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/deals" element={<DealsPage />} />
-      <Route path="/deals/create" element={<CreateDealPage />} />
-      <Route path="/deals/:id" element={<DealDetailPage />} />
-      <Route path="/deals/:id/edit" element={<EditDealPage />} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route
+        path="/deals"
+        element={
+          <ProtectedRoute>
+            <DealsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/deals/create"
+        element={
+          <ProtectedRoute>
+            <CreateDealPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/deals/:id"
+        element={
+          <ProtectedRoute>
+            <DealDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/deals/:id/edit"
+        element={
+          <ProtectedRoute>
+            <EditDealPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import { AuthContext } from "@/contexts/auth-context";
-import { removeCookie, setCookie } from "@/lib/cookies";
+import { removeAccessToken } from "@/lib/cookies";
+import { setUnauthorizedHandler } from "@/lib/fetch";
 import { authService } from "@/services";
 import { UserDto } from "@definitions/dto";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,6 +15,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const redirectToLogin = useCallback(() => {
+    setUser(null);
+    if (!pathname.startsWith("/login")) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, pathname]);
+
   const checkAuth = useCallback(async () => {
     setError(null);
     setLoading(true);
@@ -21,65 +29,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await authService.getMe();
       setUser(userData);
       if (pathname === "/login") {
-        navigate("/deals");
+        navigate("/deals", { replace: true });
       }
-    } catch (error) {
-      if (!pathname.startsWith("/login")) {
-        navigate("/login");
-      }
+    } catch (err) {
       setUser(null);
-      setError(error instanceof Error ? error.message : "Auth check failed");
+      if (!pathname.startsWith("/login")) {
+        navigate("/login", { replace: true });
+      }
+      setError(err instanceof Error ? err.message : "Auth check failed");
     } finally {
       setLoading(false);
     }
-  }, [navigate, pathname, setError, setLoading, setUser]);
+  }, [navigate, pathname]);
 
   const login = async (email: string, password: string) => {
+    setError(null);
     try {
-      setError(null);
-
-      const response = await fetch(
-        "https://appgrand.worldautogroup.ru/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.detail || "Login failed");
-      }
-
-      const { access_token } = await response.json();
-      setCookie("tg_news_bot_access_token", access_token);
-
+      await authService.login(email, password);
       await checkAuth();
-      navigate("/deals");
-    } catch (error) {
-      setLoading(false);
-      setError(error instanceof Error ? error.message : "Login failed");
-      throw error;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+      throw err;
     }
   };
 
   const logout = async () => {
-    try {
-      await authService.logout();
-    } finally {
-      removeCookie("tg_news_bot_access_token");
-      setUser(null);
-      navigate("/login");
-    }
+    removeAccessToken();
+    setUser(null);
+    navigate("/login", { replace: true });
   };
+
+  useEffect(() => {
+    setUnauthorizedHandler(redirectToLogin);
+    return () => setUnauthorizedHandler(null);
+  }, [redirectToLogin]);
 
   useEffect(() => {
     checkAuth().catch(() => {
       setLoading(false);
       setUser(null);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Проверка сессии только при старте приложения
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -8,15 +8,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const { loading, user } = useAuthContext();
 
-  if (loading || (pathname === "/login" && user))
+  if (loading) {
     return (
-      <div className="w-svw h-svh items-center justify-center flex">
+      <div className="flex h-svh w-svw items-center justify-center">
         <Spinner className="w-12 h-12" />
       </div>
     );
+  }
 
   if (pathname === "/login") {
+    if (user) {
+      return (
+        <div className="flex h-svh w-svw items-center justify-center">
+          <Spinner className="w-12 h-12" />
+        </div>
+      );
+    }
     return <>{children}</>;
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-svh w-svw items-center justify-center">
+        <Spinner className="w-12 h-12" />
+      </div>
+    );
   }
 
   return (

@@ -17,7 +17,10 @@ function getUniqueManagers(deals: DealDto[]) {
   const managerMap: Record<string, string> = {};
   deals.forEach((deal) => {
     if (deal.user) {
-      managerMap[deal.user._id] = deal.user.name || "Без имени";
+      const userId = deal.user._id ?? deal.user.id;
+      if (userId) {
+        managerMap[userId] = deal.user.name || "Без имени";
+      }
     }
   });
   return Object.entries(managerMap).map(([value, label]) => ({

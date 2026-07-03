@@ -1,51 +1,31 @@
-import { getCookie } from "../cookies";
+import { getAccessToken } from "@/lib/api";
+import { removeAccessToken } from "@/lib/cookies";
 
-export async function getData(url: string, options: RequestInit = {}) {
-  if (typeof window === "undefined") {
-    console.warn("getData should be used in a browser environment only");
-  }
+type UnauthorizedHandler = () => void;
 
-  const response = await fetch(url, {
-    ...options,
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include",
-  });
+let unauthorizedHandler: UnauthorizedHandler | null = null;
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(
-      errorData?.detail || `HTTP error! status: ${response.status}`
-    );
-  }
-
-  return response.json();
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
 }
 
-export async function secureGetData(url: string, options: RequestInit = {}) {
-  if (typeof window === "undefined") {
-    console.warn("secureGetData should be used in a browser environment only");
-  }
-
-  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
-
+function authHeaders(): Record<string, string> {
+  const token = getAccessToken();
   if (!token) {
-    throw new Error("No access token");
+    throw new Error("Требуется авторизация");
   }
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
 
-  const response = await fetch(url, {
-    ...options,
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { "x-user-id": token }),
-      ...options.headers,
-    },
-    credentials: "include",
-  });
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 401) {
+    removeAccessToken();
+    unauthorizedHandler?.();
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || "Требуется авторизация");
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
@@ -54,95 +34,122 @@ export async function secureGetData(url: string, options: RequestInit = {}) {
     );
   }
 
-  return response.json();
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
-export async function securePostData(
+export async function getData<T = unknown>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  return parseResponse<T>(response);
+}
+
+export async function postData<T = unknown>(
+  url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: any,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    method: "POST",
+    body: data !== undefined ? JSON.stringify(data) : undefined,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  return parseResponse<T>(response);
+}
+
+export async function secureGetData<T = unknown>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...options.headers,
+    },
+  });
+
+  return parseResponse<T>(response);
+}
+
+export async function securePostData<T = unknown>(
   url: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
   options: RequestInit = {}
-) {
-  if (typeof window === "undefined") {
-    console.warn("securePostData should be used in a browser environment only");
-  }
-
-  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
-
-  if (!token) {
-    throw new Error("No access token");
-  }
-
+): Promise<T> {
   const response = await fetch(url, {
     ...options,
     method: "POST",
     body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
-      ...(token && { "x-user-id": token }),
+      ...authHeaders(),
       ...options.headers,
     },
-    credentials: "include",
   });
 
-  return response.json();
+  return parseResponse<T>(response);
 }
 
-export async function securePatchData(
+export async function securePatchData<T = unknown>(
   url: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
   options: RequestInit = {}
-) {
-  if (typeof window === "undefined") {
-    console.warn(
-      "securePatchData should be used in a browser environment only"
-    );
-  }
-
-  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
-
-  if (!token) {
-    throw new Error("No access token");
-  }
-
+): Promise<T> {
   const response = await fetch(url, {
     ...options,
     method: "PATCH",
     body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
-      ...(token && { "x-user-id": token }),
+      ...authHeaders(),
       ...options.headers,
     },
-    credentials: "include",
   });
 
-  return response.json();
+  return parseResponse<T>(response);
 }
 
-export async function secureDeleteData(url: string, options: RequestInit = {}) {
-  if (typeof window === "undefined") {
-    console.warn(
-      "secureDeleteData should be used in a browser environment only"
-    );
-  }
-
-  const token = typeof window !== "undefined" ? getCookie("tg_news_bot_access_token") : null;
-
-  if (!token) {
-    throw new Error("No access token");
-  }
-
+export async function secureDeleteData<T = unknown>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
   const response = await fetch(url, {
     ...options,
     method: "DELETE",
     headers: {
-      ...(token && { "x-user-id": token }),
+      ...authHeaders(),
       ...options.headers,
     },
-    credentials: "include",
   });
 
-  return response.json();
+  return parseResponse<T>(response);
 }

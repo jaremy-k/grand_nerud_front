@@ -1,5 +1,6 @@
 export default interface UserDto {
-  _id: string;
+  id?: string;
+  _id?: string;
   email: string;
   admin: boolean | null;
 
@@ -7,7 +8,9 @@ export default interface UserDto {
   lastName?: string | null;
   fatherName?: string | null;
   hashed_password?: string;
+  deletedAt?: string | null;
   deleted_at?: string | null;
+  isDeleted?: boolean | null;
   is_deleted?: boolean | null;
   profit?: {
     cash: {
