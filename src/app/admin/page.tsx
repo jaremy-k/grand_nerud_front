@@ -23,7 +23,7 @@ import {
   TrendingUpIcon,
   UsersIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { getStageBadgeClass } from "@features/deals/utils/stage-colors";
 
@@ -59,7 +59,7 @@ function filterDealsByPeriod(
 
 export default function AdminDashboardPage() {
   const { user } = useAuthContext();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodKey>("30");
   const [deals, setDeals] = useState<DealDto[]>([]);
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -116,11 +116,11 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (!user) return;
     if (!user.admin) {
-      router.replace("/deals");
+      navigate("/deals", { replace: true });
       return;
     }
     loadData();
-  }, [user, user?.admin, router, loadData]);
+  }, [user, user?.admin, navigate, loadData]);
 
   if (!user) {
     return (

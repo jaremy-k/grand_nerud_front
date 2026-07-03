@@ -7,7 +7,7 @@ import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest } from "@definitions/requests";
 import { useDataFormHook } from "@features/deals/hooks/deal-form";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
 import DeliveryInformationSection from "./delivery-information";
@@ -15,7 +15,7 @@ import FinancialInformationSection from "./financial-information";
 import PrimaryInformationSection from "./primary-information";
 
 export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const formData = useDataFormHook(defaultDeal);
   const { dealFormData, calculatedData, taxPercent, isDirty } = formData;
   const [submiting, setSubmiting] = useState(false);
@@ -91,7 +91,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       } else {
         await dealsService.createDeal(dataToSend);
       }
-      router.push("/deals");
+      navigate("/deals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
     } finally {

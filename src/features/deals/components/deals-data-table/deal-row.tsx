@@ -27,7 +27,7 @@ import {
   getStageDotClass,
 } from "@features/deals/utils/stage-colors";
 import { CheckIcon, MoreHorizontal } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 export default function DealRow({
   deal,
@@ -40,7 +40,7 @@ export default function DealRow({
   onStageChange: (dealId: string, stageId: string) => Promise<void>;
   isUpdatingStage: string | null;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const isUpdating = isUpdatingStage === deal._id;
   const [stagePopoverOpen, setStagePopoverOpen] = useState(false);
 
@@ -122,12 +122,12 @@ export default function DealRow({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Действия</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => router.push(`/deals/${deal._id}`)}
+                onClick={() => navigate(`/deals/${deal._id}`)}
               >
                 Подробнее
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push(`/deals/${deal._id}/edit`)}
+                onClick={() => navigate(`/deals/${deal._id}/edit`)}
               >
                 Редактировать
               </DropdownMenuItem>

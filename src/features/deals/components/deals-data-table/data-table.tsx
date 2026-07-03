@@ -20,7 +20,7 @@ import {
 } from "@features/deals/utils/filter-presets";
 import { useStages } from "@features/deals/hooks/use-stages";
 import { delayedPromise } from "@features/deals/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import {
   useCallback,
   useEffect,
@@ -45,7 +45,7 @@ export default function DealsDataTable({
   viewMode: "table" | "kanban";
   setViewMode: (mode: "table" | "kanban") => void;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { stages } = useStages();
   const [deals, setDeals] = useState<DealDto[]>([]);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -216,7 +216,7 @@ export default function DealsDataTable({
     <div className="flex min-w-0 flex-col">
       <div className="sticky top-0 z-10 flex-shrink-0 space-y-3 border-b bg-background/95 pb-4 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center gap-2">
-          <Button onClick={() => router.push("/deals/create")} variant="default">
+          <Button onClick={() => navigate("/deals/create")} variant="default">
             Создать сделку
           </Button>
         </div>

@@ -1,7 +1,7 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @plugin "tailwindcss-animate";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -124,5 +124,6 @@ select {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", sans-serif;
   }
 }

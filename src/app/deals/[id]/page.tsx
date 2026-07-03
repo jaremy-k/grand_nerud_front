@@ -28,11 +28,11 @@ import {
 } from "@features/deals/utils/stage-colors";
 import { companiesService, dealsService } from "@/services";
 import { CompanyDto, DealDto } from "@definitions/dto";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function DealDetailPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuthContext();
   const [deal, setDeal] = useState<DealDto | null>(null);
@@ -44,7 +44,7 @@ export default function DealDetailPage() {
   const handleDelete = async () => {
     if (!deal) return;
     await dealsService.deleteDeal(deal._id);
-    router.replace("/deals");
+    navigate("/deals", { replace: true });
   };
 
   useEffect(() => {
@@ -360,7 +360,7 @@ export default function DealDetailPage() {
         <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
           Удалить
         </Button>
-        <Button onClick={() => router.push(`/deals/${deal._id}/edit`)}>
+        <Button onClick={() => navigate(`/deals/${deal._id}/edit`)}>
           Редактировать
         </Button>
       </div>

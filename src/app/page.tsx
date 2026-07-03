@@ -1,18 +1,18 @@
 "use client";
 
 import useAuthContext from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 export default function Home() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { loading } = useAuthContext();
 
   useEffect(() => {
     if (!loading) {
-      router.replace("/deals");
+      navigate("/deals", { replace: true });
     }
-  }, [router, loading]);
+  }, [navigate, loading]);
 
   return null;
 }

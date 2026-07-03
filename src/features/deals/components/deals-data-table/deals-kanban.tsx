@@ -16,7 +16,7 @@ import {
   getStageBadgeClass,
   getStageDotClass,
 } from "@features/deals/utils/stage-colors";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import {
   Popover,
   PopoverContent,
@@ -40,7 +40,7 @@ export default function DealsKanban({
   onStageChange: (dealId: string, stageId: string) => Promise<void>;
   updatingStageId: string | null;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [activeDealId, setActiveDealId] = useState<string | null>(null);
 
   const stageIds = new Set(stages.map((s) => s._id));
@@ -107,8 +107,8 @@ export default function DealsKanban({
             customerNames={customerNames}
             onStageChange={onStageChange}
             updatingStageId={updatingStageId}
-            onOpen={(id) => router.push(`/deals/${id}`)}
-            onEdit={(id) => router.push(`/deals/${id}/edit`)}
+            onOpen={(id) => navigate(`/deals/${id}`)}
+            onEdit={(id) => navigate(`/deals/${id}/edit`)}
           />
         ))}
       </div>

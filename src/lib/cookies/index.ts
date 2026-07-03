@@ -1,11 +1,10 @@
 export const setCookie = (name: string, value: string) => {
-  const domain =
-    process.env.NODE_ENV === "development" ? "localhost" : ".worldautogroup.ru";
+  const domain = import.meta.env.DEV
+    ? "localhost"
+    : import.meta.env.VITE_COOKIE_DOMAIN || ".worldautogroup.ru";
 
   document.cookie = `${name}=${value}; path=/; domain=${domain}; ${
-    process.env.NODE_ENV === "production"
-      ? "Secure; SameSite=None"
-      : "SameSite=Lax"
+    import.meta.env.PROD ? "Secure; SameSite=None" : "SameSite=Lax"
   }`;
 };
 

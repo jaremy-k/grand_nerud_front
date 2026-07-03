@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@radix-ui/react-separator";
+import { Link } from "react-router-dom";
 import { Fragment } from "react";
 
 export default function Page({
@@ -35,8 +36,8 @@ export default function Page({
                 index < breadcrumbLinks.length - 1 ? (
                   <Fragment key={link.href}>
                     <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href={link.href}>
-                        {link.label}
+                      <BreadcrumbLink asChild>
+                        <Link to={link.href}>{link.label}</Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />

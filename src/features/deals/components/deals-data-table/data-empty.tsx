@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/empty";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Handshake } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 export default function DealsDataEmpty() {
-  const router = useRouter();
+  const navigate = useNavigate();
   return (
     <TableRow className="hover:bg-transparent">
       <TableCell colSpan={7}>
@@ -30,7 +30,7 @@ export default function DealsDataEmpty() {
           </EmptyHeader>
           <EmptyContent>
             <Button
-              onClick={() => router.push("/deals/new-deal")}
+              onClick={() => navigate("/deals/create")}
               type="button"
               className="pointer-events-auto"
             >

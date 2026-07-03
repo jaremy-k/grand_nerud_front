@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import useAuthContext from "@/contexts/auth-context";
 import { BarChart3Icon, Handshake, House } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import * as React from "react";
 import { NavUser } from "./footer";
 import { Header } from "./header";
@@ -38,7 +37,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { user } = useAuthContext();
 
   return (
@@ -48,7 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/"}>
-              <Link href="/">
+              <Link to="/">
                 <House />
                 <span>Главная</span>
               </Link>
@@ -65,7 +64,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url}>
+                      <Link to={item.url}>
                         <Handshake />
                         {item.title}
                       </Link>
@@ -75,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {user?.admin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/admin"}>
-                      <Link href="/admin">
+                      <Link to="/admin">
                         <BarChart3Icon />
                         Статистика
                       </Link>

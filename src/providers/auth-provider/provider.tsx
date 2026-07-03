@@ -4,12 +4,12 @@ import { AuthContext } from "@/contexts/auth-context";
 import { removeCookie, setCookie } from "@/lib/cookies";
 import { authService } from "@/services";
 import { UserDto } from "@definitions/dto";
-import { usePathname, useRouter } from "next/navigation";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,18 +21,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await authService.getMe();
       setUser(userData);
       if (pathname === "/login") {
-        router.push("/deals");
+        navigate("/deals");
       }
     } catch (error) {
       if (!pathname.startsWith("/login")) {
-        router.push("/login");
+        navigate("/login");
       }
       setUser(null);
       setError(error instanceof Error ? error.message : "Auth check failed");
     } finally {
       setLoading(false);
     }
-  }, [router, pathname, setError, setLoading, setUser]);
+  }, [navigate, pathname, setError, setLoading, setUser]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCookie("tg_news_bot_access_token", access_token);
 
       await checkAuth();
-      router.push("/deals");
+      navigate("/deals");
     } catch (error) {
       setLoading(false);
       setError(error instanceof Error ? error.message : "Login failed");
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       removeCookie("tg_news_bot_access_token");
       setUser(null);
-      router.push("/login");
+      navigate("/login");
     }
   };
 

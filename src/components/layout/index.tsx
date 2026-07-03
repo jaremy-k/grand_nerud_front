@@ -1,13 +1,11 @@
-"use client";
-
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import useAuthContext from "@/contexts/auth-context";
-import { usePathname } from "next/navigation";
+import { useLocation } from "react-router-dom";
 import { Spinner } from "../ui/spinner";
 import { AppSidebar } from "./sidebar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { loading, user } = useAuthContext();
 
   if (loading || (pathname === "/login" && user))

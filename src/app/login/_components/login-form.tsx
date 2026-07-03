@@ -10,11 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import useAuthContext from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 export function LoginForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuthContext();
@@ -30,7 +30,7 @@ export function LoginForm() {
 
     try {
       await login(email, password);
-      router.push("/deals");
+      navigate("/deals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
     } finally {

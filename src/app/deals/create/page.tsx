@@ -11,7 +11,7 @@ export default function NewDealPage() {
         },
         {
           label: "Новая сделка",
-          href: "/deals/new-deal",
+          href: "/deals/create",
         },
       ]}
     >

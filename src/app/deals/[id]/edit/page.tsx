@@ -1,12 +1,9 @@
 import { Page } from "@/components/blocks";
+import { useParams } from "react-router-dom";
 import EditDealForm from "./_components/edit-form";
 
-export default async function EditDealPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id: dealId } = await params;
+export default function EditDealPage() {
+  const { id: dealId } = useParams<{ id: string }>();
 
   if (!dealId) {
     return <div className="p-8">ID сделки не указан</div>;
