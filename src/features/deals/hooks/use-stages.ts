@@ -4,26 +4,11 @@ import { stagesService } from "@/services";
 import { StageDto } from "@definitions/dto";
 import { useEffect, useState } from "react";
 
-const STAGE_NAME_ORDER = [
-  "согласование",
-  "заключение договора",
-  "ожидает оплаты",
-  "заказ выполняется",
-  "выполнен",
-  "отменен",
-  "без этапа",
-];
-
-function sortStagesByProcessOrder(stages: StageDto[]): StageDto[] {
-  const orderMap = new Map(
-    STAGE_NAME_ORDER.map((name, i) => [name.toLowerCase(), i])
-  );
+function sortStagesByOrder(stages: StageDto[]): StageDto[] {
   return [...stages].sort((a, b) => {
-    const aIdx =
-      orderMap.get(a.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
-    const bIdx =
-      orderMap.get(b.name.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
-    if (aIdx !== bIdx) return aIdx - bIdx;
+    const aOrder = a.order ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = b.order ?? Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) return aOrder - bOrder;
     return a.name.localeCompare(b.name);
   });
 }
@@ -35,7 +20,7 @@ export function useStages() {
   useEffect(() => {
     stagesService
       .getStages()
-      .then((data) => setStages(sortStagesByProcessOrder(data)))
+      .then((data) => setStages(sortStagesByOrder(data)))
       .catch(() => setStages([]))
       .finally(() => setLoading(false));
   }, []);

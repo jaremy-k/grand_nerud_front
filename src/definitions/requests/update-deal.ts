@@ -1,40 +1,6 @@
-export default interface UpdateDealRequest {
-  stageId: string;
-  materialId: string;
+import CreateDealRequest from "./create-deal";
 
-  unitMeasurement: "тонна" | "куб.м" | "шт";
-
-  quantity: number;
-
-  amountPurchaseUnit: number;
-  amountPurchaseTotal: number;
-
-  amountSalesUnit: number;
-  amountSalesTotal: number;
-
-  amountDelivery: number;
-  companyProfit: number;
-
-  ndsAmount: number;
-  ndsPercent: number;
-
-  totalAmount: number;
-  managerProfit: number;
-
-  paymentMethod: "наличный расчет" | "безналичный расчет";
-
-  shippingAddress: string;
-  methodReceiving: "самовывоз" | "доставка";
-  deliveryAddress: string;
-
-  notes: string;
-  OSSIG: boolean;
-
-  addExpenses: Array<{ name: string; amount: number }>;
-  deliveredQuantity: Array<{
-    quantity: number;
-    unit: string;
-    date: string;
-    amountPurchase?: number;
-  }>; // date format: "YYYY-MM-DD 00:00"
-}
+export default interface UpdateDealRequest extends Omit<
+  CreateDealRequest,
+  "serviceId" | "customerId"
+> {}

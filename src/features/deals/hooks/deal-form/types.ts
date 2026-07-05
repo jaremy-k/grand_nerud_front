@@ -1,3 +1,5 @@
+import { ServiceDto } from "@definitions/dto";
+
 export type MeasurementUnit = "тонна" | "куб.м" | "шт";
 export type PaymentMethod = "наличный расчет" | "безналичный расчет";
 export type ReceivingMethod = "самовывоз" | "доставка";
@@ -17,20 +19,18 @@ export type DealDataFormHook = {
   ) => void;
 
   taxPercent: number;
+  managerShare: number;
   isDirty: boolean;
+  services: ServiceDto[];
 
-  // Hook methods and values
   calculatedData: {
     taxAmount: number;
     companyProfit: number;
     managerProfit: number;
     amountPurchaseTotal: number;
     amountSalesTotal: number;
-    /** Фактическая прибыль по доставленным количествам */
     actualCompanyProfit: number;
-    /** Фактическая сумма от клиента по доставленным */
     actualAmountSalesTotal: number;
-    /** Сумма доставленного объёма */
     totalDeliveredQuantity: number;
   };
 };
@@ -42,7 +42,6 @@ export type DealFormData = {
   materialId: string | undefined;
   unitMeasurement: MeasurementUnit;
   quantity: string;
-  managerShare: string;
   amountPurchaseUnit: string;
   amountSalesUnit: string;
   amountDelivery: string;

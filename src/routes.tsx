@@ -1,4 +1,6 @@
 import AdminPage from "@/app/admin/page";
+import CalculationRulesAdminPage from "@/app/admin/calculation-rules/page";
+import AdminUsersPage from "@/app/admin/users/page";
 import DealDetailPage from "@/app/deals/[id]/page";
 import EditDealPage from "@/app/deals/[id]/edit/page";
 import CreateDealPage from "@/app/deals/create/page";
@@ -51,6 +53,22 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <EditDealPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminUsersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/calculation-rules"
+        element={
+          <ProtectedRoute adminOnly>
+            <CalculationRulesAdminPage />
           </ProtectedRoute>
         }
       />

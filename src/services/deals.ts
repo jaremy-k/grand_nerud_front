@@ -6,7 +6,12 @@ import {
   securePostData,
 } from "@/lib/fetch";
 import { DealDto } from "@definitions/dto";
-import { CreateDealRequest, UpdateDealRequest } from "@definitions/requests";
+import {
+  CreateDealRequest,
+  PreviewDealRequest,
+  PreviewDealResult,
+  UpdateDealRequest,
+} from "@definitions/requests";
 import { DealFilters } from "@features/deals/definitions";
 
 export async function getDeals(
@@ -51,12 +56,17 @@ export async function getDealsAdmin(): Promise<DealDto[]> {
   return secureGetData(apiPath("/deals/admin/all"));
 }
 
+export async function previewDeal(
+  body: PreviewDealRequest,
+  options: RequestInit = {}
+): Promise<PreviewDealResult> {
+  return securePostData(apiPath("/deals/preview"), body, options);
+}
+
 export async function createDeal(
   dealData: CreateDealRequest
 ): Promise<DealDto> {
-  return securePostData(apiPath("/deals"), {
-    ...dealData,
-  });
+  return securePostData(apiPath("/deals"), dealData);
 }
 
 export async function getDeal(id: string): Promise<DealDto> {
@@ -65,6 +75,10 @@ export async function getDeal(id: string): Promise<DealDto> {
 
 export async function updateDeal(id: string, body: UpdateDealRequest) {
   return securePatchData(apiPath(`/deals/${id}`), body);
+}
+
+export async function updateDealStage(id: string, stageId: string) {
+  return securePatchData(apiPath(`/deals/${id}/stage`), { stageId });
 }
 
 export async function deleteDeal(id: string) {

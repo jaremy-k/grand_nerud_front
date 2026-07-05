@@ -5,8 +5,11 @@ import { formatCurrency } from "@/lib/formatters";
 import { isSalesService } from "@/config/services";
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
-import { CreateDealRequest } from "@definitions/requests";
-import { useDataFormHook } from "@features/deals/hooks/deal-form";
+import { CreateDealRequest, UpdateDealRequest } from "@definitions/requests";
+import {
+  formatDeliveredQuantity,
+  useDataFormHook,
+} from "@features/deals/hooks/deal-form";
 import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
 import AdditionalInformationSection from "./additional-information";
@@ -17,7 +20,8 @@ import PrimaryInformationSection from "./primary-information";
 export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
   const navigate = useNavigate();
   const formData = useDataFormHook(defaultDeal);
-  const { dealFormData, calculatedData, taxPercent, isDirty } = formData;
+  const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services } =
+    formData;
   const [submiting, setSubmiting] = useState(false);
   const [error, setError] = useState<string | null>(); //eslint-disable-line @typescript-eslint/no-unused-vars
 
@@ -38,27 +42,16 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
     }
 
     try {
-      const dataToSend: CreateDealRequest = {
-        serviceId: dealFormData.serviceId,
-        customerId: dealFormData.customerId,
+      const shared = {
         stageId: dealFormData.stageId,
         materialId: dealFormData.materialId,
         unitMeasurement: dealFormData.unitMeasurement,
         quantity: Number(dealFormData.quantity),
         methodReceiving: dealFormData.methodReceiving,
         paymentMethod: dealFormData.paymentMethod,
-
         amountPurchaseUnit: Number(dealFormData.amountPurchaseUnit),
-        amountPurchaseTotal: calculatedData.amountPurchaseTotal,
         amountSalesUnit: Number(dealFormData.amountSalesUnit),
-        amountSalesTotal: calculatedData.amountSalesTotal,
         amountDelivery: Number(dealFormData.amountDelivery),
-        companyProfit: calculatedData.companyProfit,
-        totalAmount: calculatedData.amountSalesTotal,
-        managerProfit: calculatedData.managerProfit,
-        ndsAmount: calculatedData.taxAmount,
-        ndsPercent: taxPercent,
-
         shippingAddress: dealFormData.shippingAddress,
         deliveryAddress: dealFormData.deliveryAddress,
         notes: dealFormData.notes,
@@ -67,28 +60,21 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
           name: v.name,
           amount: Number(v.amount),
         })),
-        deliveredQuantity: dealFormData.deliveredQuantity
-          .filter((dq) => dq.date && dq.quantity)
-          .map((dq) => {
-            const amountPurchaseNum = dq.amountPurchase
-              ? Number(dq.amountPurchase)
-              : undefined;
-            return {
-              quantity: Number(dq.quantity),
-              unit: dealFormData.unitMeasurement,
-              date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
-                .toString()
-                .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
-              ...(amountPurchaseNum != null && !Number.isNaN(amountPurchaseNum)
-                ? { amountPurchase: amountPurchaseNum }
-                : {}),
-            };
-          }),
+        deliveredQuantity: formatDeliveredQuantity(
+          dealFormData.deliveredQuantity,
+          dealFormData.unitMeasurement
+        ),
       };
 
       if (!!defaultDeal && defaultDeal._id) {
+        const dataToSend: UpdateDealRequest = shared;
         await dealsService.updateDeal(defaultDeal._id, dataToSend);
       } else {
+        const dataToSend: CreateDealRequest = {
+          ...shared,
+          serviceId: dealFormData.serviceId,
+          customerId: dealFormData.customerId,
+        };
         await dealsService.createDeal(dataToSend);
       }
       navigate("/deals");
@@ -104,22 +90,16 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       ? calculatedData.amountSalesTotal / (1 + taxPercent)
       : calculatedData.amountSalesTotal;
 
-  const showSalesFields = isSalesService(dealFormData.serviceId);
+  const showSalesFields = isSalesService(dealFormData.serviceId, services);
 
   const showSummary =
     dealFormData.serviceId && dealFormData.customerId;
 
-  const managerSharePercent =
-    (Number(dealFormData.managerShare) * 100).toFixed(0);
-  const extraExpensesSum = dealFormData.extraExpenses.reduce(
-    (s, e) => s + Number(e.amount || 0),
-    0
-  );
+  const managerSharePercent = (managerShare * 100).toFixed(0);
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
-        {/* Основная колонка — поля формы; отступ снизу на мобиле под фиксированную панель */}
         <div className="min-w-0 space-y-6 pb-[380px] xl:pb-0">
           <PrimaryInformationSection
             formData={formData}
@@ -130,7 +110,6 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
           <AdditionalInformationSection formData={formData} />
         </div>
 
-        {/* Боковая панель — итог по сделке: на мобиле фиксирована внизу, на xl — липкая справа */}
         {showSummary && (
           <aside className="fixed bottom-0 left-0 right-0 z-10 mt-6 border-t bg-card shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] xl:bottom-auto xl:mt-0 xl:border-t-0 xl:shadow-none xl:sticky xl:top-4">
             <div className="max-h-[70dvh] overflow-y-auto rounded-t-xl border-x border-t border-b-0 bg-card p-4 xl:max-h-none xl:rounded-xl xl:border xl:border-b xl:p-5 xl:shadow-sm">

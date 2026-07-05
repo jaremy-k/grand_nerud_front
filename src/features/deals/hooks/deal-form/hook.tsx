@@ -1,16 +1,13 @@
 "use client";
 
-import useAuthContext from "@/contexts/auth-context";
 import {
   isSalesService,
   isTransportService,
 } from "@/config/services";
-import {
-  actualProfitCalculator,
-  dealCalculator,
-} from "@/lib/calculators";
 import { useDebounce } from "@/lib/debouncer";
-import { DealDto } from "@definitions/dto";
+import { dealsService, servicesService } from "@/services";
+import { DealDto, ServiceDto } from "@definitions/dto";
+import { PreviewDealResult } from "@definitions/requests";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DealDataFormHook,
@@ -20,7 +17,20 @@ import {
   ReceivingMethod,
 } from "./types";
 
-const NDS_PERCENT = 0.22;
+const EMPTY_CALC: PreviewDealResult = {
+  taxAmount: 0,
+  companyProfit: 0,
+  managerProfit: 0,
+  amountPurchaseTotal: 0,
+  amountSalesTotal: 0,
+  actualCompanyProfit: 0,
+  actualAmountSalesTotal: 0,
+  actualAmountPurchaseTotal: 0,
+  totalDeliveredQuantity: 0,
+  ndsPercent: 0,
+  managerShare: 0,
+  totalAmount: 0,
+};
 
 function dealToFormData(d: DealDto): DealFormData {
   return {
@@ -30,7 +40,6 @@ function dealToFormData(d: DealDto): DealFormData {
     materialId: d.materialId ?? undefined,
     unitMeasurement: (d.unitMeasurement as MeasurementUnit) || "тонна",
     quantity: String(d.quantity || "0"),
-    managerShare: "0",
     amountPurchaseUnit: String(d.amountPurchaseUnit || "0"),
     amountSalesUnit: String(d.amountSalesUnit || "0"),
     amountDelivery: String(d.amountDelivery || "0"),
@@ -96,11 +105,32 @@ function isFormDataEqual(a: DealFormData, b: DealFormData): boolean {
   return true;
 }
 
+function formatDeliveredQuantity(
+  items: DealFormData["deliveredQuantity"],
+  unitMeasurement: MeasurementUnit
+) {
+  return items
+    .filter((dq) => dq.date && dq.quantity)
+    .map((dq) => {
+      const amountPurchaseNum = dq.amountPurchase
+        ? Number(dq.amountPurchase)
+        : undefined;
+      return {
+        quantity: Number(dq.quantity),
+        unit: unitMeasurement,
+        date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
+        ...(amountPurchaseNum != null && !Number.isNaN(amountPurchaseNum)
+          ? { amountPurchase: amountPurchaseNum }
+          : {}),
+      };
+    });
+}
+
 export default function useDataFormHook(
   defaultDeal?: DealDto
 ): DealDataFormHook {
-  const { user } = useAuthContext();
-
   const [dealFormData, setDealFormData] = useState<DealFormData>({
     serviceId: defaultDeal?.serviceId || undefined,
     customerId: defaultDeal?.customerId || undefined,
@@ -109,7 +139,6 @@ export default function useDataFormHook(
     unitMeasurement:
       (defaultDeal?.unitMeasurement as MeasurementUnit) || "тонна",
     quantity: String(defaultDeal?.quantity || "0"),
-    managerShare: "0",
     amountPurchaseUnit: String(defaultDeal?.amountPurchaseUnit || "0"),
     amountSalesUnit: String(defaultDeal?.amountSalesUnit || "0"),
     amountDelivery: String(defaultDeal?.amountDelivery || "0"),
@@ -134,6 +163,13 @@ export default function useDataFormHook(
       })) || [],
   });
 
+  const [calculatedData, setCalculatedData] = useState(EMPTY_CALC);
+  const [services, setServices] = useState<ServiceDto[]>([]);
+
+  useEffect(() => {
+    servicesService.getServices().then(setServices).catch(() => setServices([]));
+  }, []);
+
   const updateField = useCallback(
     (key: keyof DealFormData, value: DealFormData[keyof DealFormData]) => {
       setDealFormData((c) => ({
@@ -144,94 +180,70 @@ export default function useDataFormHook(
     [setDealFormData]
   );
 
-  // Calculate totals with debounce
-  const debounced = useDebounce(
-    useMemo(
-      () => ({
-        quantity: dealFormData.quantity,
-        amountPurchaseUnit: dealFormData.amountPurchaseUnit,
-        amountSalesUnit: dealFormData.amountSalesUnit,
-        paymentMethod: dealFormData.paymentMethod,
-        amountDelivery: dealFormData.amountDelivery,
-        managerShare: dealFormData.managerShare,
-        extraExpenses: dealFormData.extraExpenses,
-      }),
-      [
-        dealFormData.quantity,
-        dealFormData.amountPurchaseUnit,
-        dealFormData.amountSalesUnit,
-        dealFormData.paymentMethod,
-        dealFormData.amountDelivery,
-        dealFormData.managerShare,
-        dealFormData.extraExpenses,
-      ]
-    ),
-    300
+  const previewPayload = useMemo(
+    () => ({
+      quantity: dealFormData.quantity,
+      amountPurchaseUnit: dealFormData.amountPurchaseUnit,
+      amountSalesUnit: dealFormData.amountSalesUnit,
+      paymentMethod: dealFormData.paymentMethod,
+      amountDelivery: dealFormData.amountDelivery,
+      extraExpenses: dealFormData.extraExpenses,
+      deliveredQuantity: dealFormData.deliveredQuantity,
+      unitMeasurement: dealFormData.unitMeasurement,
+    }),
+    [
+      dealFormData.quantity,
+      dealFormData.amountPurchaseUnit,
+      dealFormData.amountSalesUnit,
+      dealFormData.paymentMethod,
+      dealFormData.amountDelivery,
+      dealFormData.extraExpenses,
+      dealFormData.deliveredQuantity,
+      dealFormData.unitMeasurement,
+    ]
   );
-  const deliveredItemsForCalc = useMemo(
-    () =>
-      dealFormData.deliveredQuantity
-        .filter((dq) => Number(dq.quantity || 0) > 0)
-        .map((dq) => ({
-          quantity: Number(dq.quantity),
-          amountPurchase: dq.amountPurchase
-            ? Number(dq.amountPurchase)
-            : undefined,
-        })),
-    [dealFormData.deliveredQuantity]
-  );
-  const totalDeliveredQuantity = useMemo(
-    () =>
-      deliveredItemsForCalc.reduce((sum, d) => sum + d.quantity, 0),
-    [deliveredItemsForCalc]
-  );
+  const debouncedPreview = useDebounce(previewPayload, 300);
 
-  const calculatedData = useMemo(() => {
-    const planned = dealCalculator(
-      Number(debounced.quantity),
-      Number(debounced.amountPurchaseUnit),
-      Number(debounced.amountSalesUnit),
-      Number(debounced.managerShare),
-      dealFormData.paymentMethod === "безналичный расчет" ? NDS_PERCENT : 0,
-      Number(debounced.amountDelivery),
-      debounced.extraExpenses
-    );
-    const actual = actualProfitCalculator(
-      deliveredItemsForCalc,
-      Number(debounced.quantity),
-      Number(debounced.amountPurchaseUnit),
-      Number(debounced.amountSalesUnit),
-      Number(debounced.amountDelivery),
-      debounced.extraExpenses
-    );
-    return {
-      ...planned,
-      actualCompanyProfit: actual.actualCompanyProfit,
-      actualAmountSalesTotal: actual.actualAmountSalesTotal,
-      totalDeliveredQuantity,
-    };
-  }, [
-    debounced,
-    dealFormData.paymentMethod,
-    deliveredItemsForCalc,
-  ]);
+  useEffect(() => {
+    const controller = new AbortController();
+    dealsService
+      .previewDeal(
+        {
+          quantity: Number(debouncedPreview.quantity),
+          amountPurchaseUnit: Number(debouncedPreview.amountPurchaseUnit),
+          amountSalesUnit: Number(debouncedPreview.amountSalesUnit),
+          amountDelivery: Number(debouncedPreview.amountDelivery),
+          paymentMethod: debouncedPreview.paymentMethod,
+          addExpenses: debouncedPreview.extraExpenses.map((v) => ({
+            name: v.name,
+            amount: Number(v.amount || 0),
+          })),
+          deliveredQuantity: formatDeliveredQuantity(
+            debouncedPreview.deliveredQuantity,
+            debouncedPreview.unitMeasurement
+          ),
+        },
+        { signal: controller.signal }
+      )
+      .then(setCalculatedData)
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [debouncedPreview]);
 
   const prevServiceIdRef = useRef<string | undefined>(defaultDeal?.serviceId);
 
-  // При смене услуги: сбрасываем поля только при переходе между разными типами
-  // (продажа ↔ доставка). При переключении Продажа ↔ Продажа с доставкой — сохраняем данные.
   useEffect(() => {
     if (!dealFormData.serviceId) return;
 
     const prevServiceId = prevServiceIdRef.current;
     const currServiceId = dealFormData.serviceId;
-    const prevWasSales = isSalesService(prevServiceId);
-    const currIsSales = isSalesService(currServiceId);
-    const currIsTransport = isTransportService(currServiceId);
+    const prevWasSales = isSalesService(prevServiceId, services);
+    const currIsSales = isSalesService(currServiceId, services);
+    const currIsTransport = isTransportService(currServiceId, services);
 
     prevServiceIdRef.current = currServiceId;
 
-    // Редактирование: если услуга не менялась — синхронизируем с defaultDeal
     if (defaultDeal && defaultDeal.serviceId === currServiceId) {
       setDealFormData((c) => ({
         ...c,
@@ -261,7 +273,6 @@ export default function useDataFormHook(
       return;
     }
 
-    // Смена типа услуги: сбрасываем только при переходе продажа ↔ доставка
     const switchedBetweenSalesAndTransport = prevWasSales !== currIsSales;
 
     if (switchedBetweenSalesAndTransport) {
@@ -281,18 +292,17 @@ export default function useDataFormHook(
         ossig: false,
       }));
     }
-  }, [dealFormData.serviceId, defaultDeal]);
+  }, [dealFormData.serviceId, defaultDeal, services]);
 
-  // Автоматически устанавливаем "доставка" для услуги перевозки
   useEffect(() => {
     if (
       dealFormData.serviceId &&
-      isTransportService(dealFormData.serviceId) &&
+      isTransportService(dealFormData.serviceId, services) &&
       dealFormData.methodReceiving !== "доставка"
     ) {
       updateField("methodReceiving", "доставка");
     }
-  }, [dealFormData.serviceId, dealFormData.methodReceiving, updateField]);
+  }, [dealFormData.serviceId, dealFormData.methodReceiving, updateField, services]);
 
   useEffect(() => {
     if (
@@ -307,15 +317,6 @@ export default function useDataFormHook(
     updateField("amountDelivery", "0");
   }, [dealFormData.methodReceiving, defaultDeal, updateField]);
 
-  useEffect(() => {
-    updateField(
-      "managerShare",
-      dealFormData.paymentMethod === "наличный расчет"
-        ? String(user?.profit?.cash.alone || "0.05")
-        : String(user?.profit?.nonCash.alone || "0.05")
-    );
-  }, [dealFormData.paymentMethod, user, updateField]);
-
   const initialFormData = useMemo(
     () => (defaultDeal ? dealToFormData(defaultDeal) : null),
     [defaultDeal?._id]
@@ -327,9 +328,12 @@ export default function useDataFormHook(
   return {
     dealFormData,
     updateField,
-
-    taxPercent: NDS_PERCENT,
+    taxPercent: calculatedData.ndsPercent,
+    managerShare: calculatedData.managerShare,
     calculatedData,
     isDirty,
+    services,
   };
 }
+
+export { formatDeliveredQuantity };

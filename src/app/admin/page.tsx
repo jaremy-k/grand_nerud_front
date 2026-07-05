@@ -111,7 +111,12 @@ export default function AdminDashboardPage() {
 
   if (!user) {
     return (
-      <Page breadcrumbLinks={[{ label: "Статистика", href: "/admin" }]}>
+      <Page
+        breadcrumbLinks={[
+          { label: "Сделки", href: "/deals" },
+          { label: "Статистика", href: "/admin" },
+        ]}
+      >
         <div className="py-10 text-center text-muted-foreground">
           Войдите для доступа
         </div>

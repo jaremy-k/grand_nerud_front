@@ -1,7 +1,6 @@
 "use client";
 
 import { Page } from "@/components/blocks";
-import { actualProfitCalculator } from "@/lib/calculators";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -81,26 +80,9 @@ export default function DealDetailPage() {
     return <div className="text-center py-10">Сделка не найдена</div>;
   }
 
-  const deliveredItems =
-    deal.deliveredQuantity?.map((dq) => ({
-      quantity: dq.quantity || 0,
-      amountPurchase: dq.amountPurchase,
-    })) ?? [];
-  const totalDelivered = deliveredItems.reduce((s, d) => s + d.quantity, 0);
+  const totalDelivered = deal.totalDeliveredQuantity ?? 0;
   const actualProfit =
-    totalDelivered > 0 && deal.quantity > 0
-      ? actualProfitCalculator(
-          deliveredItems,
-          deal.quantity,
-          deal.amountPurchaseUnit ?? 0,
-          deal.amountSalesUnit ?? 0,
-          deal.amountDelivery ?? 0,
-          (deal.addExpenses ?? []).map((e) => ({
-            name: e.name,
-            amount: String(e.amount),
-          }))
-        )
-      : null;
+    totalDelivered > 0 ? deal.actualCompanyProfit ?? 0 : null;
 
   return (
     <Page
@@ -115,7 +97,7 @@ export default function DealDetailPage() {
         },
       ]}
     >
-      {actualProfit && (
+      {actualProfit != null && (
         <div className="mb-6 flex justify-end">
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
             <div className="flex gap-6">
@@ -132,7 +114,7 @@ export default function DealDetailPage() {
                   Фактическая прибыль
                 </p>
                 <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(actualProfit.actualCompanyProfit)}
+                  {formatCurrency(actualProfit)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Доставлено: {totalDelivered.toLocaleString("ru-RU")}{" "}

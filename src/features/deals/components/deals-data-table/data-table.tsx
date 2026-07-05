@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { buildUpdateDealRequestFromDeal } from "@/lib/deals/build-update-request";
 import { useDebounce } from "@/lib/debouncer";
 import { companiesService, dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
@@ -191,9 +190,7 @@ export default function DealsDataTable({
     async (dealId: string, stageId: string) => {
       setUpdatingStageId(dealId);
       try {
-        const deal = await dealsService.getDeal(dealId);
-        const body = buildUpdateDealRequestFromDeal(deal, { stageId });
-        await dealsService.updateDeal(dealId, body);
+        await dealsService.updateDealStage(dealId, stageId);
         const data = await dealsService.getDeals({
           pageSize,
           page: currentPage,

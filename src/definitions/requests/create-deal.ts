@@ -7,21 +7,9 @@ export default interface CreateDealRequest {
   unitMeasurement: "тонна" | "куб.м" | "шт";
 
   quantity: number;
-
   amountPurchaseUnit: number;
-  amountPurchaseTotal: number;
-
   amountSalesUnit: number;
-  amountSalesTotal: number;
-
   amountDelivery: number;
-  companyProfit: number;
-
-  ndsAmount: number;
-  ndsPercent: number;
-
-  totalAmount: number;
-  managerProfit: number;
 
   paymentMethod: "наличный расчет" | "безналичный расчет";
 
@@ -38,5 +26,5 @@ export default interface CreateDealRequest {
     unit: string;
     date: string;
     amountPurchase?: number;
-  }>; // date format: "YYYY-MM-DD 00:00"
+  }>;
 }

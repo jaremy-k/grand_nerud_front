@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5003}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5007}
         VITE_COOKIE_DOMAIN: ${VITE_COOKIE_DOMAIN:-.worldautogroup.ru}
     ports:
       - "${PORT:-3000}:80"

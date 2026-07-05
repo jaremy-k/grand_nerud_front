@@ -28,6 +28,12 @@ export default interface DealDto {
   totalAmount: number;
   managerProfit: number;
 
+  actualCompanyProfit?: number;
+  actualAmountSalesTotal?: number;
+  actualAmountPurchaseTotal?: number;
+  totalDeliveredQuantity?: number;
+  managerShare?: number;
+
   paymentMethod: string;
 
   shippingAddress: string | null;

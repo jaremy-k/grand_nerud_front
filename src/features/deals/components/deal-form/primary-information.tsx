@@ -1,6 +1,7 @@
 "use client";
 
 import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
+import { MaterialSelect } from "@/components/inputs/material-input/material-select";
 import { isSalesService } from "@/config/services";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -21,11 +22,9 @@ import { numberInputFormatter } from "@/lib/input-formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
 import { getStageDotClass } from "@features/deals/utils/stage-colors";
 import {
-  materialsService,
-  servicesService,
   stagesService,
 } from "@/services";
-import { DealDto, MaterialDto, ServiceDto, StageDto } from "@definitions/dto";
+import { DealDto, StageDto } from "@definitions/dto";
 import {
   DealDataFormHook,
   MeasurementUnit,
@@ -41,26 +40,24 @@ export default function PrimaryInformationSection({
   formData: DealDataFormHook;
   defaultDeal?: DealDto;
 }) {
-  const { dealFormData, updateField } = formData;
-  const [services, setServices] = useState<ServiceDto[]>([]);
+  const { dealFormData, updateField, services } = formData;
   const [stages, setStages] = useState<StageDto[]>([]);
-  const [materials, setMaterials] = useState<MaterialDto[]>([]);
 
   useEffect(() => {
-    Promise.all([
-      servicesService.getServices(),
-      stagesService.getStages(),
-      materialsService.getMaterials(),
-    ])
-      .then(([servicesData, stagesData, materialsData]) => {
-        setServices(servicesData);
-        setStages(stagesData);
-        setMaterials(materialsData);
+    stagesService
+      .getStages()
+      .then((stagesData) => {
+        setStages(
+          [...stagesData].sort((a, b) => {
+            const aOrder = a.order ?? Number.MAX_SAFE_INTEGER;
+            const bOrder = b.order ?? Number.MAX_SAFE_INTEGER;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            return a.name.localeCompare(b.name);
+          })
+        );
       })
       .catch(() => {
-        setServices([]);
         setStages([]);
-        setMaterials([]);
       });
   }, []);
 
@@ -181,27 +178,11 @@ export default function PrimaryInformationSection({
                   >
                     Материал{labelRequired}
                   </FieldLabel>
-                  <Select
-                    name="material"
+                  <MaterialSelect
                     value={dealFormData.materialId}
-                    onValueChange={(val) => updateField("materialId", val)}
-                  >
-                    <SelectTrigger className={inputClass}>
-                      <SelectValue placeholder="Выберите материал" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {materials.map((material) => (
-                          <SelectItem
-                            key={`material-${material._id}`}
-                            value={material._id}
-                          >
-                            {capitalizeFirstLetter(material.name)}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                    onChange={(val) => updateField("materialId", val)}
+                    className={inputClass}
+                  />
                 </Field>
               </div>
             </div>
@@ -291,7 +272,7 @@ export default function PrimaryInformationSection({
               </div>
             </div>
 
-            {isSalesService(dealFormData.serviceId) && (
+            {isSalesService(dealFormData.serviceId, services) && (
               <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   Продажа

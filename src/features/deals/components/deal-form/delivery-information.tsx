@@ -32,7 +32,7 @@ export default function DeliveryInformationSection({
 }: {
   formData: DealDataFormHook;
 }) {
-  const { dealFormData, updateField } = formData;
+  const { dealFormData, updateField, services } = formData;
 
   if (!dealFormData.serviceId || !dealFormData.customerId) {
     return null;
@@ -48,7 +48,7 @@ export default function DeliveryInformationSection({
       icon={TruckIcon}
     >
       <FieldGroup className="gap-4">
-        {isTransportService(dealFormData.serviceId) && (
+        {isTransportService(dealFormData.serviceId, services) && (
           <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
             <Switch
               checked={dealFormData.ossig}
@@ -63,7 +63,7 @@ export default function DeliveryInformationSection({
             </Label>
           </div>
         )}
-        {isSalesService(dealFormData.serviceId) && (
+        {isSalesService(dealFormData.serviceId, services) && (
           <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
             <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Способ получения
@@ -147,7 +147,7 @@ export default function DeliveryInformationSection({
               />
             </Field>
             {(dealFormData.methodReceiving === "доставка" ||
-              isTransportService(dealFormData.serviceId)) && (
+              isTransportService(dealFormData.serviceId, services)) && (
               <Field>
                 <FieldLabel
                   htmlFor="deliveryAddress"
@@ -169,7 +169,7 @@ export default function DeliveryInformationSection({
             )}
           </div>
         </div>
-        {isTransportService(dealFormData.serviceId) && (
+        {isTransportService(dealFormData.serviceId, services) && (
           <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
             <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Стоимость доставки

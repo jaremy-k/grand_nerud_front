@@ -1,26 +1,41 @@
-/**
- * Идентификаторы услуг (при необходимости обновляются при изменении бэкенда).
- * Используются для условной логики в формах (продажа, перевозка и т.д.).
- */
-export const SERVICE_IDS = {
-  /** Продажа — показываются цены закупки/продажи, способ получения */
-  SALES: "687a88dfb6b13b70b6a575f3",
-  /** Продажа с доставкой — показываются те же поля, что и в продаже сырья */
-  SALES_WITH_DELIVERY: "698de8bf1c3ac72cbdc1ff5b",
-  /** Утилизация — те же поля, что и в продаже (сумма от клиента, закупка, доставка и т.д.) */
-  UTILIZATION: "687a88e6b6b13b70b6a575f4",
-  /** Доставка — показывается чекбокс ОССиГ, стоимость доставки и адрес доставки */
-  TRANSPORT: "687a88e9b6b13b70b6a575f5",
-} as const;
+import ServiceDto from "@definitions/dto/service";
 
-export function isSalesService(serviceId: string | undefined): boolean {
+export type ServiceKind =
+  | "sales"
+  | "sales_with_delivery"
+  | "utilization"
+  | "transport";
+
+export function getServiceKind(
+  services: ServiceDto[],
+  serviceId?: string
+): ServiceKind | undefined {
+  if (!serviceId) return undefined;
+  return services.find((service) => service._id === serviceId)?.kind;
+}
+
+export function isSalesKind(kind?: ServiceKind): boolean {
   return (
-    serviceId === SERVICE_IDS.SALES ||
-    serviceId === SERVICE_IDS.SALES_WITH_DELIVERY ||
-    serviceId === SERVICE_IDS.UTILIZATION
+    kind === "sales" ||
+    kind === "sales_with_delivery" ||
+    kind === "utilization"
   );
 }
 
-export function isTransportService(serviceId: string | undefined): boolean {
-  return serviceId === SERVICE_IDS.TRANSPORT;
+export function isTransportKind(kind?: ServiceKind): boolean {
+  return kind === "transport";
+}
+
+export function isSalesService(
+  serviceId: string | undefined,
+  services: ServiceDto[] = []
+): boolean {
+  return isSalesKind(getServiceKind(services, serviceId));
+}
+
+export function isTransportService(
+  serviceId: string | undefined,
+  services: ServiceDto[] = []
+): boolean {
+  return isTransportKind(getServiceKind(services, serviceId));
 }

@@ -14,7 +14,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import useAuthContext from "@/contexts/auth-context";
-import { BarChart3Icon, Handshake, House } from "lucide-react";
+import {
+  BarChart3Icon,
+  CalculatorIcon,
+  Handshake,
+  House,
+  UsersIcon,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import * as React from "react";
 import { NavUser } from "./footer";
@@ -30,8 +36,26 @@ const data = {
         {
           title: "Сделки",
           url: "/deals",
+          icon: Handshake,
         },
       ],
+    },
+  ],
+  adminNav: [
+    {
+      title: "Статистика",
+      url: "/admin",
+      icon: BarChart3Icon,
+    },
+    {
+      title: "Пользователи",
+      url: "/admin/users",
+      icon: UsersIcon,
+    },
+    {
+      title: "Конструктор формул",
+      url: "/admin/calculation-rules",
+      icon: CalculatorIcon,
     },
   ],
 };
@@ -65,26 +89,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
                       <Link to={item.url}>
-                        <Handshake />
+                        <item.icon />
                         {item.title}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-                {user?.admin && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === "/admin"}>
-                      <Link to="/admin">
-                        <BarChart3Icon />
-                        Статистика
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        {user?.admin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Администрирование</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {data.adminNav.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={pathname === item.url}>
+                      <Link to={item.url}>
+                        <item.icon />
+                        {item.title}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
