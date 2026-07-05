@@ -6,8 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DslReferencePanel } from "@/features/calculation-rules/components/dsl-reference-panel";
 import { FormulaFieldCard } from "@/features/calculation-rules/components/formula-field-card";
+import { TestResultsPanel } from "@/features/calculation-rules/components/test-results-panel";
+import {
+  buildLabelMap,
+  toNamedLabels,
+} from "@/features/calculation-rules/lib/formula-display";
 import useAuthContext from "@/contexts/auth-context";
-import { formatCurrency } from "@/lib/formatters";
 import {
   activateRule,
   CalculationRuleDto,
@@ -27,7 +31,7 @@ import {
   SaveIcon,
   ZapIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function emptyField(): FormulaField {
@@ -200,6 +204,20 @@ export default function CalculationRulesAdminPage() {
   const activeFieldLabel =
     activeField?.label?.trim() || activeField?.name || undefined;
 
+  const labelByName = useMemo(
+    () => buildLabelMap(fields, dslDocs?.variables),
+    [fields, dslDocs?.variables]
+  );
+
+  const ruleFieldLabels = useMemo(
+    () =>
+      fields.map((f) => ({
+        name: f.name,
+        label: f.label?.trim() || f.name,
+      })),
+    [fields]
+  );
+
   if (loading) {
     return (
       <Page
@@ -323,10 +341,8 @@ export default function CalculationRulesAdminPage() {
                 field={field}
                 index={index}
                 total={fields.length}
-                siblingFields={fields
-                  .filter((_, i) => i !== index)
-                  .map((f) => f.name)
-                  .filter(Boolean)}
+                siblingFields={toNamedLabels(fields, field.name)}
+                labelByName={labelByName}
                 testValue={testOutput?.[field.name]}
                 isActive={activeFieldIndex === index}
                 onFocus={() => setActiveFieldIndex(index)}
@@ -375,30 +391,14 @@ export default function CalculationRulesAdminPage() {
 
         <aside className="space-y-4">
           {testOutput && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <p className="mb-2 text-sm font-semibold">Результат теста</p>
-              <dl className="space-y-1.5 text-sm">
-                {Object.entries(testOutput).map(([key, value]) => (
-                  <div key={key} className="flex justify-between gap-2">
-                    <dt className="font-mono text-xs text-muted-foreground">
-                      {key}
-                    </dt>
-                    <dd className="tabular-nums">
-                      {Math.abs(value) > 1000
-                        ? formatCurrency(value)
-                        : value.toLocaleString("ru-RU", {
-                            maximumFractionDigits: 4,
-                          })}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            <TestResultsPanel results={testOutput} labelByName={labelByName} />
           )}
 
           {dslDocs && (
             <DslReferencePanel
               docs={dslDocs}
+              ruleFields={ruleFieldLabels}
+              activeFieldName={activeField?.name}
               onInsert={handleDslInsert}
               activeFieldLabel={activeFieldLabel}
             />

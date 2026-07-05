@@ -6,11 +6,13 @@ import { ReactNode } from "react";
 type ProtectedRouteProps = {
   children: ReactNode;
   adminOnly?: boolean;
+  managerOrAdmin?: boolean;
 };
 
 export function ProtectedRoute({
   children,
   adminOnly = false,
+  managerOrAdmin = false,
 }: ProtectedRouteProps) {
   const { user, loading } = useAuthContext();
   const location = useLocation();
@@ -28,6 +30,10 @@ export function ProtectedRoute({
   }
 
   if (adminOnly && !user.admin) {
+    return <Navigate to="/deals" replace />;
+  }
+
+  if (managerOrAdmin && !user.admin && !user.manager) {
     return <Navigate to="/deals" replace />;
   }
 

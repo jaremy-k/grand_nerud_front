@@ -40,6 +40,7 @@ type UserFormState = {
   lastName: string;
   fatherName: string;
   admin: boolean;
+  manager: boolean;
   profit: UserProfit;
 };
 
@@ -51,6 +52,7 @@ function emptyForm(): UserFormState {
     lastName: "",
     fatherName: "",
     admin: false,
+    manager: false,
     profit: profitToPercents({ ...DEFAULT_USER_PROFIT }),
   };
 }
@@ -63,6 +65,7 @@ function userToForm(user: UserDto): UserFormState {
     lastName: user.lastName ?? "",
     fatherName: user.fatherName ?? "",
     admin: Boolean(user.admin),
+    manager: Boolean(user.manager),
     profit: user.profit ?? { ...DEFAULT_USER_PROFIT },
   };
 }
@@ -70,6 +73,41 @@ function userToForm(user: UserDto): UserFormState {
 function displayName(user: UserDto): string {
   const parts = [user.lastName, user.name, user.fatherName].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : "—";
+}
+
+function canManageUsers(user: UserDto | null): boolean {
+  return Boolean(user?.admin || user?.manager);
+}
+
+function RoleBadges({ user }: { user: UserDto }) {
+  const roles: Array<{ label: string; className: string }> = [];
+  if (user.admin) {
+    roles.push({
+      label: "Админ",
+      className: "bg-primary/10 text-primary",
+    });
+  }
+  if (user.manager) {
+    roles.push({
+      label: "Руководитель",
+      className: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    });
+  }
+  if (roles.length === 0) {
+    return <span className="text-muted-foreground text-sm">Пользователь</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.map((role) => (
+        <span
+          key={role.label}
+          className={`rounded px-2 py-0.5 text-xs font-medium ${role.className}`}
+        >
+          {role.label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function profitFromPercents(form: UserFormState): UserProfit {
@@ -154,6 +192,8 @@ function ProfitFields({
 export default function AdminUsersPage() {
   const { user } = useAuthContext();
   const navigate = useNavigate();
+  const isAdmin = Boolean(user?.admin);
+  const canManage = canManageUsers(user);
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -180,12 +220,12 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    if (!user?.admin) {
+    if (!canManage) {
       navigate("/deals", { replace: true });
       return;
     }
     void load();
-  }, [user?.admin, navigate, load]);
+  }, [canManage, navigate, load]);
 
   const openCreate = () => {
     setEditingUser(null);

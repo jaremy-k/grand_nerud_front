@@ -15,13 +15,20 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  humanizeFormula,
+  NamedLabel,
+  resolveLabel,
+} from "../lib/formula-display";
 import { FormulaEditor } from "./formula-editor";
+import { FormulaPreview } from "./formula-preview";
 
 interface FormulaFieldCardProps {
   field: FormulaField;
   index: number;
   total: number;
-  siblingFields: string[];
+  siblingFields: NamedLabel[];
+  labelByName: Record<string, string>;
   testValue?: number;
   isActive: boolean;
   onFocus: () => void;
@@ -44,6 +51,7 @@ export function FormulaFieldCard({
   index,
   total,
   siblingFields,
+  labelByName,
   testValue,
   isActive,
   onFocus,
@@ -56,6 +64,7 @@ export function FormulaFieldCard({
   const [collapsed, setCollapsed] = useState(false);
 
   const displayTitle = field.label?.trim() || field.name || `Поле ${index + 1}`;
+  const readableExpression = humanizeFormula(field.expression, labelByName);
 
   return (
     <div
@@ -65,7 +74,12 @@ export function FormulaFieldCard({
       )}
     >
       <div className="flex items-start gap-2 p-4 pb-0">
-        <GripVerticalIcon className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50" />
+        <div className="mt-0.5 flex flex-col items-center gap-0.5">
+          <GripVerticalIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+          <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+            {index + 1}
+          </span>
+        </div>
         <button
           type="button"
           className="min-w-0 flex-1 text-left"
@@ -73,9 +87,11 @@ export function FormulaFieldCard({
         >
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{displayTitle}</span>
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
-              {field.name}
-            </code>
+            {field.label?.trim() && field.name && (
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                {field.name}
+              </code>
+            )}
             {field.store && (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                 <DatabaseIcon className="h-3 w-3" />
@@ -83,14 +99,16 @@ export function FormulaFieldCard({
               </span>
             )}
             {testValue !== undefined && (
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
                 = {formatTestValue(testValue)}
               </span>
             )}
           </div>
           {collapsed && field.expression && (
-            <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-              {field.expression}
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {readableExpression !== field.expression
+                ? readableExpression
+                : field.expression}
             </p>
           )}
         </button>
@@ -149,22 +167,27 @@ export function FormulaFieldCard({
         <div className="space-y-4 p-4 pt-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Имя поля (camelCase)</Label>
-              <Input
-                value={field.name}
-                onChange={(e) => onChange({ name: e.target.value })}
-                onFocus={onFocus}
-                className="mt-1 font-mono text-sm"
-              />
-            </div>
-            <div>
-              <Label>Подпись</Label>
+              <Label>Подпись для отображения</Label>
               <Input
                 value={field.label || ""}
                 onChange={(e) => onChange({ label: e.target.value })}
                 onFocus={onFocus}
+                placeholder="Например: Прибыль компании"
                 className="mt-1"
               />
+            </div>
+            <div>
+              <Label>Техническое имя (camelCase)</Label>
+              <Input
+                value={field.name}
+                onChange={(e) => onChange({ name: e.target.value })}
+                onFocus={onFocus}
+                placeholder="companyProfit"
+                className="mt-1 font-mono text-sm"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Используется в формулах и API
+              </p>
             </div>
           </div>
 
@@ -177,12 +200,22 @@ export function FormulaFieldCard({
             siblingFields={siblingFields}
           />
 
-          <div className="flex items-center gap-2">
+          <FormulaPreview
+            expression={field.expression}
+            labelByName={labelByName}
+          />
+
+          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
             <Switch
               checked={field.store}
               onCheckedChange={(store) => onChange({ store })}
             />
-            <Label className="text-sm font-normal">Сохранять в сделке</Label>
+            <div>
+              <Label className="text-sm font-normal">Сохранять в сделке</Label>
+              <p className="text-xs text-muted-foreground">
+                Значение «{resolveLabel(field.name, labelByName)}» будет записано в карточку сделки
+              </p>
+            </div>
           </div>
         </div>
       )}

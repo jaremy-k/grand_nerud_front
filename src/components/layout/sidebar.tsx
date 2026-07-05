@@ -48,14 +48,16 @@ const data = {
       icon: BarChart3Icon,
     },
     {
-      title: "Пользователи",
-      url: "/admin/users",
-      icon: UsersIcon,
-    },
-    {
       title: "Конструктор формул",
       url: "/admin/calculation-rules",
       icon: CalculatorIcon,
+    },
+  ],
+  managerNav: [
+    {
+      title: "Пользователи",
+      url: "/admin/users",
+      icon: UsersIcon,
     },
   ],
 };
@@ -99,21 +101,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
-        {user?.admin && (
+        {(user?.admin || user?.manager) && (
           <SidebarGroup>
             <SidebarGroupLabel>Администрирование</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {data.adminNav.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link to={item.url}>
-                        <item.icon />
-                        {item.title}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {user?.admin &&
+                  data.adminNav.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={pathname === item.url}
+                      >
+                        <Link to={item.url}>
+                          <item.icon />
+                          {item.title}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                {(user?.admin || user?.manager) &&
+                  data.managerNav.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={pathname === item.url}
+                      >
+                        <Link to={item.url}>
+                          <item.icon />
+                          {item.title}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

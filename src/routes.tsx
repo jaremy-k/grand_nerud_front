@@ -59,7 +59,7 @@ export function AppRoutes() {
       <Route
         path="/admin/users"
         element={
-          <ProtectedRoute adminOnly>
+          <ProtectedRoute managerOrAdmin>
             <AdminUsersPage />
           </ProtectedRoute>
         }

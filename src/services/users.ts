@@ -11,6 +11,7 @@ export type CreateUserRequest = {
   lastName?: string;
   fatherName?: string;
   admin?: boolean;
+  manager?: boolean;
   profit?: UserProfit;
 };
 
@@ -21,6 +22,7 @@ export type UpdateUserRequest = {
   lastName?: string;
   fatherName?: string;
   admin?: boolean;
+  manager?: boolean;
   profit?: UserProfit;
 };
 

@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Maximize2Icon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { NamedLabel } from "../lib/formula-display";
 import { insertAtCursor } from "../lib/insert-at-cursor";
 
 const OPERATORS: { label: string; insert: string; title?: string }[] = [
@@ -28,9 +29,9 @@ const OPERATORS: { label: string; insert: string; title?: string }[] = [
   { label: ")", insert: ")" },
   { label: "==", insert: " == " },
   { label: "!=", insert: " != " },
-  { label: "and", insert: " and " },
-  { label: "or", insert: " or " },
-  { label: "if", insert: "if  else ", title: "Условие if … else …" },
+  { label: "and", insert: " and ", title: "Логическое И" },
+  { label: "or", insert: " or ", title: "Логическое ИЛИ" },
+  { label: "if", insert: "if  else ", title: "Условие: if … else …" },
 ];
 
 interface FormulaEditorProps {
@@ -41,7 +42,7 @@ interface FormulaEditorProps {
   onRegisterInsert?: (
     handler: ((text: string, cursorOffset?: number) => void) | null
   ) => void;
-  siblingFields?: string[];
+  siblingFields?: NamedLabel[];
   className?: string;
   label?: string;
 }
@@ -68,7 +69,7 @@ function FormulaTextarea({
       onChange={(e) => onChange(e.target.value)}
       onFocus={onFocus}
       spellCheck={false}
-      placeholder="Например: amountSalesTotal * (1 + taxPercent / 100)"
+      placeholder="Введите формулу или вставьте переменные из справочника справа"
       className={cn(
         "resize-y rounded-t-none border-t-0 bg-muted/30 font-mono text-sm leading-relaxed focus-visible:ring-1",
         minHeight,
@@ -86,7 +87,7 @@ export function FormulaEditor({
   onRegisterInsert,
   siblingFields = [],
   className,
-  label = "Формула",
+  label = "Формула (технический синтаксис)",
 }: FormulaEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -134,60 +135,73 @@ export function FormulaEditor({
   };
 
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-1 rounded-t-md border border-b-0 bg-muted/50 px-2 py-1.5">
-      {OPERATORS.map((op) => (
-        <Tooltip key={op.label}>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 min-w-7 px-1.5 font-mono text-xs"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                if (op.label === "if") {
-                  insert("if  else ", 3);
-                } else {
-                  insert(op.insert);
-                }
-              }}
-            >
-              {op.label}
-            </Button>
-          </TooltipTrigger>
-          {op.title && <TooltipContent>{op.title}</TooltipContent>}
-        </Tooltip>
-      ))}
+    <div className="space-y-1.5 rounded-t-md border border-b-0 bg-muted/50 px-2 py-2">
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Операторы
+        </span>
+        {OPERATORS.map((op) => (
+          <Tooltip key={op.label}>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 min-w-7 px-1.5 font-mono text-xs"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  if (op.label === "if") {
+                    insert("if  else ", 3);
+                  } else {
+                    insert(op.insert);
+                  }
+                }}
+              >
+                {op.label}
+              </Button>
+            </TooltipTrigger>
+            {op.title && <TooltipContent>{op.title}</TooltipContent>}
+          </Tooltip>
+        ))}
+      </div>
       {siblingFields.length > 0 && (
-        <>
-          <span className="mx-1 h-4 w-px bg-border" />
-          {siblingFields.map((name) => (
-            <Button
-              key={name}
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-7 px-2 font-mono text-xs"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => insert(name)}
-            >
-              {name}
-            </Button>
+        <div className="flex flex-wrap items-center gap-1 border-t border-border/50 pt-1.5">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Поля набора
+          </span>
+          {siblingFields.map((field) => (
+            <Tooltip key={field.name}>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 max-w-[180px] truncate px-2 text-xs font-normal"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => insert(field.name)}
+                >
+                  {field.label}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="font-mono">{field.name}</span>
+              </TooltipContent>
+            </Tooltip>
           ))}
-        </>
+        </div>
       )}
     </div>
   );
 
   return (
     <div className={cn("space-y-0", className)}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium leading-none">{label}</span>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-7 gap-1 text-xs text-muted-foreground"
+          className="h-7 shrink-0 gap-1 text-xs text-muted-foreground"
           onClick={() => setExpanded(true)}
         >
           <Maximize2Icon className="h-3.5 w-3.5" />

@@ -3,6 +3,7 @@ export default interface UserDto {
   _id?: string;
   email: string;
   admin: boolean | null;
+  manager?: boolean | null;
 
   name?: string | null;
   lastName?: string | null;
