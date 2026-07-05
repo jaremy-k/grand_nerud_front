@@ -11,10 +11,16 @@ import {
   buildLabelMap,
   toNamedLabels,
 } from "@/features/calculation-rules/lib/formula-display";
+import {
+  DEFAULT_INPUTS,
+  fieldsToSchema,
+  schemaToFields,
+} from "@/features/calculation-rules/lib/schema-conversion";
 import useAuthContext from "@/contexts/auth-context";
 import {
   activateRule,
   CalculationRuleDto,
+  CalculationRuleInputs,
   createRule,
   FormulaField,
   getActiveRule,
@@ -38,8 +44,8 @@ function emptyField(): FormulaField {
   return {
     name: "newField",
     label: "Новое поле",
-    expression: "0",
-    store: true,
+    expr: "0",
+    snapshot: false,
   };
 }
 
@@ -51,6 +57,14 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
+function applyRuleToState(rule: CalculationRuleDto) {
+  return {
+    name: rule.name,
+    fields: schemaToFields(rule.schema).map((f) => ({ ...f })),
+    inputs: rule.schema.inputs,
+  };
+}
+
 export default function CalculationRulesAdminPage() {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -59,6 +73,7 @@ export default function CalculationRulesAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [fields, setFields] = useState<FormulaField[]>([]);
+  const [inputs, setInputs] = useState<CalculationRuleInputs>(DEFAULT_INPUTS);
   const [dslDocs, setDslDocs] = useState<
     Awaited<ReturnType<typeof getDslDocs>> | null
   >(null);
@@ -74,6 +89,11 @@ export default function CalculationRulesAdminPage() {
     ((text: string, cursorOffset?: number) => void) | null
   >(null);
 
+  const buildSchema = useCallback(
+    () => fieldsToSchema(fields, inputs),
+    [fields, inputs]
+  );
+
   const load = useCallback(async (preserveId?: string | null) => {
     setLoading(true);
     try {
@@ -88,8 +108,10 @@ export default function CalculationRulesAdminPage() {
       const pickId = preserveId ?? selectedId;
       const current = rulesList.find((r) => r._id === pickId) || active;
       setSelectedId(current._id);
-      setName(current.name);
-      setFields(current.fields.map((f) => ({ ...f })));
+      const state = applyRuleToState(current);
+      setName(state.name);
+      setFields(state.fields);
+      setInputs(state.inputs);
     } catch (err) {
       setErrors([
         err instanceof Error ? err.message : "Не удалось загрузить правила",
@@ -110,8 +132,10 @@ export default function CalculationRulesAdminPage() {
 
   const selectRule = (rule: CalculationRuleDto) => {
     setSelectedId(rule._id);
-    setName(rule.name);
-    setFields(rule.fields.map((f) => ({ ...f })));
+    const state = applyRuleToState(rule);
+    setName(state.name);
+    setFields(state.fields);
+    setInputs(state.inputs);
     setActiveFieldIndex(0);
     setTestOutput(null);
     setErrors([]);
@@ -133,14 +157,14 @@ export default function CalculationRulesAdminPage() {
 
   const handleValidate = async () => {
     setMessage("");
-    const result = await validateRules(fields);
+    const result = await validateRules(buildSchema());
     setErrors(result.errors);
     setMessage(result.valid ? "Формулы корректны" : "Есть ошибки в формулах");
   };
 
   const handleTest = async () => {
     setMessage("");
-    const result = await testRules({ fields });
+    const result = await testRules({ schema: buildSchema() });
     setErrors(result.errors);
     setTestOutput(result.results);
     setMessage(result.errors.length ? "Ошибка теста" : "Тест выполнен");
@@ -151,7 +175,10 @@ export default function CalculationRulesAdminPage() {
     setSaving(true);
     setMessage("");
     try {
-      const updated = await updateRule(selectedId, { name, fields });
+      const updated = await updateRule(selectedId, {
+        name,
+        schema: buildSchema(),
+      });
       setMessage("Сохранено");
       setErrors([]);
       await load(selectedId);
@@ -169,7 +196,7 @@ export default function CalculationRulesAdminPage() {
     try {
       const created = await createRule({
         name: `${name} (копия)`,
-        fields,
+        schema: buildSchema(),
         isActive: false,
       });
       setMessage(`Создана версия v${created.version}`);
@@ -247,8 +274,8 @@ export default function CalculationRulesAdminPage() {
             Конструктор формул
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Python-подобный DSL. Расчёт выполняется на сервере; сделки сохраняют
-            версию правил и записанный НДС.
+            Python-подобный DSL. Расчёт на сервере; snapshot-поля фиксируются в
+            сделке при создании.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

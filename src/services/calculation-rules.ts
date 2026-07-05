@@ -5,12 +5,37 @@ import {
   securePostData,
 } from "@/lib/fetch";
 
+export interface CalculationRuleInputs {
+  deal: string[];
+  config: string[];
+  user: string[];
+}
+
+export interface FormulaDefinition {
+  expr: string;
+  snapshot?: boolean;
+}
+
+export interface FormulaMetadata {
+  label?: string | null;
+  description?: string | null;
+  group?: string | null;
+}
+
+export interface CalculationRuleSchema {
+  inputs: CalculationRuleInputs;
+  formulas: Record<string, FormulaDefinition>;
+  metadata: Record<string, FormulaMetadata>;
+}
+
+/** Плоское представление формулы для редактора UI */
 export interface FormulaField {
   name: string;
   label?: string | null;
   description?: string | null;
-  expression: string;
-  store: boolean;
+  group?: string | null;
+  expr: string;
+  snapshot: boolean;
 }
 
 export interface CalculationRuleDto {
@@ -18,7 +43,7 @@ export interface CalculationRuleDto {
   name: string;
   version: number;
   isActive: boolean;
-  fields: FormulaField[];
+  schema: CalculationRuleSchema;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,7 +73,7 @@ export async function listRules(): Promise<CalculationRuleDto[]> {
 
 export async function createRule(body: {
   name: string;
-  fields: FormulaField[];
+  schema: CalculationRuleSchema;
   isActive?: boolean;
 }): Promise<CalculationRuleDto> {
   return securePostData(apiPath("/calculation-rules"), body);
@@ -58,7 +83,7 @@ export async function updateRule(
   id: string,
   body: Partial<{
     name: string;
-    fields: FormulaField[];
+    schema: CalculationRuleSchema;
     isActive: boolean;
   }>
 ): Promise<CalculationRuleDto> {
@@ -70,14 +95,14 @@ export async function activateRule(id: string): Promise<CalculationRuleDto> {
 }
 
 export async function validateRules(
-  fields: FormulaField[]
+  schema: CalculationRuleSchema
 ): Promise<{ valid: boolean; errors: string[] }> {
-  return securePostData(apiPath("/calculation-rules/validate"), fields);
+  return securePostData(apiPath("/calculation-rules/validate"), schema);
 }
 
 export async function testRules(body: {
-  fields: FormulaField[];
-  context?: Record<string, unknown>;
+  schema: CalculationRuleSchema;
+  context?: Record<string, unknown> | null;
 }): Promise<TestRulesResult> {
   return securePostData(apiPath("/calculation-rules/test"), body);
 }

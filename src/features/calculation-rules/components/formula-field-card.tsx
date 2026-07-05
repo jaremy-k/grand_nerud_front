@@ -64,7 +64,7 @@ export function FormulaFieldCard({
   const [collapsed, setCollapsed] = useState(false);
 
   const displayTitle = field.label?.trim() || field.name || `Поле ${index + 1}`;
-  const readableExpression = humanizeFormula(field.expression, labelByName);
+  const readableExpression = humanizeFormula(field.expr, labelByName);
 
   return (
     <div
@@ -92,10 +92,10 @@ export function FormulaFieldCard({
                 {field.name}
               </code>
             )}
-            {field.store && (
+            {field.snapshot && (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                 <DatabaseIcon className="h-3 w-3" />
-                В сделке
+                Snapshot
               </span>
             )}
             {testValue !== undefined && (
@@ -104,11 +104,11 @@ export function FormulaFieldCard({
               </span>
             )}
           </div>
-          {collapsed && field.expression && (
+          {collapsed && field.expr && (
             <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {readableExpression !== field.expression
+              {readableExpression !== field.expr
                 ? readableExpression
-                : field.expression}
+                : field.expr}
             </p>
           )}
         </button>
@@ -192,8 +192,8 @@ export function FormulaFieldCard({
           </div>
 
           <FormulaEditor
-            value={field.expression}
-            onChange={(expression) => onChange({ expression })}
+            value={field.expr}
+            onChange={(expr) => onChange({ expr })}
             onFocus={onFocus}
             isActive={isActive}
             onRegisterInsert={onRegisterInsert}
@@ -201,19 +201,19 @@ export function FormulaFieldCard({
           />
 
           <FormulaPreview
-            expression={field.expression}
+            expression={field.expr}
             labelByName={labelByName}
           />
 
           <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
             <Switch
-              checked={field.store}
-              onCheckedChange={(store) => onChange({ store })}
+              checked={field.snapshot}
+              onCheckedChange={(snapshot) => onChange({ snapshot })}
             />
             <div>
-              <Label className="text-sm font-normal">Сохранять в сделке</Label>
+              <Label className="text-sm font-normal">Snapshot</Label>
               <p className="text-xs text-muted-foreground">
-                Значение «{resolveLabel(field.name, labelByName)}» будет записано в карточку сделки
+                «{resolveLabel(field.name, labelByName)}» фиксируется в сделке при создании и не пересчитывается
               </p>
             </div>
           </div>
