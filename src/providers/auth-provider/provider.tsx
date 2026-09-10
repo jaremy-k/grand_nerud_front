@@ -28,9 +28,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userData = await authService.getMe();
       setUser(userData);
-      if (pathname === "/login") {
-        navigate("/deals", { replace: true });
-      }
     } catch (err) {
       setUser(null);
       if (!pathname.startsWith("/login")) {
@@ -72,6 +69,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Проверка сессии только при старте приложения
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!loading && user && pathname === "/login") {
+      navigate("/deals", { replace: true });
+    }
+  }, [loading, user, pathname, navigate]);
 
   return (
     <AuthContext.Provider

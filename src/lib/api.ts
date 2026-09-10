@@ -23,18 +23,26 @@ export function apiPath(path: string): string {
   return `${API_URL}${normalized}`;
 }
 
+function readCookieValue(name: string): string | undefined {
+  const prefix = `${name}=`;
+  const row = document.cookie.split("; ").find((part) => part.startsWith(prefix));
+  if (!row) {
+    return undefined;
+  }
+  return row.slice(prefix.length);
+}
+
 export function getAccessToken(): string | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
-  return (
-    document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${ACCESS_TOKEN_KEY}=`))
-      ?.split("=")[1] ??
-    document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${LEGACY_TOKEN_KEY}=`))
-      ?.split("=")[1]
-  );
+  try {
+    const stored = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (stored) {
+      return stored;
+    }
+  } catch {
+    // ignore
+  }
+  return readCookieValue(ACCESS_TOKEN_KEY) ?? readCookieValue(LEGACY_TOKEN_KEY);
 }

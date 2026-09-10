@@ -14,11 +14,28 @@ function cookieDomain(): string | undefined {
   if (isLocalhost()) {
     return undefined;
   }
-  return import.meta.env.VITE_COOKIE_DOMAIN || ".worldautogroup.ru";
+  const configured = import.meta.env.VITE_COOKIE_DOMAIN?.trim();
+  if (!configured) {
+    return undefined;
+  }
+  const host = window.location.hostname;
+  const domain = configured.replace(/^\./, "");
+  if (host === domain || host.endsWith(`.${domain}`)) {
+    return configured.startsWith(".") ? configured : `.${configured}`;
+  }
+  return undefined;
 }
 
-function isSecureContext(): boolean {
-  return typeof window !== "undefined" && window.location.protocol === "https:";
+function readCookie(name: string): string | undefined {
+  if (typeof document === "undefined") {
+    return undefined;
+  }
+  const prefix = `${name}=`;
+  const row = document.cookie.split("; ").find((part) => part.startsWith(prefix));
+  if (!row) {
+    return undefined;
+  }
+  return row.slice(prefix.length);
 }
 
 export const setCookie = (name: string, value: string) => {
@@ -27,16 +44,13 @@ export const setCookie = (name: string, value: string) => {
     `${name}=${value}`,
     "path=/",
     domain ? `domain=${domain}` : "",
-    isSecureContext() ? "Secure; SameSite=None" : "SameSite=Lax",
+    isLocalhost() ? "SameSite=Lax" : "Secure; SameSite=Lax",
   ].filter(Boolean);
   document.cookie = parts.join("; ");
 };
 
 export const getCookie = (name: string) => {
-  return document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(`${name}=`))
-    ?.split("=")[1];
+  return readCookie(name);
 };
 
 export const removeCookie = (name: string) => {
@@ -48,13 +62,26 @@ export const removeCookie = (name: string) => {
     domain ? `domain=${domain}` : "",
   ].filter(Boolean);
   document.cookie = parts.join(";");
+  if (domain) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  }
 };
 
 export const setAccessToken = (token: string) => {
   setCookie(ACCESS_TOKEN_KEY, token);
+  try {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } catch {
+    // ignore quota / private mode
+  }
 };
 
 export const removeAccessToken = () => {
   removeCookie(ACCESS_TOKEN_KEY);
   removeCookie("tg_news_bot_access_token");
+  try {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
 };

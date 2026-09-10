@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5007}
-        VITE_COOKIE_DOMAIN: ${VITE_COOKIE_DOMAIN:-.worldautogroup.ru}
+        VITE_COOKIE_DOMAIN: ${VITE_COOKIE_DOMAIN:-.crm-grandnerudgroup.ru}
     ports:
       - "${PORT:-3000}:80"
     restart: unless-stopped
