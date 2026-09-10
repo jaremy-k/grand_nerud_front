@@ -1,4 +1,15 @@
-export const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+function normalizeApiUrl(raw: string): string {
+  const url = raw.trim().replace(/\/$/, "");
+  if (!url) {
+    return "";
+  }
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  return `https://${url}`;
+}
+
+export const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL ?? "");
 
 export const ACCESS_TOKEN_KEY = "grand_nerud_access_token";
 
