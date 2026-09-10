@@ -262,25 +262,19 @@ export default function AdminUsersPage() {
     try {
       if (editingUser) {
         const id = editingUser.id ?? editingUser._id ?? "";
-        if (isAdmin) {
-          const profit = profitFromPercents(form);
-          await updateUser(id, {
-            email: form.email,
-            name: form.name || undefined,
-            lastName: form.lastName || undefined,
-            fatherName: form.fatherName || undefined,
-            admin: form.admin,
-            manager: form.manager,
-            profit,
-          });
-        } else {
-          await updateUser(id, { manager: form.manager });
-        }
+        const profit = profitFromPercents(form);
+        const payload = {
+          email: form.email,
+          name: form.name || undefined,
+          lastName: form.lastName || undefined,
+          fatherName: form.fatherName || undefined,
+          manager: form.manager,
+          profit,
+          ...(isAdmin ? { admin: form.admin } : {}),
+        };
+        await updateUser(id, payload);
         setMessage("Пользователь обновлён");
       } else {
-        if (!isAdmin) {
-          throw new Error("Недостаточно прав для создания пользователя");
-        }
         if (!form.password || form.password.length < 6) {
           throw new Error("Пароль должен быть не короче 6 символов");
         }
@@ -291,9 +285,9 @@ export default function AdminUsersPage() {
           name: form.name || undefined,
           lastName: form.lastName || undefined,
           fatherName: form.fatherName || undefined,
-          admin: form.admin,
           manager: form.manager,
           profit,
+          ...(isAdmin ? { admin: form.admin } : { admin: false }),
         });
         setMessage("Пользователь создан");
       }
@@ -344,12 +338,10 @@ export default function AdminUsersPage() {
             <UsersIcon className="h-6 w-6" />
             Пользователи
           </h1>
-          {isAdmin && (
-            <Button onClick={openCreate}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Создать
-            </Button>
-          )}
+          <Button onClick={openCreate}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Создать
+          </Button>
         </div>
 
         {error && !dialogOpen && !resetPasswordOpen && (
@@ -400,18 +392,16 @@ export default function AdminUsersPage() {
                             onClick={() => openEdit(item)}
                           >
                             <PencilIcon className="mr-1 h-3.5 w-3.5" />
-                            {isAdmin ? "Изменить" : "Роль"}
+                            Изменить
                           </Button>
-                          {isAdmin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openResetPassword(item)}
-                            >
-                              <KeyRoundIcon className="mr-1 h-3.5 w-3.5" />
-                              Пароль
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openResetPassword(item)}
+                          >
+                            <KeyRoundIcon className="mr-1 h-3.5 w-3.5" />
+                            Пароль
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -428,85 +418,68 @@ export default function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>
               {editingUser
-                ? isAdmin
-                  ? "Редактирование пользователя"
-                  : "Роль пользователя"
+                ? "Редактирование пользователя"
                 : "Новый пользователь"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {isAdmin ? (
-              <>
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    required
-                  />
-                </div>
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
+            </div>
 
-                {!editingUser && (
-                  <div className="space-y-1">
-                    <Label htmlFor="password">Пароль</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={form.password}
-                      onChange={(e) =>
-                        setForm({ ...form, password: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                )}
-
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="lastName">Фамилия</Label>
-                    <Input
-                      id="lastName"
-                      value={form.lastName}
-                      onChange={(e) =>
-                        setForm({ ...form, lastName: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="name">Имя</Label>
-                    <Input
-                      id="name"
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm({ ...form, name: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="fatherName">Отчество</Label>
-                    <Input
-                      id="fatherName"
-                      value={form.fatherName}
-                      onChange={(e) =>
-                        setForm({ ...form, fatherName: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              editingUser && (
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">{editingUser.email}</p>
-                  <p className="text-muted-foreground">{displayName(editingUser)}</p>
-                </div>
-              )
+            {!editingUser && (
+              <div className="space-y-1">
+                <Label htmlFor="password">Пароль</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                  required
+                />
+              </div>
             )}
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label htmlFor="lastName">Фамилия</Label>
+                <Input
+                  id="lastName"
+                  value={form.lastName}
+                  onChange={(e) =>
+                    setForm({ ...form, lastName: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="name">Имя</Label>
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="fatherName">Отчество</Label>
+                <Input
+                  id="fatherName"
+                  value={form.fatherName}
+                  onChange={(e) =>
+                    setForm({ ...form, fatherName: e.target.value })
+                  }
+                />
+              </div>
+            </div>
 
             {isAdmin && (
               <div className="flex items-center justify-between rounded-lg border p-3">
@@ -529,7 +502,7 @@ export default function AdminUsersPage() {
               <div>
                 <p className="text-sm font-medium">Руководитель</p>
                 <p className="text-muted-foreground text-xs">
-                  Может назначать роль руководителя другим пользователям
+                  Может добавлять пользователей, менять проценты и пароли
                 </p>
               </div>
               <Switch
@@ -540,15 +513,13 @@ export default function AdminUsersPage() {
               />
             </div>
 
-            {isAdmin && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Доля менеджера, %</p>
-                <ProfitFields
-                  profit={form.profit}
-                  onChange={(profit) => setForm({ ...form, profit })}
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Доля менеджера, %</p>
+              <ProfitFields
+                profit={form.profit}
+                onChange={(profit) => setForm({ ...form, profit })}
+              />
+            </div>
 
             {error && dialogOpen && (
               <p className="text-sm text-red-500">{error}</p>
