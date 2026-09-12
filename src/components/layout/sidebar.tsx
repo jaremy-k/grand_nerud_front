@@ -43,17 +43,17 @@ const data = {
   ],
   adminNav: [
     {
-      title: "Статистика",
-      url: "/admin",
-      icon: BarChart3Icon,
-    },
-    {
       title: "Конструктор формул",
       url: "/admin/calculation-rules",
       icon: CalculatorIcon,
     },
   ],
   managerNav: [
+    {
+      title: "Статистика",
+      url: "/admin",
+      icon: BarChart3Icon,
+    },
     {
       title: "Пользователи",
       url: "/admin/users",
@@ -106,8 +106,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupLabel>Администрирование</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {user?.admin &&
-                  data.adminNav.map((item) => (
+                {(user?.admin || user?.manager) &&
+                  data.managerNav.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild
@@ -120,8 +120,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
-                {(user?.admin || user?.manager) &&
-                  data.managerNav.map((item) => (
+                {user?.admin &&
+                  data.adminNav.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild

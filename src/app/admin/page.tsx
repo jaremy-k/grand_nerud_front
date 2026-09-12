@@ -66,8 +66,10 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const canViewStats = Boolean(user?.admin || user?.manager);
+
   const loadData = useCallback(async () => {
-    if (!user?.admin) return;
+    if (!canViewStats) return;
     setLoading(true);
     setError("");
     try {
@@ -98,16 +100,16 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.admin]);
+  }, [canViewStats]);
 
   useEffect(() => {
     if (!user) return;
-    if (!user.admin) {
+    if (!canViewStats) {
       navigate("/deals", { replace: true });
       return;
     }
     loadData();
-  }, [user, user?.admin, navigate, loadData]);
+  }, [user, canViewStats, navigate, loadData]);
 
   if (!user) {
     return (
@@ -124,7 +126,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!user.admin) {
+  if (!canViewStats) {
     return null;
   }
 
