@@ -43,7 +43,7 @@ export default function InnProviderForm({
       .then((res) => {
         if (!res?.name) {
           setError(
-            `Компания с ИНН ${inn.replace(/\D/g, "")} не найдена. Проверьте номер или добавьте клиента как физическое лицо.`
+            `Организация с ИНН ${inn.replace(/\D/g, "")} не найдена. Проверьте номер.`
           );
           return;
         }
@@ -56,7 +56,7 @@ export default function InnProviderForm({
         setError(
           err instanceof Error
             ? err.message
-            : "Не удалось найти компанию по ИНН"
+            : "Организация не найдена. Проверьте ИНН."
         );
       })
       .finally(() => setSearching(false));

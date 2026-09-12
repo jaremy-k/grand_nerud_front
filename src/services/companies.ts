@@ -11,33 +11,19 @@ export async function getCompany(id: string): Promise<CompanyDto> {
   return secureGetData(apiPath(`/companies/${id}`));
 }
 
-function innLookupErrorMessage(err: unknown, inn: string): string {
-  const raw = err instanceof Error ? err.message : String(err ?? "");
-  const lower = raw.toLowerCase();
-  const notFound =
-    !raw ||
-    raw === "Not Found" ||
-    lower.includes("not found") ||
-    lower.includes("не найден") ||
-    /http error! status: (404|422|400)/.test(lower);
-
-  if (notFound) {
-    return `Компания с ИНН ${inn} не найдена. Проверьте номер или добавьте клиента как физическое лицо.`;
-  }
-  return raw;
+function innLookupErrorMessage(inn: string): string {
+  return `Организация с ИНН ${inn} не найдена. Проверьте номер.`;
 }
 
 export async function getCompanyInfoByINN(inn: string): Promise<CompanyDto> {
   const cleanedInn = inn.replace(/\D/g, "");
   if (cleanedInn.length !== 10 && cleanedInn.length !== 12) {
-    throw new Error(
-      "ИНН должен содержать 10 цифр для юрлица или 12 цифр для ИП"
-    );
+    throw new Error(innLookupErrorMessage(cleanedInn || inn));
   }
   try {
     return await secureGetData(apiPath(`/companies/fns/${cleanedInn}`));
-  } catch (err) {
-    throw new Error(innLookupErrorMessage(err, cleanedInn));
+  } catch {
+    throw new Error(innLookupErrorMessage(cleanedInn));
   }
 }
 
