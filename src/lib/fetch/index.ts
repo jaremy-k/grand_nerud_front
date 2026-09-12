@@ -9,6 +9,35 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
   unauthorizedHandler = handler;
 }
 
+function formatApiDetail(detail: unknown): string | undefined {
+  if (detail == null || detail === "") {
+    return undefined;
+  }
+  if (typeof detail === "string") {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          const row = item as { msg?: unknown; message?: unknown };
+          if (typeof row.msg === "string") return row.msg;
+          if (typeof row.message === "string") return row.message;
+        }
+        return "";
+      })
+      .filter(Boolean);
+    return parts.length > 0 ? parts.join(". ") : undefined;
+  }
+  if (typeof detail === "object") {
+    const row = detail as { msg?: unknown; message?: unknown };
+    if (typeof row.msg === "string") return row.msg;
+    if (typeof row.message === "string") return row.message;
+  }
+  return undefined;
+}
+
 function authHeaders(): Record<string, string> {
   const token = getAccessToken();
   if (!token) {
@@ -24,13 +53,13 @@ async function parseResponse<T>(response: Response): Promise<T> {
     removeAccessToken();
     unauthorizedHandler?.();
     const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || "Требуется авторизация");
+    throw new Error(formatApiDetail(errorData?.detail) || "Требуется авторизация");
   }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
     throw new Error(
-      errorData?.detail || `HTTP error! status: ${response.status}`
+      formatApiDetail(errorData?.detail) || `HTTP error! status: ${response.status}`
     );
   }
 

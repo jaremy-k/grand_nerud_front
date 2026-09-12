@@ -18,6 +18,7 @@ export default function InnProviderForm({
   onCancel?: () => void;
 }) {
   const [searching, setSearching] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
   const [inn, setInn] = useState<string>("");
   const [name, setName] = useState<string>("");
@@ -35,14 +36,28 @@ export default function InnProviderForm({
 
   const handleLoadData = () => {
     setSearching(true);
+    setError("");
     resetFields();
     companiesService
       .getCompanyInfoByINN(inn)
       .then((res) => {
+        if (!res?.name) {
+          setError(
+            `Компания с ИНН ${inn.replace(/\D/g, "")} не найдена. Проверьте номер или добавьте клиента как физическое лицо.`
+          );
+          return;
+        }
         setName(res.name);
         setAbbreviatedName(res.abbreviatedName);
         setContacts(res.contacts);
         setType(res.type);
+      })
+      .catch((err) => {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Не удалось найти компанию по ИНН"
+        );
       })
       .finally(() => setSearching(false));
   };
@@ -66,7 +81,10 @@ export default function InnProviderForm({
           </Label>
           <Input
             value={inn}
-            onChange={(e) => setInn(e.target.value)}
+            onChange={(e) => {
+              setInn(e.target.value);
+              if (error) setError("");
+            }}
             disabled={disabled || searching}
             name="inn"
             autoComplete="off"
@@ -81,6 +99,11 @@ export default function InnProviderForm({
         >
           Найти
         </Button>
+        {error && (
+          <p className="text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        )}
         {name && (
           <div className="grid gap-3">
             <Label htmlFor="name" className="gap-0.5">
