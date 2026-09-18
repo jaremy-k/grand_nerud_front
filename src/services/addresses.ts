@@ -11,10 +11,11 @@ import {
   UpdateAddressRequest,
 } from "@definitions/requests";
 
-export async function getAddresses(companyId: string): Promise<AddressDto[]> {
-  return secureGetData(
-    apiPath(`/adresses?companyId=${encodeURIComponent(companyId)}`)
-  );
+export async function getAddresses(companyId?: string): Promise<AddressDto[]> {
+  const query = companyId
+    ? `?companyId=${encodeURIComponent(companyId)}`
+    : "";
+  return secureGetData(apiPath(`/adresses${query}`));
 }
 
 export async function getAddress(id: string): Promise<AddressDto> {

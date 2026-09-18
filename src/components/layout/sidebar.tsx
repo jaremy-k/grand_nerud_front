@@ -20,6 +20,7 @@ import {
   FactoryIcon,
   Handshake,
   House,
+  MapPinIcon,
   ShoppingBagIcon,
   UsersIcon,
 } from "lucide-react";
@@ -49,6 +50,11 @@ const data = {
           title: "Исполнители",
           url: "/providers",
           icon: FactoryIcon,
+        },
+        {
+          title: "Адреса",
+          url: "/addresses",
+          icon: MapPinIcon,
         },
       ],
     },

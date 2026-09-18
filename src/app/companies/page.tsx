@@ -14,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatINN } from "@/lib/formatters";
-import { companiesService } from "@/services";
-import { CompanyDto, CompanyRole } from "@definitions/dto";
+import { addressesService, companiesService } from "@/services";
+import { AddressDto, CompanyDto, CompanyRole } from "@definitions/dto";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -32,6 +32,7 @@ function formatContactPersons(company: CompanyDto): string {
 
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
+  const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,9 +44,14 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   useEffect(() => {
     setLoading(true);
     setError("");
-    companiesService
-      .getCompanies(role)
-      .then(setCompanies)
+    Promise.all([
+      companiesService.getCompanies(role),
+      addressesService.getAddresses(),
+    ])
+      .then(([companyData, addressData]) => {
+        setCompanies(companyData);
+        setAddresses(addressData);
+      })
       .catch((err) =>
         setError(
           err instanceof Error ? err.message : "Не удалось загрузить компании"
@@ -70,6 +76,17 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         )
     );
   }, [companies, search]);
+
+  const addressesByCompany = useMemo(() => {
+    const grouped = new Map<string, AddressDto[]>();
+    addresses.forEach((address) => {
+      grouped.set(address.companyId, [
+        ...(grouped.get(address.companyId) ?? []),
+        address,
+      ]);
+    });
+    return grouped;
+  }, [addresses]);
 
   return (
     <Page
@@ -109,6 +126,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                 <TableHead className="text-muted-foreground/70">
                   Контакт карточки
                 </TableHead>
+                <TableHead>Адреса</TableHead>
                 <TableHead>Комментарий</TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Действия</span>
@@ -129,6 +147,12 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                       ? `${company.contacts.length} зап.`
                       : "—"}
                   </TableCell>
+                  <TableCell>
+                    {(addressesByCompany.get(company._id) ?? [])
+                      .map((address) => address.adressDetail?.address)
+                      .filter(Boolean)
+                      .join("; ") || "—"}
+                  </TableCell>
                   <TableCell>{company.comment || "—"}</TableCell>
                   <TableCell>
                     <Button
@@ -146,7 +170,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены

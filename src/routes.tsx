@@ -6,6 +6,7 @@ import EditDealPage from "@/app/deals/[id]/edit/page";
 import CreateDealPage from "@/app/deals/create/page";
 import DealsPage from "@/app/deals/page";
 import CompaniesPage from "@/app/companies/page";
+import AddressesPage from "@/app/addresses/page";
 import DashboardPage from "@/app/dashboard/page";
 import LoginPage from "@/app/login/page";
 import HomePage from "@/app/page";
@@ -54,6 +55,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <CompaniesPage role="provider" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/addresses"
+        element={
+          <ProtectedRoute>
+            <AddressesPage />
           </ProtectedRoute>
         }
       />
