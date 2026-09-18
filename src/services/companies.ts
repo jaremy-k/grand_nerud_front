@@ -6,9 +6,38 @@ import {
   UpdateCompanyRequest,
 } from "@definitions/requests";
 
+type CompaniesResponse =
+  | CompanyDto[]
+  | {
+      items?: CompanyDto[];
+      data?: CompanyDto[];
+      companies?: CompanyDto[];
+    };
+
+function normalizeCompanies(response: CompaniesResponse): CompanyDto[] {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.items)) return response.items;
+  if (Array.isArray(response.data)) return response.data;
+  if (Array.isArray(response.companies)) return response.companies;
+  return [];
+}
+
 export async function getCompanies(role?: CompanyRole): Promise<CompanyDto[]> {
   const query = role ? `?role=${encodeURIComponent(role)}` : "";
-  return secureGetData(apiPath(`/companies${query}`));
+  const response = await secureGetData<CompaniesResponse>(
+    apiPath(`/companies${query}`)
+  );
+  const companies = normalizeCompanies(response);
+
+  if (!role || companies.length > 0) return companies;
+
+  // Compatibility for installations where roles have not been migrated yet.
+  const allResponse = await secureGetData<CompaniesResponse>(
+    apiPath("/companies")
+  );
+  return normalizeCompanies(allResponse).filter(
+    (company) => !company.roles?.length || company.roles.includes(role)
+  );
 }
 
 export async function getCompany(id: string): Promise<CompanyDto> {

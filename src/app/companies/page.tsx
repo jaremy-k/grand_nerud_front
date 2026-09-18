@@ -133,7 +133,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         onCancel={() => setCreating(false)}
         onCreate={(company) =>
           setCompanies((current) =>
-            company.roles.includes(role) ? [...current, company] : current
+            !company.roles?.length || company.roles.includes(role)
+              ? [...current, company]
+              : current
           )
         }
       />

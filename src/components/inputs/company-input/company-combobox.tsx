@@ -53,6 +53,21 @@ export function CompanyCombobox({
   }, [role]);
 
   useEffect(() => {
+    if (!value || companies.some((company) => company._id === value)) return;
+
+    companiesService
+      .getCompany(value)
+      .then((company) =>
+        setCompanies((current) =>
+          current.some((item) => item._id === company._id)
+            ? current
+            : [company, ...current]
+        )
+      )
+      .catch(() => {});
+  }, [companies, value]);
+
+  useEffect(() => {
     const loweredSearch = searchValue.toLowerCase();
     const matchType =
       type === "all"
