@@ -1,6 +1,6 @@
 import { apiPath } from "@/lib/api";
 import { secureGetData, securePatchData, securePostData } from "@/lib/fetch";
-import { CompanyDto, CompanyRole } from "@definitions/dto";
+import { CompanyDto, CompanyRole, ContactPerson } from "@definitions/dto";
 import {
   CreateCompanyRequest,
   UpdateCompanyRequest,
@@ -20,6 +20,24 @@ function normalizeCompanies(response: CompaniesResponse): CompanyDto[] {
   if (Array.isArray(response.data)) return response.data;
   if (Array.isArray(response.companies)) return response.companies;
   return [];
+}
+
+function normalizeContactPersons(
+  contactPersons: ContactPerson[]
+): ContactPerson[] {
+  return contactPersons.map((person) => {
+    const optionalFields = {
+      position: person.position?.trim() || undefined,
+      phone: person.phone?.trim() || undefined,
+      email: person.email?.trim() || undefined,
+      comment: person.comment?.trim() || undefined,
+    };
+
+    return {
+      name: person.name.trim(),
+      ...optionalFields,
+    };
+  });
 }
 
 export async function getCompanies(role?: CompanyRole): Promise<CompanyDto[]> {
@@ -79,6 +97,7 @@ export async function createCompany(
 ): Promise<CompanyDto> {
   const payload: CreateCompanyRequest = {
     ...data,
+    contactPersons: normalizeContactPersons(data.contactPersons),
     inn:
       data.inn != null && data.inn !== ""
         ? data.inn.replace(/\D/g, "")
@@ -93,6 +112,9 @@ export async function updateCompany(
 ): Promise<CompanyDto> {
   const payload: UpdateCompanyRequest = {
     ...data,
+    contactPersons: data.contactPersons
+      ? normalizeContactPersons(data.contactPersons)
+      : undefined,
     inn:
       data.inn != null && data.inn !== ""
         ? data.inn.replace(/\D/g, "")

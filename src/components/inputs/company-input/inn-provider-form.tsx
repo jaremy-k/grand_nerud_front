@@ -1,11 +1,15 @@
 import { companiesService } from "@/services";
-import { CompanyRole } from "@definitions/dto";
+import { CompanyRole, ContactPerson } from "@definitions/dto";
 import { CreateCompanyRequest } from "@definitions/requests";
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import { DialogClose, DialogFooter } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
+import { Textarea } from "../../ui/textarea";
+import ContactPersonsEditor, {
+  isValidContactPersons,
+} from "./contact-persons-editor";
 
 export default function InnProviderForm({
   disabled = false,
@@ -30,6 +34,7 @@ export default function InnProviderForm({
   const [kpp, setKpp] = useState<string>("");
   const [comment, setComment] = useState<string>("");
   const [contacts, setContacts] = useState<Record<string, unknown>[]>([]);
+  const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
 
   const resetFields = () => {
     setName("");
@@ -38,6 +43,7 @@ export default function InnProviderForm({
     setKpp("");
     setComment("");
     setContacts([]);
+    setContactPersons([]);
   };
 
   const handleLoadData = () => {
@@ -59,6 +65,7 @@ export default function InnProviderForm({
         setType(res.type ?? "");
         setKpp(res.kpp ?? "");
         setComment(res.comment ?? "");
+        setContactPersons(res.contactPersons ?? []);
       })
       .catch((err) => {
         setError(
@@ -71,6 +78,11 @@ export default function InnProviderForm({
   };
 
   const handleSubmit = () => {
+    if (!isValidContactPersons(contactPersons)) {
+      setError("Укажите имя и корректный email для каждого контрагента");
+      return;
+    }
+
     onSubmit({
       type,
       name,
@@ -79,6 +91,7 @@ export default function InnProviderForm({
       kpp,
       roles,
       contacts,
+      contactPersons,
       comment,
     });
   };
@@ -149,31 +162,36 @@ export default function InnProviderForm({
             <Input value={kpp} disabled name="kpp" autoComplete="off" />
           </div>
         )}
-        {contacts.map((contact, idx) => {
-          const key = Object.keys(contact)[0];
-          let fieldName = key === "address" ? "Адрес" : key;
-          fieldName = fieldName === "email" ? "Почта" : fieldName;
-          fieldName = fieldName === "director" ? "Директор" : fieldName;
-
-          return (
-            <div key={`${idx}-${key}`} className="grid gap-3">
-              <Label htmlFor={key} className="gap-0.5">
-                {fieldName}
-              </Label>
-              <Input
-                defaultValue={String(contact[key] ?? "")}
-                disabled
-                name={key}
-                autoComplete="off"
-              />
-            </div>
-          );
-        })}
+        {contacts.length > 0 && (
+          <details className="rounded-md border border-border/50 px-3 py-2 text-muted-foreground">
+            <summary className="cursor-pointer text-xs font-medium">
+              Контакт карточки
+            </summary>
+            <dl className="mt-2 grid gap-1.5 text-xs">
+              {contacts.flatMap((contact, contactIndex) =>
+                Object.entries(contact).map(([key, value]) => (
+                  <div key={`${contactIndex}-${key}`} className="flex gap-2">
+                    <dt className="font-medium">{key}:</dt>
+                    <dd>{String(value ?? "")}</dd>
+                  </div>
+                ))
+              )}
+            </dl>
+          </details>
+        )}
+        <ContactPersonsEditor
+          value={contactPersons}
+          onChange={(value) => {
+            setContactPersons(value);
+            if (error) setError("");
+          }}
+          disabled={disabled || searching}
+        />
         <div className="grid gap-3">
           <Label htmlFor="comment" className="gap-0.5">
             Комментарий
           </Label>
-          <Input
+          <Textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             disabled={disabled || searching}

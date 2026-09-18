@@ -1,4 +1,4 @@
-import type { CompanyRole } from "@definitions/dto";
+import type { CompanyRole, ContactPerson } from "@definitions/dto";
 
 export default interface CreateCompanyRequest {
   name: string;
@@ -7,6 +7,7 @@ export default interface CreateCompanyRequest {
   kpp?: string;
   roles: CompanyRole[];
   contacts: Record<string, unknown>[];
+  contactPersons: ContactPerson[];
   comment?: string;
   type?: string;
   deleted_at?: string;

@@ -18,12 +18,15 @@ import { CompanyDto, CompanyRole } from "@definitions/dto";
 import { PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-function formatContacts(contacts: CompanyDto["contacts"]): string {
-  if (!contacts?.length) return "—";
-  return contacts
-    .flatMap((contact) => Object.values(contact).map((value) => String(value)))
-    .filter(Boolean)
-    .join(", ");
+function formatContactPersons(company: CompanyDto): string {
+  if (!company.contactPersons?.length) return "—";
+  return company.contactPersons
+    .map((person) =>
+      [person.name, person.position, person.phone, person.email]
+        .filter(Boolean)
+        .join(" · ")
+    )
+    .join("; ");
 }
 
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
@@ -57,7 +60,12 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         company.name.toLowerCase().includes(value) ||
         company.abbreviatedName?.toLowerCase().includes(value) ||
         company.inn?.includes(value) ||
-        company.kpp?.includes(value)
+        company.kpp?.includes(value) ||
+        company.contactPersons?.some((person) =>
+          [person.name, person.position, person.phone, person.email].some(
+            (field) => field?.toLowerCase().includes(value)
+          )
+        )
     );
   }, [companies, search]);
 
@@ -95,7 +103,10 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                 <TableHead>Компания</TableHead>
                 <TableHead>ИНН</TableHead>
                 <TableHead>КПП</TableHead>
-                <TableHead>Контакты</TableHead>
+                <TableHead>Контрагенты</TableHead>
+                <TableHead className="text-muted-foreground/70">
+                  Контакт карточки
+                </TableHead>
                 <TableHead>Комментарий</TableHead>
               </TableRow>
             </TableHeader>
@@ -107,14 +118,19 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     {company.inn ? formatINN(company.inn) : "—"}
                   </TableCell>
                   <TableCell>{company.kpp || "—"}</TableCell>
-                  <TableCell>{formatContacts(company.contacts)}</TableCell>
+                  <TableCell>{formatContactPersons(company)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {company.contacts?.length
+                      ? `${company.contacts.length} зап.`
+                      : "—"}
+                  </TableCell>
                   <TableCell>{company.comment || "—"}</TableCell>
                 </TableRow>
               ))}
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены

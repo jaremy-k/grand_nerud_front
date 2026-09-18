@@ -122,13 +122,23 @@ export default function DealDetailPage() {
   const shippingAddress = deal.shippingAddress ?? deal.shipping_address;
   const deliveryAddress = deal.deliveryAddress ?? deal.delivery_address;
 
-  const formatContacts = (company: CompanyDto | null) => {
-    if (!company?.contacts?.length) return "Не указаны";
+  const formatContactPersons = (company: CompanyDto | null) => {
+    if (!company?.contactPersons?.length) return "Не указаны";
 
-    return company.contacts
-      .flatMap((contact) =>
-        Object.entries(contact).map(([key, value]) => `${key}: ${String(value)}`)
+    return company.contactPersons
+      .map((person) =>
+        [person.name, person.position, person.phone, person.email]
+          .filter(Boolean)
+          .join(" · ")
       )
+      .join("; ");
+  };
+
+  const formatCardContacts = (company: CompanyDto | null) => {
+    if (!company?.contacts?.length) return "";
+    return company.contacts
+      .flatMap((contact) => Object.values(contact).map((value) => String(value)))
+      .filter(Boolean)
       .join(", ");
   };
 
@@ -196,8 +206,16 @@ export default function DealDetailPage() {
             <TableCell>{shippingAddress || "Не указан"}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Контакты</TableCell>
-            <TableCell>{formatContacts(provider)}</TableCell>
+            <TableCell className="font-medium w-1/3">Контрагенты</TableCell>
+            <TableCell>
+              {formatContactPersons(provider)}
+              {provider?.contacts?.length ? (
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer">Контакт карточки</summary>
+                  <p className="mt-1">{formatCardContacts(provider)}</p>
+                </details>
+              ) : null}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">ИНН / КПП</TableCell>

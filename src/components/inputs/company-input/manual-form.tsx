@@ -1,4 +1,4 @@
-import { CompanyRole } from "@definitions/dto";
+import { CompanyRole, ContactPerson } from "@definitions/dto";
 import { CreateCompanyRequest } from "@definitions/requests";
 import { useState } from "react";
 import { Button } from "../../ui/button";
@@ -6,6 +6,9 @@ import { DialogClose, DialogFooter } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
+import ContactPersonsEditor, {
+  isValidContactPersons,
+} from "./contact-persons-editor";
 
 export default function ManualForm({
   disabled = false,
@@ -19,17 +22,23 @@ export default function ManualForm({
   roles: CompanyRole[];
 }) {
   const [name, setName] = useState<string>("");
-  const [phone, setPhone] = useState<string>("");
   const [comment, setComment] = useState<string>("");
+  const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    if (!name) return;
+    if (!name.trim()) return;
+    if (!isValidContactPersons(contactPersons)) {
+      setError("Укажите имя и корректный email для каждого контрагента");
+      return;
+    }
 
     onSubmit({
       type: "Физическое лицо",
-      name,
+      name: name.trim(),
       roles,
-      contacts: phone ? [{ phone }] : [],
+      contacts: [],
+      contactPersons,
       comment,
     });
   };
@@ -49,18 +58,15 @@ export default function ManualForm({
             autoComplete="off"
           />
         </div>
-        <div className="grid gap-3">
-          <Label htmlFor="phone" className="gap-0.5">
-            Телефон
-          </Label>
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            disabled={disabled}
-            name="phone"
-            autoComplete="off"
-          />
-        </div>
+        <ContactPersonsEditor
+          value={contactPersons}
+          onChange={(value) => {
+            setContactPersons(value);
+            if (error) setError("");
+          }}
+          disabled={disabled}
+        />
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="grid gap-3">
           <Label htmlFor="comment">Комментарий</Label>
           <Textarea

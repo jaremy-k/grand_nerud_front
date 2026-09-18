@@ -68,7 +68,10 @@ export function CreatingModal({
 
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-lg" showCloseButton={false}>
+      <DialogContent
+        className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+        showCloseButton={false}
+      >
         <DialogHeader>
           <DialogTitle>Добавление компании</DialogTitle>
         </DialogHeader>
