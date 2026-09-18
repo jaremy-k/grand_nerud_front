@@ -36,7 +36,7 @@ function dealToFormData(d: DealDto): DealFormData {
   return {
     serviceId: d.serviceId,
     customerId: d.customerId,
-    providerId: d.providerId ?? undefined,
+    providerId: d.providerId ?? d.provider?._id ?? undefined,
     stageId: d.stageId,
     materialId: d.materialId ?? undefined,
     unitMeasurement: (d.unitMeasurement as MeasurementUnit) || "тонна",
@@ -136,7 +136,7 @@ export default function useDataFormHook(
   const [dealFormData, setDealFormData] = useState<DealFormData>({
     serviceId: defaultDeal?.serviceId || undefined,
     customerId: defaultDeal?.customerId || undefined,
-    providerId: defaultDeal?.providerId || undefined,
+    providerId: defaultDeal?.providerId || defaultDeal?.provider?._id || undefined,
     stageId: defaultDeal?.stageId || undefined,
     materialId: defaultDeal?.materialId || undefined,
     unitMeasurement:

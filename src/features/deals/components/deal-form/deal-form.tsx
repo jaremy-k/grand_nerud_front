@@ -97,10 +97,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
 
   const showSalesFields = isSalesService(dealFormData.serviceId, services);
 
-  const showSummary =
-    dealFormData.serviceId &&
-    dealFormData.customerId &&
-    dealFormData.providerId;
+  const showSummary = dealFormData.serviceId && dealFormData.customerId;
 
   const managerSharePercent = (managerShare * 100).toFixed(0);
 
