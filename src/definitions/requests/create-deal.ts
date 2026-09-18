@@ -1,6 +1,7 @@
 export default interface CreateDealRequest {
   serviceId: string;
   customerId: string;
+  providerId: string;
   stageId: string;
   materialId: string;
 

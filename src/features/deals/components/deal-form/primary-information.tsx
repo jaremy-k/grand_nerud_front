@@ -74,7 +74,7 @@ export default function PrimaryInformationSection({
       icon={FileTextIcon}
     >
       <FieldGroup className="gap-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
             <FieldLabel
               htmlFor="customer"
@@ -87,6 +87,19 @@ export default function PrimaryInformationSection({
               disabled={!!defaultDeal}
               value={dealFormData.customerId ?? ""}
               onChange={(val) => updateField("customerId", val)}
+            />
+          </Field>
+          <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
+            <FieldLabel
+              htmlFor="provider"
+              className="mb-1.5 block text-sm font-medium"
+            >
+              Исполнитель{labelRequired}
+            </FieldLabel>
+            <CompanyCombobox
+              role="provider"
+              value={dealFormData.providerId ?? ""}
+              onChange={(val) => updateField("providerId", val)}
             />
           </Field>
           <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">

@@ -84,7 +84,10 @@ export default function DealDetailPage() {
     }
 
     if (!deal.provider && deal.providerId) {
-      companiesService.getCompany(deal.providerId).then(setProvider).catch(() => {});
+      companiesService
+        .getCompany(deal.providerId)
+        .then(setProvider)
+        .catch(() => {});
     }
   }, [deal]);
 

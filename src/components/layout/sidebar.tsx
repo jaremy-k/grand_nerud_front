@@ -17,8 +17,10 @@ import useAuthContext from "@/contexts/auth-context";
 import {
   BarChart3Icon,
   CalculatorIcon,
+  FactoryIcon,
   Handshake,
   House,
+  ShoppingBagIcon,
   UsersIcon,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -37,6 +39,16 @@ const data = {
           title: "Сделки",
           url: "/deals",
           icon: Handshake,
+        },
+        {
+          title: "Заказчики",
+          url: "/customers",
+          icon: ShoppingBagIcon,
+        },
+        {
+          title: "Исполнители",
+          url: "/providers",
+          icon: FactoryIcon,
         },
       ],
     },

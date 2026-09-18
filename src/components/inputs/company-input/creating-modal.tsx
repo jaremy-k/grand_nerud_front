@@ -9,7 +9,7 @@ import { companiesService } from "@/services";
 import { CompanyDto } from "@definitions/dto";
 import type { CompanyRole } from "@definitions/dto";
 import { CreateCompanyRequest } from "@definitions/requests";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InnProviderForm from "./inn-provider-form";
 import ManualForm from "./manual-form";
 import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
@@ -31,6 +31,10 @@ export function CreatingModal({
 
   const [type, setType] = useState<string>(IP_AND_LEGAL_TYPE);
   const [roles, setRoles] = useState<CompanyRole[]>([initialRole]);
+
+  useEffect(() => {
+    if (open) setRoles([initialRole]);
+  }, [initialRole, open]);
 
   const toggleRole = (role: CompanyRole) => {
     setRoles((current) =>

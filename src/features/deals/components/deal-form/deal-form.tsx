@@ -33,6 +33,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
     if (
       !dealFormData.serviceId ||
       !dealFormData.customerId ||
+      !dealFormData.providerId ||
       !dealFormData.stageId ||
       !dealFormData.materialId
     ) {
@@ -67,13 +68,17 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       };
 
       if (!!defaultDeal && defaultDeal._id) {
-        const dataToSend: UpdateDealRequest = shared;
+        const dataToSend: UpdateDealRequest = {
+          ...shared,
+          providerId: dealFormData.providerId,
+        };
         await dealsService.updateDeal(defaultDeal._id, dataToSend);
       } else {
         const dataToSend: CreateDealRequest = {
           ...shared,
           serviceId: dealFormData.serviceId,
           customerId: dealFormData.customerId,
+          providerId: dealFormData.providerId,
         };
         await dealsService.createDeal(dataToSend);
       }
@@ -93,7 +98,9 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
   const showSalesFields = isSalesService(dealFormData.serviceId, services);
 
   const showSummary =
-    dealFormData.serviceId && dealFormData.customerId;
+    dealFormData.serviceId &&
+    dealFormData.customerId &&
+    dealFormData.providerId;
 
   const managerSharePercent = (managerShare * 100).toFixed(0);
 
@@ -251,6 +258,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                 className="mt-4 w-full xl:mt-5"
                 disabled={
                   !dealFormData.customerId ||
+                  !dealFormData.providerId ||
                   !dealFormData.stageId ||
                   !dealFormData.materialId ||
                   !dealFormData.serviceId ||

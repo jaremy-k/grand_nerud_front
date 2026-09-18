@@ -38,6 +38,7 @@ export type DealDataFormHook = {
 export type DealFormData = {
   serviceId: string | undefined;
   customerId: string | undefined;
+  providerId: string | undefined;
   stageId: string | undefined;
   materialId: string | undefined;
   unitMeasurement: MeasurementUnit;
