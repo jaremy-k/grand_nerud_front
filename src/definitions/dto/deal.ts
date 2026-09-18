@@ -6,6 +6,7 @@ export default interface DealDto {
   userId: string;
   serviceId: string;
   customerId: string;
+  providerId?: string | null;
   stageId: string;
   materialId: string | null;
 
@@ -37,8 +38,10 @@ export default interface DealDto {
   paymentMethod: string;
 
   shippingAddress: string | null;
+  shipping_address?: string | null;
   methodReceiving: string;
   deliveryAddress: string | null;
+  delivery_address?: string | null;
 
   notes: string;
   OSSIG: boolean;
@@ -55,6 +58,7 @@ export default interface DealDto {
   user: UserDto | null;
   service: ServiceDto | null;
   customer: CompanyDto | null;
+  provider: CompanyDto | null;
   stage: StageDto | null;
   material: MaterialDto | null;
 

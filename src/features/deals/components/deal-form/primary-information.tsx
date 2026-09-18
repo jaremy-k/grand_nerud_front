@@ -83,6 +83,7 @@ export default function PrimaryInformationSection({
               Заказчик{labelRequired}
             </FieldLabel>
             <CompanyCombobox
+              role="customer"
               disabled={!!defaultDeal}
               value={dealFormData.customerId ?? ""}
               onChange={(val) => updateField("customerId", val)}

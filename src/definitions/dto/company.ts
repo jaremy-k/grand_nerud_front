@@ -1,11 +1,15 @@
+export type CompanyRole = "provider" | "customer";
+
 export default interface CompanyDto {
   _id: string;
   name: string;
-  abbreviatedName: string;
-  inn: string;
-  type: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  contacts: Record<string, any>[];
-  deleted_at: string;
-  is_deleted: boolean;
+  abbreviatedName?: string;
+  inn?: string;
+  kpp?: string;
+  type?: string;
+  roles: CompanyRole[];
+  contacts: Record<string, unknown>[];
+  comment?: string;
+  deleted_at?: string;
+  is_deleted?: boolean;
 }

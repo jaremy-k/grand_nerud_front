@@ -36,7 +36,7 @@ export default function CompanyButton({
           <p className="truncate text-slate-700 group-hover:text-slate-900 flex-auto max-w-md">
             {company.name}
           </p>
-          {getTypeLabel(company.type)}
+          {company.type && getTypeLabel(company.type)}
         </div>
         <div className="flex max-w-32 justify-end w-full">
           {company.inn !== undefined && company.inn !== null && (

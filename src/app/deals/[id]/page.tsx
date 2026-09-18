@@ -16,6 +16,8 @@ import {
   TableBody,
   TableCell,
   TableFooter,
+  TableHead,
+  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
@@ -25,8 +27,12 @@ import {
   getStageBadgeClass,
   getStageDotClass,
 } from "@features/deals/utils/stage-colors";
-import { companiesService, dealsService } from "@/services";
-import { CompanyDto, DealDto } from "@definitions/dto";
+import {
+  companiesService,
+  companyMaterialsService,
+  dealsService,
+} from "@/services";
+import { CompanyDto, CompanyMaterialDto, DealDto } from "@definitions/dto";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -36,6 +42,10 @@ export default function DealDetailPage() {
   const { user } = useAuthContext();
   const [deal, setDeal] = useState<DealDto | null>(null);
   const [customer, setCustomer] = useState<CompanyDto | null>(null);
+  const [provider, setProvider] = useState<CompanyDto | null>(null);
+  const [providerMaterials, setProviderMaterials] = useState<
+    CompanyMaterialDto[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -54,6 +64,8 @@ export default function DealDetailPage() {
       .getDeal(id as string)
       .then((res) => {
         setDeal(res);
+        setCustomer(res.customer ?? null);
+        setProvider(res.provider ?? null);
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : "Failed to load deal")
@@ -62,11 +74,32 @@ export default function DealDetailPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (deal)
+    if (!deal) return;
+
+    if (!deal.customer && deal.customerId) {
       companiesService
         .getCompany(deal.customerId)
-        .then((data) => setCustomer(data));
+        .then(setCustomer)
+        .catch(() => {});
+    }
+
+    if (!deal.provider && deal.providerId) {
+      companiesService.getCompany(deal.providerId).then(setProvider).catch(() => {});
+    }
   }, [deal]);
+
+  useEffect(() => {
+    const providerId = provider?._id ?? deal?.providerId;
+    if (!providerId) {
+      setProviderMaterials([]);
+      return;
+    }
+
+    companyMaterialsService
+      .getCompanyMaterials(providerId)
+      .then(setProviderMaterials)
+      .catch(() => setProviderMaterials([]));
+  }, [deal?.providerId, provider?._id]);
 
   if (loading) {
     return <div className="text-center py-10">Загрузка данных сделки...</div>;
@@ -83,6 +116,18 @@ export default function DealDetailPage() {
   const totalDelivered = deal.totalDeliveredQuantity ?? 0;
   const actualProfit =
     totalDelivered > 0 ? deal.actualCompanyProfit ?? 0 : null;
+  const shippingAddress = deal.shippingAddress ?? deal.shipping_address;
+  const deliveryAddress = deal.deliveryAddress ?? deal.delivery_address;
+
+  const formatContacts = (company: CompanyDto | null) => {
+    if (!company?.contacts?.length) return "Не указаны";
+
+    return company.contacts
+      .flatMap((contact) =>
+        Object.entries(contact).map(([key, value]) => `${key}: ${String(value)}`)
+      )
+      .join(", ");
+  };
 
   return (
     <Page
@@ -136,16 +181,129 @@ export default function DealDetailPage() {
               className="font-medium text-lg pointer-events-none"
               colSpan={2}
             >
-              Основная информация
+              Исполнитель
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Клиент</TableCell>
-            <TableCell>{customer?.name}</TableCell>
+            <TableCell className="font-medium w-1/3">Компания</TableCell>
+            <TableCell>{provider?.name || "Не указан"}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">ИНН</TableCell>
-            <TableCell>{formatINN(customer?.inn || "")}</TableCell>
+            <TableCell className="font-medium w-1/3">Адрес</TableCell>
+            <TableCell>{shippingAddress || "Не указан"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Контакты</TableCell>
+            <TableCell>{formatContacts(provider)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">ИНН / КПП</TableCell>
+            <TableCell>
+              {provider?.inn ? formatINN(provider.inn) : "Не указан"}
+              {provider?.kpp ? ` / ${provider.kpp}` : ""}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Комментарий</TableCell>
+            <TableCell>{provider?.comment || "Нет комментария"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3 align-top">
+              Материалы и цены
+            </TableCell>
+            <TableCell>
+              {providerMaterials.length === 0 ? (
+                "Прайс-лист пуст"
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Материал</TableHead>
+                      <TableHead>Цена</TableHead>
+                      <TableHead>Комментарий</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {providerMaterials.map((item) => (
+                      <TableRow key={item._id}>
+                        <TableCell>
+                          {item.material?.name || item.materialId}
+                        </TableCell>
+                        <TableCell>
+                          {formatCurrency(item.price)} / {item.unit}
+                        </TableCell>
+                        <TableCell>{item.comment || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell
+              className="font-medium text-lg pointer-events-none"
+              colSpan={2}
+            >
+              Заказчик
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Компания</TableCell>
+            <TableCell>{customer?.name || "Не указан"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Объект</TableCell>
+            <TableCell>{deliveryAddress || "Не указан"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">
+              Закупаемый материал
+            </TableCell>
+            <TableCell>{deal.material?.name || "Не указан"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Цена</TableCell>
+            <TableCell>{formatCurrency(deal.amountSalesUnit)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Итоговая цена</TableCell>
+            <TableCell>{formatCurrency(deal.amountSalesTotal)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">ИНН / КПП</TableCell>
+            <TableCell>
+              {customer?.inn ? formatINN(customer.inn) : "Не указан"}
+              {customer?.kpp ? ` / ${customer.kpp}` : ""}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">
+              Комментарий компании
+            </TableCell>
+            <TableCell>{customer?.comment || "Нет комментария"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">
+              Комментарий по сделке
+            </TableCell>
+            <TableCell>{deal.notes || "Нет комментария"}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell
+              className="font-medium text-lg pointer-events-none"
+              colSpan={2}
+            >
+              Основная информация
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Тип услуги</TableCell>

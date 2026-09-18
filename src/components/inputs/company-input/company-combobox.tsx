@@ -1,7 +1,7 @@
 "use client";
 
 import { companiesService } from "@/services";
-import { CompanyDto } from "@definitions/dto";
+import { CompanyDto, CompanyRole } from "@definitions/dto";
 import { IdCardIcon, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Pagination } from "../../blocks";
@@ -30,10 +30,12 @@ export function CompanyCombobox({
   value = "",
   disabled = false,
   onChange = () => {},
+  role = "customer",
 }: {
   value?: string;
   disabled?: boolean;
   onChange?: (value: string) => void;
+  role?: CompanyRole;
 }) {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -47,8 +49,8 @@ export function CompanyCombobox({
   const [creatingOpen, setCreatingOpen] = useState(false);
 
   useEffect(() => {
-    companiesService.getCompanies().then((res) => setCompanies(res));
-  }, []);
+    companiesService.getCompanies(role).then((res) => setCompanies(res));
+  }, [role]);
 
   useEffect(() => {
     const loweredSearch = searchValue.toLowerCase();
@@ -107,9 +109,11 @@ export function CompanyCombobox({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Выбор заказчика</DialogTitle>
+            <DialogTitle>
+              Выбор {role === "provider" ? "исполнителя" : "заказчика"}
+            </DialogTitle>
             <DialogDescription>
-              Выберите существующего заказчика или создайте нового.
+              Выберите существующую компанию или создайте новую.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -189,6 +193,7 @@ export function CompanyCombobox({
           setOpen(true);
         }}
         onClose={() => setCreatingOpen(false)}
+        initialRole={role}
       />
     </>
   );

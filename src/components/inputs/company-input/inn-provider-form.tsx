@@ -1,4 +1,5 @@
 import { companiesService } from "@/services";
+import { CompanyRole } from "@definitions/dto";
 import { CreateCompanyRequest } from "@definitions/requests";
 import { useState } from "react";
 import { Button } from "../../ui/button";
@@ -11,11 +12,13 @@ export default function InnProviderForm({
   withShortName = false,
   onSubmit = () => {},
   onCancel = () => {},
+  roles,
 }: {
   disabled?: boolean;
   withShortName?: boolean;
   onSubmit?: (data: CreateCompanyRequest) => void;
   onCancel?: () => void;
+  roles: CompanyRole[];
 }) {
   const [searching, setSearching] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -24,13 +27,16 @@ export default function InnProviderForm({
   const [name, setName] = useState<string>("");
   const [abbreviatedName, setAbbreviatedName] = useState<string>("");
   const [type, setType] = useState<string>("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [kpp, setKpp] = useState<string>("");
+  const [comment, setComment] = useState<string>("");
+  const [contacts, setContacts] = useState<Record<string, unknown>[]>([]);
 
   const resetFields = () => {
     setName("");
     setAbbreviatedName("");
     setType("");
+    setKpp("");
+    setComment("");
     setContacts([]);
   };
 
@@ -48,9 +54,11 @@ export default function InnProviderForm({
           return;
         }
         setName(res.name);
-        setAbbreviatedName(res.abbreviatedName);
+        setAbbreviatedName(res.abbreviatedName ?? "");
         setContacts(res.contacts);
-        setType(res.type);
+        setType(res.type ?? "");
+        setKpp(res.kpp ?? "");
+        setComment(res.comment ?? "");
       })
       .catch((err) => {
         setError(
@@ -68,7 +76,10 @@ export default function InnProviderForm({
       name,
       abbreviatedName,
       inn,
+      kpp,
+      roles,
       contacts,
+      comment,
     });
   };
 
@@ -130,6 +141,14 @@ export default function InnProviderForm({
             />
           </div>
         )}
+        {kpp && (
+          <div className="grid gap-3">
+            <Label htmlFor="kpp" className="gap-0.5">
+              КПП
+            </Label>
+            <Input value={kpp} disabled name="kpp" autoComplete="off" />
+          </div>
+        )}
         {contacts.map((contact, idx) => {
           const key = Object.keys(contact)[0];
           let fieldName = key === "address" ? "Адрес" : key;
@@ -142,7 +161,7 @@ export default function InnProviderForm({
                 {fieldName}
               </Label>
               <Input
-                defaultValue={contact[key]}
+                defaultValue={String(contact[key] ?? "")}
                 disabled
                 name={key}
                 autoComplete="off"
@@ -150,6 +169,18 @@ export default function InnProviderForm({
             </div>
           );
         })}
+        <div className="grid gap-3">
+          <Label htmlFor="comment" className="gap-0.5">
+            Комментарий
+          </Label>
+          <Input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            disabled={disabled || searching}
+            name="comment"
+            autoComplete="off"
+          />
+        </div>
       </div>
       <DialogFooter>
         <DialogClose asChild>

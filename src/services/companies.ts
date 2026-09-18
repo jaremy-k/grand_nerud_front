@@ -1,10 +1,14 @@
 import { apiPath } from "@/lib/api";
-import { secureGetData, securePostData } from "@/lib/fetch";
-import { CompanyDto } from "@definitions/dto";
-import { CreateCompanyRequest } from "@definitions/requests";
+import { secureGetData, securePatchData, securePostData } from "@/lib/fetch";
+import { CompanyDto, CompanyRole } from "@definitions/dto";
+import {
+  CreateCompanyRequest,
+  UpdateCompanyRequest,
+} from "@definitions/requests";
 
-export async function getCompanies(): Promise<CompanyDto[]> {
-  return secureGetData(apiPath("/companies"));
+export async function getCompanies(role?: CompanyRole): Promise<CompanyDto[]> {
+  const query = role ? `?role=${encodeURIComponent(role)}` : "";
+  return secureGetData(apiPath(`/companies${query}`));
 }
 
 export async function getCompany(id: string): Promise<CompanyDto> {
@@ -52,4 +56,18 @@ export async function createCompany(
         : data.inn,
   };
   return securePostData(apiPath("/companies"), payload);
+}
+
+export async function updateCompany(
+  id: string,
+  data: UpdateCompanyRequest
+): Promise<CompanyDto> {
+  const payload: UpdateCompanyRequest = {
+    ...data,
+    inn:
+      data.inn != null && data.inn !== ""
+        ? data.inn.replace(/\D/g, "")
+        : data.inn,
+  };
+  return securePatchData(apiPath(`/companies/${id}`), payload);
 }
