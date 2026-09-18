@@ -35,7 +35,10 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
       !dealFormData.customerId ||
       !dealFormData.providerId ||
       !dealFormData.stageId ||
-      !dealFormData.materialId
+      !dealFormData.materialId ||
+      !dealFormData.shippingAddressId ||
+      (dealFormData.methodReceiving === "доставка" &&
+        !dealFormData.deliveryAddressId)
     ) {
       setError("необходимо заполнить все обязательные поля");
       setSubmiting(false);
@@ -53,8 +56,8 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
         amountPurchaseUnit: Number(dealFormData.amountPurchaseUnit),
         amountSalesUnit: Number(dealFormData.amountSalesUnit),
         amountDelivery: Number(dealFormData.amountDelivery),
-        shippingAddress: dealFormData.shippingAddress,
-        deliveryAddress: dealFormData.deliveryAddress,
+        shippingAddressId: dealFormData.shippingAddressId,
+        deliveryAddressId: dealFormData.deliveryAddressId || null,
         notes: dealFormData.notes,
         OSSIG: dealFormData.ossig,
         addExpenses: dealFormData.extraExpenses.map((v) => ({
@@ -258,6 +261,9 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                   !dealFormData.providerId ||
                   !dealFormData.stageId ||
                   !dealFormData.materialId ||
+                  !dealFormData.shippingAddressId ||
+                  (dealFormData.methodReceiving === "доставка" &&
+                    !dealFormData.deliveryAddressId) ||
                   !dealFormData.serviceId ||
                   submiting ||
                   (!!defaultDeal && !isDirty)

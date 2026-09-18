@@ -1,8 +1,8 @@
 "use client";
 
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import AddressSelect from "@/components/inputs/company-input/address-select";
 import { isSalesService, isTransportService } from "@/config/services";
-import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -130,40 +130,32 @@ export default function DeliveryInformationSection({
           <div className="grid gap-4 sm:grid-cols-1">
             <Field>
               <FieldLabel
-                htmlFor="shippingAddress"
+                htmlFor="shippingAddressId"
                 className="mb-1.5 block text-sm font-medium"
               >
                 Адрес отгрузки
               </FieldLabel>
-              <Input
-                name="shippingAddress"
-                value={dealFormData.shippingAddress}
-                onChange={(e) =>
-                  updateField("shippingAddress", e.target.value)
-                }
-                type="text"
-                placeholder="Введите адрес отгрузки"
-                className="h-9"
+              <AddressSelect
+                companyId={dealFormData.providerId}
+                value={dealFormData.shippingAddressId}
+                onChange={(value) => updateField("shippingAddressId", value)}
+                placeholder="Выберите адрес исполнителя"
               />
             </Field>
             {(dealFormData.methodReceiving === "доставка" ||
               isTransportService(dealFormData.serviceId, services)) && (
               <Field>
                 <FieldLabel
-                  htmlFor="deliveryAddress"
+                  htmlFor="deliveryAddressId"
                   className="mb-1.5 block text-sm font-medium"
                 >
                   Адрес доставки
                 </FieldLabel>
-                <Input
-                  name="deliveryAddress"
-                  value={dealFormData.deliveryAddress}
-                  onChange={(e) =>
-                    updateField("deliveryAddress", e.target.value)
-                  }
-                  type="text"
-                  placeholder="Введите адрес доставки"
-                  className="h-9"
+                <AddressSelect
+                  companyId={dealFormData.customerId}
+                  value={dealFormData.deliveryAddressId}
+                  onChange={(value) => updateField("deliveryAddressId", value)}
+                  placeholder="Выберите объект заказчика"
                 />
               </Field>
             )}

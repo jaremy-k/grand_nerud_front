@@ -1,4 +1,11 @@
-import { CompanyDto, MaterialDto, ServiceDto, StageDto, UserDto } from "./";
+import {
+  AddressDto,
+  CompanyDto,
+  MaterialDto,
+  ServiceDto,
+  StageDto,
+  UserDto,
+} from "./";
 
 export default interface DealDto {
   _id: string;
@@ -37,11 +44,11 @@ export default interface DealDto {
 
   paymentMethod: string;
 
-  shippingAddress: string | null;
-  shipping_address?: string | null;
+  shippingAddressId: string | null;
+  shippingAddress: AddressDto | null;
   methodReceiving: string;
-  deliveryAddress: string | null;
-  delivery_address?: string | null;
+  deliveryAddressId: string | null;
+  deliveryAddress: AddressDto | null;
 
   notes: string;
   OSSIG: boolean;

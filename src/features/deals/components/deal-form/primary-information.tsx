@@ -86,7 +86,10 @@ export default function PrimaryInformationSection({
               role="customer"
               disabled={!!defaultDeal}
               value={dealFormData.customerId ?? ""}
-              onChange={(val) => updateField("customerId", val)}
+              onChange={(val) => {
+                updateField("customerId", val);
+                updateField("deliveryAddressId", "");
+              }}
             />
           </Field>
           <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
@@ -99,7 +102,10 @@ export default function PrimaryInformationSection({
             <CompanyCombobox
               role="provider"
               value={dealFormData.providerId ?? ""}
-              onChange={(val) => updateField("providerId", val)}
+              onChange={(val) => {
+                updateField("providerId", val);
+                updateField("shippingAddressId", "");
+              }}
             />
           </Field>
           <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">

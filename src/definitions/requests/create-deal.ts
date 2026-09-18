@@ -14,9 +14,9 @@ export default interface CreateDealRequest {
 
   paymentMethod: "наличный расчет" | "безналичный расчет";
 
-  shippingAddress: string;
+  shippingAddressId: string;
   methodReceiving: "самовывоз" | "доставка";
-  deliveryAddress: string;
+  deliveryAddressId: string | null;
 
   notes: string;
   OSSIG: boolean;

@@ -48,8 +48,8 @@ export type DealFormData = {
   amountDelivery: string;
   paymentMethod: PaymentMethod;
   methodReceiving: ReceivingMethod;
-  deliveryAddress: string;
-  shippingAddress: string;
+  deliveryAddressId: string;
+  shippingAddressId: string;
   ossig: boolean;
   notes: string;
   extraExpenses: Array<ExtraExpenses>;

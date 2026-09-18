@@ -46,8 +46,8 @@ function dealToFormData(d: DealDto): DealFormData {
     amountDelivery: String(d.amountDelivery || "0"),
     paymentMethod: (d.paymentMethod as PaymentMethod) || "наличный расчет",
     methodReceiving: (d.methodReceiving as ReceivingMethod) || "самовывоз",
-    deliveryAddress: d.deliveryAddress || "",
-    shippingAddress: d.shippingAddress || "",
+    deliveryAddressId: d.deliveryAddressId || "",
+    shippingAddressId: d.shippingAddressId || "",
     ossig: d.OSSIG || false,
     notes: d.notes || "",
     extraExpenses:
@@ -78,8 +78,8 @@ function isFormDataEqual(a: DealFormData, b: DealFormData): boolean {
     a.amountDelivery !== b.amountDelivery ||
     a.paymentMethod !== b.paymentMethod ||
     a.methodReceiving !== b.methodReceiving ||
-    a.deliveryAddress !== b.deliveryAddress ||
-    a.shippingAddress !== b.shippingAddress ||
+    a.deliveryAddressId !== b.deliveryAddressId ||
+    a.shippingAddressId !== b.shippingAddressId ||
     a.ossig !== b.ossig ||
     a.notes !== b.notes
   ) {
@@ -149,8 +149,8 @@ export default function useDataFormHook(
       (defaultDeal?.paymentMethod as PaymentMethod) || "наличный расчет",
     methodReceiving:
       (defaultDeal?.methodReceiving as ReceivingMethod) || "самовывоз",
-    deliveryAddress: defaultDeal?.deliveryAddress || "",
-    shippingAddress: defaultDeal?.shippingAddress || "",
+    deliveryAddressId: defaultDeal?.deliveryAddressId || "",
+    shippingAddressId: defaultDeal?.shippingAddressId || "",
     ossig: defaultDeal?.OSSIG || false,
     notes: defaultDeal?.notes || "",
     extraExpenses:
@@ -263,8 +263,8 @@ export default function useDataFormHook(
         methodReceiving:
           (defaultDeal.methodReceiving as ReceivingMethod) ||
           (currIsTransport ? "доставка" : "самовывоз"),
-        deliveryAddress: defaultDeal.deliveryAddress || "",
-        shippingAddress: defaultDeal.shippingAddress || "",
+        deliveryAddressId: defaultDeal.deliveryAddressId || "",
+        shippingAddressId: defaultDeal.shippingAddressId || "",
         ossig: defaultDeal.OSSIG || false,
         deliveredQuantity:
           defaultDeal?.deliveredQuantity?.map((el) => ({
@@ -290,8 +290,8 @@ export default function useDataFormHook(
         amountDelivery: "0",
         paymentMethod: "наличный расчет",
         methodReceiving: currIsTransport ? "доставка" : "самовывоз",
-        deliveryAddress: "",
-        shippingAddress: "",
+        deliveryAddressId: "",
+        shippingAddressId: "",
         ossig: false,
       }));
     }
@@ -312,11 +312,11 @@ export default function useDataFormHook(
       defaultDeal &&
       defaultDeal.methodReceiving === dealFormData.methodReceiving
     ) {
-      updateField("deliveryAddress", defaultDeal.deliveryAddress || "");
+      updateField("deliveryAddressId", defaultDeal.deliveryAddressId || "");
       updateField("amountDelivery", String(defaultDeal.amountDelivery || "0"));
       return;
     }
-    updateField("deliveryAddress", "");
+    updateField("deliveryAddressId", "");
     updateField("amountDelivery", "0");
   }, [dealFormData.methodReceiving, defaultDeal, updateField]);
 

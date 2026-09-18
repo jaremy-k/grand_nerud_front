@@ -31,8 +31,14 @@ import {
   companiesService,
   companyMaterialsService,
   dealsService,
+  addressesService,
 } from "@/services";
-import { CompanyDto, CompanyMaterialDto, DealDto } from "@definitions/dto";
+import {
+  AddressDto,
+  CompanyDto,
+  CompanyMaterialDto,
+  DealDto,
+} from "@definitions/dto";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -46,6 +52,8 @@ export default function DealDetailPage() {
   const [providerMaterials, setProviderMaterials] = useState<
     CompanyMaterialDto[]
   >([]);
+  const [shippingAddress, setShippingAddress] = useState<AddressDto | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState<AddressDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -66,6 +74,8 @@ export default function DealDetailPage() {
         setDeal(res);
         setCustomer(res.customer ?? null);
         setProvider(res.provider ?? null);
+        setShippingAddress(res.shippingAddress ?? null);
+        setDeliveryAddress(res.deliveryAddress ?? null);
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : "Failed to load deal")
@@ -104,6 +114,21 @@ export default function DealDetailPage() {
       .catch(() => setProviderMaterials([]));
   }, [deal?.providerId, provider?._id]);
 
+  useEffect(() => {
+    if (deal?.shippingAddressId && !deal.shippingAddress) {
+      addressesService
+        .getAddress(deal.shippingAddressId)
+        .then(setShippingAddress)
+        .catch(() => setShippingAddress(null));
+    }
+    if (deal?.deliveryAddressId && !deal.deliveryAddress) {
+      addressesService
+        .getAddress(deal.deliveryAddressId)
+        .then(setDeliveryAddress)
+        .catch(() => setDeliveryAddress(null));
+    }
+  }, [deal]);
+
   if (loading) {
     return <div className="text-center py-10">Загрузка данных сделки...</div>;
   }
@@ -119,8 +144,8 @@ export default function DealDetailPage() {
   const totalDelivered = deal.totalDeliveredQuantity ?? 0;
   const actualProfit =
     totalDelivered > 0 ? deal.actualCompanyProfit ?? 0 : null;
-  const shippingAddress = deal.shippingAddress ?? deal.shipping_address;
-  const deliveryAddress = deal.deliveryAddress ?? deal.delivery_address;
+  const shippingAddressLabel = shippingAddress?.adressDetail?.address;
+  const deliveryAddressLabel = deliveryAddress?.adressDetail?.address;
 
   const formatContactPersons = (company: CompanyDto | null) => {
     if (!company?.contactPersons?.length) return "Не указаны";
@@ -203,7 +228,7 @@ export default function DealDetailPage() {
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Адрес</TableCell>
-            <TableCell>{shippingAddress || "Не указан"}</TableCell>
+            <TableCell>{shippingAddressLabel || "Не указан"}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Контрагенты</TableCell>
@@ -279,7 +304,7 @@ export default function DealDetailPage() {
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Объект</TableCell>
-            <TableCell>{deliveryAddress || "Не указан"}</TableCell>
+            <TableCell>{deliveryAddressLabel || "Не указан"}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">
