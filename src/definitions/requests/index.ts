@@ -8,3 +8,4 @@ export type {
   UpdateCompanyMaterialRequest,
 } from "./company-material";
 export type { default as CreateMaterialRequest } from "./create-material";
+export type { CreateAddressRequest, UpdateAddressRequest } from "./address";

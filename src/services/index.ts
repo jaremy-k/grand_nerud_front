@@ -6,3 +6,4 @@ export * as stagesService from "./stages";
 export * as usersService from "./users";
 export * as companiesService from "./companies";
 export * as companyMaterialsService from "./company-materials";
+export * as addressesService from "./addresses";

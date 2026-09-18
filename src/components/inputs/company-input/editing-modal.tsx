@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import ContactPersonsEditor, {
   isValidContactPersons,
 } from "./contact-persons-editor";
+import AddressesSection from "./addresses-section";
 
 export function EditingCompanyModal({
   company,
@@ -205,6 +206,8 @@ export function EditingCompanyModal({
               disabled={submitting}
             />
           </div>
+
+          {company && <AddressesSection companyId={company._id} />}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
