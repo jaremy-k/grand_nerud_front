@@ -2,6 +2,7 @@
 
 import { Page } from "@/components/blocks";
 import { CreatingModal } from "@/components/inputs/company-input/creating-modal";
+import { EditingCompanyModal } from "@/components/inputs/company-input/editing-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +16,7 @@ import {
 import { formatINN } from "@/lib/formatters";
 import { companiesService } from "@/services";
 import { CompanyDto, CompanyRole } from "@definitions/dto";
-import { PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function formatContactPersons(company: CompanyDto): string {
@@ -35,6 +36,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<CompanyDto | null>(null);
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
 
@@ -108,6 +110,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   Контакт карточки
                 </TableHead>
                 <TableHead>Комментарий</TableHead>
+                <TableHead className="w-12">
+                  <span className="sr-only">Действия</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -125,12 +130,23 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                       : "—"}
                   </TableCell>
                   <TableCell>{company.comment || "—"}</TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={`Редактировать ${company.name}`}
+                      onClick={() => setEditingCompany(company)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены
@@ -153,6 +169,24 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               ? [...current, company]
               : current
           )
+        }
+      />
+      <EditingCompanyModal
+        company={editingCompany}
+        open={editingCompany !== null}
+        onClose={() => setEditingCompany(null)}
+        onUpdate={(updatedCompany) =>
+          setCompanies((current) => {
+            const belongsToSection =
+              !updatedCompany.roles?.length ||
+              updatedCompany.roles.includes(role);
+            if (!belongsToSection) {
+              return current.filter((item) => item._id !== updatedCompany._id);
+            }
+            return current.map((item) =>
+              item._id === updatedCompany._id ? updatedCompany : item
+            );
+          })
         }
       />
     </Page>

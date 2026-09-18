@@ -2,7 +2,7 @@
 
 import { companiesService } from "@/services";
 import { CompanyDto, CompanyRole } from "@definitions/dto";
-import { IdCardIcon, Plus } from "lucide-react";
+import { IdCardIcon, PencilIcon, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Pagination } from "../../blocks";
 import { Button } from "../../ui/button";
@@ -24,6 +24,7 @@ import {
 import { Input } from "../../ui/input";
 import CompanyButton from "./company-card";
 import { CreatingModal } from "./creating-modal";
+import { EditingCompanyModal } from "./editing-modal";
 import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
 
 export function CompanyCombobox({
@@ -47,6 +48,7 @@ export function CompanyCombobox({
 
   const [open, setOpen] = useState(false);
   const [creatingOpen, setCreatingOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<CompanyDto | null>(null);
 
   useEffect(() => {
     companiesService.getCompanies(role).then((res) => setCompanies(res));
@@ -106,6 +108,19 @@ export function CompanyCombobox({
       return [...c, company];
     });
     onChange(company._id);
+  };
+
+  const handleCompanyUpdate = (company: CompanyDto) => {
+    setCompanies((current) => {
+      const belongsToRole =
+        !company.roles?.length || company.roles.includes(role);
+      if (!belongsToRole) {
+        return current.filter((item) => item._id !== company._id);
+      }
+      return current.map((item) =>
+        item._id === company._id ? company : item
+      );
+    });
   };
 
   return (
@@ -179,15 +194,29 @@ export function CompanyCombobox({
                 filteredCompanies
                   .slice((currentPage - 1) * 10, 10 * currentPage)
                   .map((el) => (
-                    <CompanyButton
-                      key={el._id}
-                      company={el}
-                      selected={value === el._id}
-                      onClick={() => {
-                        onChange(el._id);
-                        setOpen(false);
-                      }}
-                    />
+                    <div key={el._id} className="flex items-center gap-1">
+                      <CompanyButton
+                        company={el}
+                        selected={value === el._id}
+                        onClick={() => {
+                          onChange(el._id);
+                          setOpen(false);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        className="shrink-0"
+                        aria-label={`Редактировать ${el.name}`}
+                        onClick={() => {
+                          setOpen(false);
+                          setEditingCompany(el);
+                        }}
+                      >
+                        <PencilIcon />
+                      </Button>
+                    </div>
                   ))}
             </div>
             <div className="mt-4 mx-auto">
@@ -209,6 +238,15 @@ export function CompanyCombobox({
         }}
         onClose={() => setCreatingOpen(false)}
         initialRole={role}
+      />
+      <EditingCompanyModal
+        company={editingCompany}
+        open={editingCompany !== null}
+        onClose={() => {
+          setEditingCompany(null);
+          setOpen(true);
+        }}
+        onUpdate={handleCompanyUpdate}
       />
     </>
   );
