@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import useAuthContext from "@/contexts/auth-context";
+import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import { addressesService } from "@/services";
 import { AddressDto } from "@definitions/dto";
 import { PlusIcon } from "lucide-react";
@@ -40,7 +41,9 @@ export default function AddressSelect({
   const [address, setAddress] = useState("");
   const [entrance, setEntrance] = useState("");
   const [typeAdress, setTypeAdress] = useState("Объект");
-  const [cityId, setCityId] = useState("");
+  const [city, setCity] = useState("Москва");
+  const [administrativeDistrict, setAdministrativeDistrict] = useState("");
+  const [district, setDistrict] = useState("");
   const [longitude, setLongitude] = useState("");
   const [latitude, setLatitude] = useState("");
   const [saving, setSaving] = useState(false);
@@ -63,7 +66,9 @@ export default function AddressSelect({
     setAddress("");
     setEntrance("");
     setTypeAdress("Объект");
-    setCityId("");
+    setCity("Москва");
+    setAdministrativeDistrict("");
+    setDistrict("");
     setLongitude("");
     setLatitude("");
     setError("");
@@ -88,7 +93,9 @@ export default function AddressSelect({
       const created = await addressesService.createAddress({
         companyId,
         coordinates: [longitudeValue, latitudeValue],
-        cityId: cityId.trim() || undefined,
+        city: city.trim() || undefined,
+        administrativeDistrict: administrativeDistrict || undefined,
+        district: district.trim() || undefined,
         adressDetail: {
           address: address.trim(),
           ...(entrance.trim() ? { entrance: entrance.trim() } : {}),
@@ -169,11 +176,40 @@ export default function AddressSelect({
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="deal-new-address-city">ID города</Label>
+              <Label htmlFor="deal-new-address-city">Город</Label>
               <Input
                 id="deal-new-address-city"
-                value={cityId}
-                onChange={(event) => setCityId(event.target.value)}
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                disabled={saving}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="deal-new-address-administrative-district">Округ</Label>
+              <Select
+                value={administrativeDistrict || "not-set"}
+                onValueChange={(value) =>
+                  setAdministrativeDistrict(value === "not-set" ? "" : value)
+                }
+                disabled={saving}
+              >
+                <SelectTrigger id="deal-new-address-administrative-district">
+                  <SelectValue placeholder="Выберите округ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-set">Не указан</SelectItem>
+                  {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((item) => (
+                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="deal-new-address-district">Район</Label>
+              <Input
+                id="deal-new-address-district"
+                value={district}
+                onChange={(event) => setDistrict(event.target.value)}
                 disabled={saving}
               />
             </div>

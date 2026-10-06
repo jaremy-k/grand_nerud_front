@@ -40,7 +40,7 @@ export default function ContactPersonsEditor({
   return (
     <div className="grid gap-3">
       <div className="flex items-center justify-between gap-3">
-        <Label>Контрагенты</Label>
+        <Label>Контактные лица</Label>
         <Button
           type="button"
           size="sm"
@@ -59,13 +59,15 @@ export default function ContactPersonsEditor({
           className="grid gap-3 rounded-md border border-border/60 bg-muted/20 p-3"
         >
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium">Контрагент {index + 1}</p>
+            <p className="text-sm font-medium">
+              Контактное лицо {index + 1}
+            </p>
             <Button
               type="button"
               size="icon-sm"
               variant="ghost"
               disabled={disabled}
-              aria-label="Удалить контрагента"
+              aria-label="Удалить контактное лицо"
               onClick={() =>
                 onChange(value.filter((_, personIndex) => personIndex !== index))
               }

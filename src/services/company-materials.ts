@@ -12,11 +12,13 @@ import {
 } from "@definitions/requests";
 
 export async function getCompanyMaterials(
-  companyId?: string
+  companyId?: string,
+  materialId?: string
 ): Promise<CompanyMaterialDto[]> {
-  const query = companyId
-    ? `?companyId=${encodeURIComponent(companyId)}`
-    : "";
+  const params = new URLSearchParams();
+  if (companyId) params.set("companyId", companyId);
+  if (materialId) params.set("materialId", materialId);
+  const query = params.size ? `?${params.toString()}` : "";
   return secureGetData(apiPath(`/company-materials${query}`));
 }
 

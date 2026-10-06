@@ -9,6 +9,9 @@ export default interface AddressDto {
   companyId: string;
   coordinates: [number, number];
   cityId?: string;
+  city?: string;
+  administrativeDistrict?: string;
+  district?: string;
   adressDetail: AddressDetail;
   typeAdress: string;
   deletedAt: string | null;

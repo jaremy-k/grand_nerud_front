@@ -4,8 +4,18 @@ import { Page } from "@/components/blocks";
 import { CreatingModal } from "@/components/inputs/company-input/creating-modal";
 import { EditingCompanyModal } from "@/components/inputs/company-input/editing-modal";
 import { ImportCompaniesModal } from "@/components/inputs/company-input/import-modal";
+import CompanyContactDetails from "@/components/inputs/company-input/company-contact-details";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import {
   Table,
   TableBody,
@@ -20,36 +30,13 @@ import { AddressDto, CompanyDto, CompanyRole } from "@definitions/dto";
 import { PencilIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-function formatContactPersons(company: CompanyDto): string {
-  if (!company.contactPersons?.length) return "—";
-  return company.contactPersons
-    .map((person) =>
-      [
-        person.name,
-        person.position,
-        person.isPrimary ? "Основной" : undefined,
-        person.inn ? `ИНН ${person.inn}` : undefined,
-        person.phone,
-        person.email,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    )
-    .join("; ");
-}
-
-function formatCompanyCommunication(company: CompanyDto): string {
-  return [
-    ...(company.phones ?? []),
-    ...(company.emails ?? []),
-    ...(company.websites ?? []),
-  ].join("; ") || "—";
-}
-
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [search, setSearch] = useState("");
+  const [city, setCity] = useState("");
+  const [administrativeDistrict, setAdministrativeDistrict] = useState("");
+  const [district, setDistrict] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -62,7 +49,13 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
     setLoading(true);
     setError("");
     Promise.all([
-      companiesService.getCompanies(role),
+      companiesService.getCompanies({
+        role,
+        includeDetails: true,
+        city: city.trim() || undefined,
+        administrativeDistrict: administrativeDistrict || undefined,
+        district: district.trim() || undefined,
+      }),
       addressesService.getAddresses(),
     ])
       .then(([companyData, addressData]) => {
@@ -75,7 +68,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         )
       )
       .finally(() => setLoading(false));
-  }, [role]);
+  }, [role, city, administrativeDistrict, district]);
 
   const filteredCompanies = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -132,12 +125,52 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
       }
     >
       <div className="space-y-4 py-4">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Поиск по названию, ИНН или КПП"
-          className="max-w-md"
-        />
+        <div className="grid gap-3 lg:grid-cols-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="company-search">Поиск</Label>
+            <Input
+              id="company-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Название, ИНН или КПП"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="company-city-filter">Город</Label>
+            <Input
+              id="company-city-filter"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              placeholder="Москва"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="company-administrative-district-filter">Округ</Label>
+            <Select
+              value={administrativeDistrict || "all"}
+              onValueChange={(value) => setAdministrativeDistrict(value === "all" ? "" : value)}
+            >
+              <SelectTrigger id="company-administrative-district-filter">
+                <SelectValue placeholder="Все округа" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все округа</SelectItem>
+                {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((item) => (
+                  <SelectItem key={item} value={item}>{item}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="company-district-filter">Район</Label>
+            <Input
+              id="company-district-filter"
+              value={district}
+              onChange={(event) => setDistrict(event.target.value)}
+              placeholder="Даниловский"
+            />
+          </div>
+        </div>
 
         {loading && (
           <p className="py-10 text-center text-muted-foreground">Загрузка...</p>
@@ -150,13 +183,13 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                 <TableHead>Компания</TableHead>
                 <TableHead>ИНН</TableHead>
                 <TableHead>КПП</TableHead>
-                <TableHead>Контрагенты</TableHead>
-                <TableHead>Связь</TableHead>
+                <TableHead>Контактные лица и связь</TableHead>
                 <TableHead>Источник / сегменты</TableHead>
                 <TableHead className="text-muted-foreground/70">
                   Контакт карточки
                 </TableHead>
                 <TableHead>Адреса</TableHead>
+                <TableHead>Прайс-лист</TableHead>
                 <TableHead>Комментарий</TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Действия</span>
@@ -171,8 +204,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     {company.inn ? formatINN(company.inn) : "—"}
                   </TableCell>
                   <TableCell>{company.kpp || "—"}</TableCell>
-                  <TableCell>{formatContactPersons(company)}</TableCell>
-                  <TableCell>{formatCompanyCommunication(company)}</TableCell>
+                  <TableCell className="min-w-64 align-top">
+                    <CompanyContactDetails company={company} />
+                  </TableCell>
                   <TableCell>
                     {[company.source, ...(company.segments ?? [])]
                       .filter(Boolean)
@@ -188,6 +222,22 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                       .map((address) => address.adressDetail?.address)
                       .filter(Boolean)
                       .join("; ") || "—"}
+                  </TableCell>
+                  <TableCell className="min-w-52 align-top">
+                    {company.materialsWithPrices?.length ? (
+                      <div className="grid gap-1">
+                        {company.materialsWithPrices.map((item) => (
+                          <div key={item._id} className="text-xs">
+                            <span className="font-medium">
+                              {item.material?.name || "Материал"}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {` · ${new Intl.NumberFormat("ru-RU").format(item.price)} руб. / ${item.unit}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : "—"}
                   </TableCell>
                   <TableCell>{company.comment || "—"}</TableCell>
                   <TableCell>
@@ -236,7 +286,10 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         role={role}
         onClose={() => setImportOpen(false)}
         onImported={() =>
-          companiesService.getCompanies(role).then(setCompanies).catch(() => {})
+          companiesService
+            .getCompanies({ role, includeDetails: true })
+            .then(setCompanies)
+            .catch(() => {})
         }
       />
       <EditingCompanyModal
@@ -251,9 +304,11 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
             if (!belongsToSection) {
               return current.filter((item) => item._id !== updatedCompany._id);
             }
-            return current.map((item) =>
-              item._id === updatedCompany._id ? updatedCompany : item
-            );
+              return current.map((item) =>
+                item._id === updatedCompany._id
+                  ? { ...item, ...updatedCompany }
+                  : item
+              );
           })
         }
       />

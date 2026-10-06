@@ -10,6 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import useAuthContext from "@/contexts/auth-context";
 import { addressesService } from "@/services";
 import { AddressDto } from "@definitions/dto";
@@ -20,7 +28,9 @@ type AddressFormState = {
   address: string;
   entrance: string;
   typeAdress: string;
-  cityId: string;
+  city: string;
+  administrativeDistrict: string;
+  district: string;
   longitude: string;
   latitude: string;
 };
@@ -29,7 +39,9 @@ const EMPTY_FORM: AddressFormState = {
   address: "",
   entrance: "",
   typeAdress: "Объект",
-  cityId: "",
+  city: "Москва",
+  administrativeDistrict: "",
+  district: "",
   longitude: "",
   latitude: "",
 };
@@ -76,7 +88,9 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
       address: address.adressDetail?.address ?? "",
       entrance: String(address.adressDetail?.entrance ?? ""),
       typeAdress: address.typeAdress ?? "Объект",
-      cityId: address.cityId ?? "",
+      city: address.city ?? "",
+      administrativeDistrict: address.administrativeDistrict ?? "",
+      district: address.district ?? "",
       longitude: String(address.coordinates?.[0] ?? ""),
       latitude: String(address.coordinates?.[1] ?? ""),
     });
@@ -98,7 +112,9 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
 
     const data = {
       coordinates: [longitude, latitude] as [number, number],
-      cityId: form.cityId.trim() || undefined,
+      city: form.city.trim() || undefined,
+      administrativeDistrict: form.administrativeDistrict || undefined,
+      district: form.district.trim() || undefined,
       adressDetail: {
         address: form.address.trim(),
         ...(form.entrance.trim() ? { entrance: form.entrance.trim() } : {}),
@@ -182,6 +198,13 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
                   ? ` · ${String(address.adressDetail.entrance)}`
                   : ""}
               </p>
+              {(address.city || address.administrativeDistrict || address.district) && (
+                <p className="text-xs text-muted-foreground">
+                  {[address.city, address.administrativeDistrict, address.district]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground/70">
                 {address.coordinates?.join(", ")}
               </p>
@@ -250,11 +273,40 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="company-address-city">ID города</Label>
+              <Label htmlFor="company-address-city">Город</Label>
               <Input
                 id="company-address-city"
-                value={form.cityId}
-                onChange={(event) => updateField("cityId", event.target.value)}
+                value={form.city}
+                onChange={(event) => updateField("city", event.target.value)}
+                disabled={saving}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="company-address-administrative-district">Округ</Label>
+              <Select
+                value={form.administrativeDistrict || "not-set"}
+                onValueChange={(value) =>
+                  updateField("administrativeDistrict", value === "not-set" ? "" : value)
+                }
+                disabled={saving}
+              >
+                <SelectTrigger id="company-address-administrative-district">
+                  <SelectValue placeholder="Выберите округ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-set">Не указан</SelectItem>
+                  {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((district) => (
+                    <SelectItem key={district} value={district}>{district}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="company-address-district">Район</Label>
+              <Input
+                id="company-address-district"
+                value={form.district}
+                onChange={(event) => updateField("district", event.target.value)}
                 disabled={saving}
               />
             </div>

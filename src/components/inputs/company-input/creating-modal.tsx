@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { companiesService } from "@/services";
 import { CompanyDto } from "@definitions/dto";
 import type { CompanyRole } from "@definitions/dto";
@@ -13,6 +12,7 @@ import { useEffect, useState } from "react";
 import InnProviderForm from "./inn-provider-form";
 import ManualForm from "./manual-form";
 import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
+import CompanyRoleSelector from "./company-role-selector";
 
 export function CreatingModal({
   open,
@@ -35,16 +35,6 @@ export function CreatingModal({
   useEffect(() => {
     if (open) setRoles([initialRole]);
   }, [initialRole, open]);
-
-  const toggleRole = (role: CompanyRole) => {
-    setRoles((current) =>
-      current.includes(role)
-        ? current.length > 1
-          ? current.filter((item) => item !== role)
-          : current
-        : [...current, role]
-    );
-  };
 
   const hanleCancel = () => {
     onCancel();
@@ -75,27 +65,11 @@ export function CreatingModal({
         <DialogHeader>
           <DialogTitle>Добавление компании</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-2">
-          <p className="text-sm font-medium">Роли компании</p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={roles.includes("provider") ? "default" : "outline"}
-              onClick={() => toggleRole("provider")}
-            >
-              Исполнитель
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={roles.includes("customer") ? "default" : "outline"}
-              onClick={() => toggleRole("customer")}
-            >
-              Заказчик
-            </Button>
-          </div>
-        </div>
+        <CompanyRoleSelector
+          value={roles}
+          onChange={setRoles}
+          disabled={submitting}
+        />
         <div className="flex pb-2.5">
           <TypeSelector value={type} onChange={setType} withoutAny />
         </div>

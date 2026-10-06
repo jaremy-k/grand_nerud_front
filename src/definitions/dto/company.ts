@@ -1,5 +1,7 @@
 export type CompanyRole = "provider" | "customer";
 
+import type CompanyMaterialDto from "./company-material";
+
 export type ContactPerson = {
   name: string;
   inn?: string;
@@ -25,6 +27,7 @@ export default interface CompanyDto {
   websites?: string[];
   source?: string;
   segments?: string[];
+  materialsWithPrices?: CompanyMaterialDto[];
   comment?: string;
   deleted_at?: string;
   is_deleted?: boolean;

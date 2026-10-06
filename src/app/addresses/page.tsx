@@ -4,6 +4,7 @@ import { Page } from "@/components/blocks";
 import AddressesSection from "@/components/inputs/company-input/addresses-section";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import {
   Select,
   SelectContent,
@@ -28,12 +29,22 @@ export default function AddressesPage() {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [search, setSearch] = useState("");
+  const [city, setCity] = useState("");
+  const [administrativeDistrict, setAdministrativeDistrict] = useState("");
+  const [district, setDistrict] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([addressesService.getAddresses(), companiesService.getCompanies()])
+    Promise.all([
+      addressesService.getAddresses({
+        city: city.trim() || undefined,
+        administrativeDistrict: administrativeDistrict || undefined,
+        district: district.trim() || undefined,
+      }),
+      companiesService.getCompanies(),
+    ])
       .then(([addressData, companyData]) => {
         setAddresses(addressData);
         setCompanies(companyData);
@@ -42,7 +53,7 @@ export default function AddressesPage() {
         setError(err instanceof Error ? err.message : "Не удалось загрузить адреса")
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [city, administrativeDistrict, district]);
 
   const companyNames = useMemo(
     () => new Map(companies.map((company) => [company._id, company.name])),
@@ -57,6 +68,9 @@ export default function AddressesPage() {
         address.adressDetail?.address,
         address.adressDetail?.entrance,
         address.typeAdress,
+        address.city,
+        address.administrativeDistrict,
+        address.district,
         companyNames.get(address.companyId),
       ].some((field) => String(field ?? "").toLowerCase().includes(value))
     );
@@ -88,12 +102,52 @@ export default function AddressesPage() {
         </section>
 
         <section className="grid gap-3 border-t pt-5">
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Поиск по адресу, типу или компании"
-            className="max-w-md"
-          />
+          <div className="grid gap-3 lg:grid-cols-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="address-search">Поиск</Label>
+              <Input
+                id="address-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Адрес, тип или компания"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="address-city-filter">Город</Label>
+              <Input
+                id="address-city-filter"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                placeholder="Москва"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="address-administrative-district-filter">Округ</Label>
+              <Select
+                value={administrativeDistrict || "all"}
+                onValueChange={(value) => setAdministrativeDistrict(value === "all" ? "" : value)}
+              >
+                <SelectTrigger id="address-administrative-district-filter">
+                  <SelectValue placeholder="Все округа" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все округа</SelectItem>
+                  {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((item) => (
+                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="address-district-filter">Район</Label>
+              <Input
+                id="address-district-filter"
+                value={district}
+                onChange={(event) => setDistrict(event.target.value)}
+                placeholder="Даниловский"
+              />
+            </div>
+          </div>
           {loading && (
             <p className="py-10 text-center text-muted-foreground">Загрузка...</p>
           )}
@@ -105,6 +159,8 @@ export default function AddressesPage() {
                   <TableHead>Компания</TableHead>
                   <TableHead>Адрес</TableHead>
                   <TableHead>Тип</TableHead>
+                  <TableHead>Город</TableHead>
+                  <TableHead>Округ / район</TableHead>
                   <TableHead>Детали</TableHead>
                   <TableHead>Координаты</TableHead>
                 </TableRow>
@@ -117,6 +173,12 @@ export default function AddressesPage() {
                     </TableCell>
                     <TableCell>{address.adressDetail?.address || "—"}</TableCell>
                     <TableCell>{address.typeAdress || "—"}</TableCell>
+                    <TableCell>{address.city || "—"}</TableCell>
+                    <TableCell>
+                      {[address.administrativeDistrict, address.district]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
+                    </TableCell>
                     <TableCell>
                       {String(address.adressDetail?.entrance ?? "—")}
                     </TableCell>
@@ -126,7 +188,7 @@ export default function AddressesPage() {
                 {filteredAddresses.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={7}
                       className="h-32 text-center text-muted-foreground"
                     >
                       Адреса не найдены

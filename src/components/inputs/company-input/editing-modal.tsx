@@ -16,6 +16,8 @@ import ContactPersonsEditor, {
   isValidContactPersons,
 } from "./contact-persons-editor";
 import AddressesSection from "./addresses-section";
+import CompanyRoleSelector from "./company-role-selector";
+import CompanyMaterialsSection from "./company-materials-section";
 
 export function EditingCompanyModal({
   company,
@@ -50,14 +52,6 @@ export function EditingCompanyModal({
     setError("");
   }, [company, open]);
 
-  const toggleRole = (role: CompanyRole) => {
-    setRoles((current) =>
-      current.includes(role)
-        ? current.filter((item) => item !== role)
-        : [...current, role]
-    );
-  };
-
   const handleSubmit = async () => {
     if (!company) return;
     if (!name.trim()) {
@@ -69,7 +63,7 @@ export function EditingCompanyModal({
       return;
     }
     if (!isValidContactPersons(contactPersons)) {
-      setError("Укажите имя и корректный email для каждого контрагента");
+      setError("Укажите имя и корректный email для каждого контактного лица");
       return;
     }
 
@@ -104,27 +98,11 @@ export function EditingCompanyModal({
         </DialogHeader>
 
         <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Роли компании</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={roles.includes("provider") ? "default" : "outline"}
-                onClick={() => toggleRole("provider")}
-              >
-                Исполнитель
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={roles.includes("customer") ? "default" : "outline"}
-                onClick={() => toggleRole("customer")}
-              >
-                Заказчик
-              </Button>
-            </div>
-          </div>
+          <CompanyRoleSelector
+            value={roles}
+            onChange={setRoles}
+            disabled={submitting}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5 sm:col-span-2">
@@ -207,6 +185,7 @@ export function EditingCompanyModal({
             />
           </div>
 
+          {company && <CompanyMaterialsSection companyId={company._id} />}
           {company && <AddressesSection companyId={company._id} />}
 
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
+import CompanyContactDetails from "@/components/inputs/company-input/company-contact-details";
 import { formatCurrency, formatINN } from "@/lib/formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
 import {
@@ -147,18 +148,6 @@ export default function DealDetailPage() {
   const shippingAddressLabel = shippingAddress?.adressDetail?.address;
   const deliveryAddressLabel = deliveryAddress?.adressDetail?.address;
 
-  const formatContactPersons = (company: CompanyDto | null) => {
-    if (!company?.contactPersons?.length) return "Не указаны";
-
-    return company.contactPersons
-      .map((person) =>
-        [person.name, person.position, person.phone, person.email]
-          .filter(Boolean)
-          .join(" · ")
-      )
-      .join("; ");
-  };
-
   const formatCardContacts = (company: CompanyDto | null) => {
     if (!company?.contacts?.length) return "";
     return company.contacts
@@ -231,9 +220,15 @@ export default function DealDetailPage() {
             <TableCell>{shippingAddressLabel || "Не указан"}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Контрагенты</TableCell>
+            <TableCell className="font-medium w-1/3">
+              Контактные лица
+            </TableCell>
             <TableCell>
-              {formatContactPersons(provider)}
+              {provider ? (
+                <CompanyContactDetails company={provider} />
+              ) : (
+                "Не указаны"
+              )}
               {provider?.contacts?.length ? (
                 <details className="mt-2 text-xs text-muted-foreground">
                   <summary className="cursor-pointer">Контакт карточки</summary>

@@ -32,6 +32,14 @@ function normalizeCompanies(response: CompaniesResponse): CompanyDto[] {
   return [];
 }
 
+export type CompanyFilters = {
+  role?: CompanyRole;
+  includeDetails?: boolean;
+  city?: string;
+  administrativeDistrict?: string;
+  district?: string;
+};
+
 function normalizeContactPersons(
   contactPersons: ContactPerson[]
 ): ContactPerson[] {
@@ -62,21 +70,42 @@ export async function importCompanies(
   return securePostFormData(apiPath(`/companies/import${query}`), formData);
 }
 
-export async function getCompanies(role?: CompanyRole): Promise<CompanyDto[]> {
-  const query = role ? `?role=${encodeURIComponent(role)}` : "";
+export async function getCompanies(
+  roleOrFilters?: CompanyRole | CompanyFilters
+): Promise<CompanyDto[]> {
+  const filters =
+    typeof roleOrFilters === "string"
+      ? { role: roleOrFilters }
+      : roleOrFilters ?? {};
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  });
+  const query = params.size ? `?${params.toString()}` : "";
   const response = await secureGetData<CompaniesResponse>(
     apiPath(`/companies${query}`)
   );
   const companies = normalizeCompanies(response);
 
-  if (!role || companies.length > 0) return companies;
+  if (!filters.role || companies.length > 0) return companies;
+
+  const hasAdditionalFilters = Boolean(
+    filters.city || filters.administrativeDistrict || filters.district
+  );
+  if (hasAdditionalFilters) return companies;
 
   // Compatibility for installations where roles have not been migrated yet.
+  const fallbackParams = new URLSearchParams();
+  if (filters.includeDetails) fallbackParams.set("includeDetails", "true");
+  const fallbackQuery = fallbackParams.size
+    ? `?${fallbackParams.toString()}`
+    : "";
   const allResponse = await secureGetData<CompaniesResponse>(
-    apiPath("/companies")
+    apiPath(`/companies${fallbackQuery}`)
   );
   return normalizeCompanies(allResponse).filter(
-    (company) => !company.roles?.length || company.roles.includes(role)
+    (company) =>
+      !company.roles?.length || company.roles.includes(filters.role as CompanyRole)
   );
 }
 

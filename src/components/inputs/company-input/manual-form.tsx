@@ -29,7 +29,7 @@ export default function ManualForm({
   const handleSubmit = () => {
     if (!name.trim()) return;
     if (!isValidContactPersons(contactPersons)) {
-      setError("Укажите имя и корректный email для каждого контрагента");
+      setError("Укажите имя и корректный email для каждого контактного лица");
       return;
     }
 

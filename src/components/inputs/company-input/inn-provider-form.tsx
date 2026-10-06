@@ -79,7 +79,7 @@ export default function InnProviderForm({
 
   const handleSubmit = () => {
     if (!isValidContactPersons(contactPersons)) {
-      setError("Укажите имя и корректный email для каждого контрагента");
+      setError("Укажите имя и корректный email для каждого контактного лица");
       return;
     }
 
