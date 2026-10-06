@@ -2,10 +2,12 @@ export type CompanyRole = "provider" | "customer";
 
 export type ContactPerson = {
   name: string;
+  inn?: string;
   position?: string;
   phone?: string;
   email?: string;
   comment?: string;
+  isPrimary?: boolean;
 };
 
 export default interface CompanyDto {
@@ -18,6 +20,11 @@ export default interface CompanyDto {
   roles: CompanyRole[];
   contacts: Record<string, unknown>[];
   contactPersons: ContactPerson[];
+  phones?: string[];
+  emails?: string[];
+  websites?: string[];
+  source?: string;
+  segments?: string[];
   comment?: string;
   deleted_at?: string;
   is_deleted?: boolean;

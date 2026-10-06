@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { ContactPerson } from "@definitions/dto";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 
@@ -101,6 +102,17 @@ export default function ContactPersonsEditor({
               />
             </div>
             <div className="grid gap-1.5">
+              <Label htmlFor={`contact-person-inn-${index}`}>Личный ИНН</Label>
+              <Input
+                id={`contact-person-inn-${index}`}
+                value={person.inn ?? ""}
+                disabled={disabled}
+                onChange={(event) =>
+                  updatePerson(index, "inn", event.target.value)
+                }
+              />
+            </div>
+            <div className="grid gap-1.5">
               <Label htmlFor={`contact-person-phone-${index}`}>Телефон</Label>
               <Input
                 id={`contact-person-phone-${index}`}
@@ -122,6 +134,25 @@ export default function ContactPersonsEditor({
                   updatePerson(index, "email", event.target.value)
                 }
               />
+            </div>
+            <div className="flex items-center gap-2 self-end pb-2">
+              <Switch
+                id={`contact-person-primary-${index}`}
+                checked={Boolean(person.isPrimary)}
+                disabled={disabled}
+                onCheckedChange={(checked) =>
+                  onChange(
+                    value.map((item, personIndex) =>
+                      personIndex === index
+                        ? { ...item, isPrimary: checked }
+                        : item
+                    )
+                  )
+                }
+              />
+              <Label htmlFor={`contact-person-primary-${index}`}>
+                Основной контакт
+              </Label>
             </div>
           </div>
           <div className="grid gap-1.5">

@@ -1,6 +1,16 @@
 import { apiPath } from "@/lib/api";
-import { secureGetData, securePatchData, securePostData } from "@/lib/fetch";
-import { CompanyDto, CompanyRole, ContactPerson } from "@definitions/dto";
+import {
+  secureGetData,
+  securePatchData,
+  securePostData,
+  securePostFormData,
+} from "@/lib/fetch";
+import {
+  CompanyDto,
+  CompanyImportResult,
+  CompanyRole,
+  ContactPerson,
+} from "@definitions/dto";
 import {
   CreateCompanyRequest,
   UpdateCompanyRequest,
@@ -28,9 +38,11 @@ function normalizeContactPersons(
   return contactPersons.map((person) => {
     const optionalFields = {
       position: person.position?.trim() || undefined,
+      inn: person.inn?.replace(/\D/g, "") || undefined,
       phone: person.phone?.trim() || undefined,
       email: person.email?.trim() || undefined,
       comment: person.comment?.trim() || undefined,
+      isPrimary: person.isPrimary || undefined,
     };
 
     return {
@@ -38,6 +50,16 @@ function normalizeContactPersons(
       ...optionalFields,
     };
   });
+}
+
+export async function importCompanies(
+  file: File,
+  role?: CompanyRole
+): Promise<CompanyImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const query = role ? `?role=${encodeURIComponent(role)}` : "";
+  return securePostFormData(apiPath(`/companies/import${query}`), formData);
 }
 
 export async function getCompanies(role?: CompanyRole): Promise<CompanyDto[]> {

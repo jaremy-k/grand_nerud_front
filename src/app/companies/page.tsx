@@ -3,6 +3,7 @@
 import { Page } from "@/components/blocks";
 import { CreatingModal } from "@/components/inputs/company-input/creating-modal";
 import { EditingCompanyModal } from "@/components/inputs/company-input/editing-modal";
+import { ImportCompaniesModal } from "@/components/inputs/company-input/import-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,18 +17,33 @@ import {
 import { formatINN } from "@/lib/formatters";
 import { addressesService, companiesService } from "@/services";
 import { AddressDto, CompanyDto, CompanyRole } from "@definitions/dto";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function formatContactPersons(company: CompanyDto): string {
   if (!company.contactPersons?.length) return "—";
   return company.contactPersons
     .map((person) =>
-      [person.name, person.position, person.phone, person.email]
+      [
+        person.name,
+        person.position,
+        person.isPrimary ? "Основной" : undefined,
+        person.inn ? `ИНН ${person.inn}` : undefined,
+        person.phone,
+        person.email,
+      ]
         .filter(Boolean)
         .join(" · ")
     )
     .join("; ");
+}
+
+function formatCompanyCommunication(company: CompanyDto): string {
+  return [
+    ...(company.phones ?? []),
+    ...(company.emails ?? []),
+    ...(company.websites ?? []),
+  ].join("; ") || "—";
 }
 
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
@@ -37,6 +53,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyDto | null>(null);
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
@@ -69,8 +86,13 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         company.abbreviatedName?.toLowerCase().includes(value) ||
         company.inn?.includes(value) ||
         company.kpp?.includes(value) ||
+        company.phones?.some((item) => item.toLowerCase().includes(value)) ||
+        company.emails?.some((item) => item.toLowerCase().includes(value)) ||
+        company.websites?.some((item) => item.toLowerCase().includes(value)) ||
+        company.segments?.some((item) => item.toLowerCase().includes(value)) ||
+        company.source?.toLowerCase().includes(value) ||
         company.contactPersons?.some((person) =>
-          [person.name, person.position, person.phone, person.email].some(
+          [person.name, person.inn, person.position, person.phone, person.email].some(
             (field) => field?.toLowerCase().includes(value)
           )
         )
@@ -97,10 +119,16 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         },
       ]}
       headerActions={
-        <Button size="sm" onClick={() => setCreating(true)}>
-          <PlusIcon />
-          Добавить
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <UploadIcon />
+            Импорт
+          </Button>
+          <Button size="sm" onClick={() => setCreating(true)}>
+            <PlusIcon />
+            Добавить
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4 py-4">
@@ -123,6 +151,8 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                 <TableHead>ИНН</TableHead>
                 <TableHead>КПП</TableHead>
                 <TableHead>Контрагенты</TableHead>
+                <TableHead>Связь</TableHead>
+                <TableHead>Источник / сегменты</TableHead>
                 <TableHead className="text-muted-foreground/70">
                   Контакт карточки
                 </TableHead>
@@ -142,6 +172,12 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   </TableCell>
                   <TableCell>{company.kpp || "—"}</TableCell>
                   <TableCell>{formatContactPersons(company)}</TableCell>
+                  <TableCell>{formatCompanyCommunication(company)}</TableCell>
+                  <TableCell>
+                    {[company.source, ...(company.segments ?? [])]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {company.contacts?.length
                       ? `${company.contacts.length} зап.`
@@ -170,7 +206,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={10}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены
@@ -193,6 +229,14 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               ? [...current, company]
               : current
           )
+        }
+      />
+      <ImportCompaniesModal
+        open={importOpen}
+        role={role}
+        onClose={() => setImportOpen(false)}
+        onImported={() =>
+          companiesService.getCompanies(role).then(setCompanies).catch(() => {})
         }
       />
       <EditingCompanyModal

@@ -147,6 +147,24 @@ export async function securePostData<T = unknown>(
   return parseResponse<T>(response);
 }
 
+export async function securePostFormData<T = unknown>(
+  url: string,
+  data: FormData,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    method: "POST",
+    body: data,
+    headers: {
+      ...authHeaders(),
+      ...options.headers,
+    },
+  });
+
+  return parseResponse<T>(response);
+}
+
 export async function securePatchData<T = unknown>(
   url: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
