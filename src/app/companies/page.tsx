@@ -395,23 +395,11 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   </>
                 ) : (
                   <>
-                    <TableHead>Компания</TableHead>
-                    <TableHead>ИНН</TableHead>
-                    <TableHead>КПП</TableHead>
-                    <TableHead>Контактные лица и связь</TableHead>
+                    <TableHead className="w-[25%]">Заказчик</TableHead>
+                    <TableHead className="w-[30%]">Объекты</TableHead>
                     <TableHead>Источник / сегменты</TableHead>
-                    <TableHead className="text-muted-foreground/70">
-                      Контакт карточки
-                    </TableHead>
-                    <TableHead>Адреса</TableHead>
-                    <TableHead>Прайс-лист</TableHead>
-                    <TableHead>Комментарий</TableHead>
+                    <TableHead className="w-[290px]">Действия</TableHead>
                   </>
-                )}
-                {role !== "provider" && (
-                  <TableHead className="w-12">
-                    <span className="sr-only">Действия</span>
-                  </TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -419,8 +407,8 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               {filteredCompanies.map((company) => (
                 <Fragment key={company._id}>
                   <TableRow>
-                  {role === "provider" ? (
-                    <>
+                    {role === "provider" ? (
+                      <>
                       <TableCell className="align-top">
                         <p className="font-medium">{company.name}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
@@ -520,72 +508,98 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                           </Button>
                         </div>
                       </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell className="font-medium">{company.name}</TableCell>
-                      <TableCell>
-                        {company.inn ? formatINN(company.inn) : "—"}
+                      </>
+                    ) : (
+                      <>
+                      <TableCell className="align-top">
+                        <p className="font-medium">{company.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {company.inn
+                            ? `ИНН ${formatINN(company.inn)}`
+                            : "ИНН не указан"}
+                          {company.kpp ? ` · КПП ${company.kpp}` : ""}
+                        </p>
+                        {company.comment && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {company.comment}
+                          </p>
+                        )}
                       </TableCell>
-                      <TableCell>{company.kpp || "—"}</TableCell>
-                      <TableCell className="min-w-64 align-top">
-                        <CompanyContactDetails company={company} />
+                      <TableCell className="align-top">
+                        {(addressesByCompany.get(company._id) ?? []).length ? (
+                          <div className="grid gap-2">
+                            {(addressesByCompany.get(company._id) ?? []).map(
+                              (address) => (
+                                <div
+                                  key={address._id}
+                                  className="flex gap-2 text-xs"
+                                >
+                                  <MapPinIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                                  <div>
+                                    <p className="font-medium">
+                                      {[
+                                        address.administrativeDistrict,
+                                        address.district,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ") || "Район не указан"}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      {address.adressDetail?.address ||
+                                        "Адрес не указан"}
+                                    </p>
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            Объекты не добавлены
+                          </span>
+                        )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top text-sm">
                         {[company.source, ...(company.segments ?? [])]
                           .filter(Boolean)
                           .join(" · ") || "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {company.contacts?.length
-                          ? `${company.contacts.length} зап.`
-                          : "—"}
+                      <TableCell className="align-top">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/deals/create?customerId=${encodeURIComponent(company._id)}`
+                              )
+                            }
+                          >
+                            <FilePlus2Icon />
+                            Создать сделку
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            aria-expanded={expandedCompanyIds.has(company._id)}
+                            onClick={() => toggleCompanyDetails(company._id)}
+                          >
+                            Подробнее
+                            {expandedCompanyIds.has(company._id) ? (
+                              <ChevronUpIcon />
+                            ) : (
+                              <ChevronDownIcon />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        {(addressesByCompany.get(company._id) ?? [])
-                          .map((address) => address.adressDetail?.address)
-                          .filter(Boolean)
-                          .join("; ") || "—"}
-                      </TableCell>
-                      <TableCell className="min-w-52 align-top">
-                        {company.materialsWithPrices?.length ? (
-                          <div className="grid gap-1">
-                            {company.materialsWithPrices.map((item) => (
-                              <div key={item._id} className="text-xs">
-                                <span className="font-medium">
-                                  {item.material?.name || "Материал"}
-                                </span>
-                                <span className="text-muted-foreground">
-                                  {` · ${priceFormatter.format(item.price)} руб. / ${item.unit}`}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell>{company.comment || "—"}</TableCell>
-                    </>
-                  )}
-                  {role !== "provider" && (
-                    <TableCell>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label={`Редактировать ${company.name}`}
-                        onClick={() => setEditingCompany(company)}
-                      >
-                        <PencilIcon />
-                      </Button>
-                    </TableCell>
-                  )}
+                      </>
+                    )}
                   </TableRow>
-                  {role === "provider" &&
-                    expandedCompanyIds.has(company._id) && (
+                  {expandedCompanyIds.has(company._id) && (
                     <TableRow>
-                    <TableCell colSpan={4} className="bg-muted/20 p-0">
+                      <TableCell colSpan={4} className="bg-muted/20 p-0">
                       <div className="border-b px-4 py-4">
                         <div className="mb-4 flex items-center justify-between gap-3">
                           <div>
@@ -652,7 +666,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                           </section>
 
                           <section className="grid content-start gap-2 border-t pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
-                            <h3 className="text-sm font-medium">Адреса</h3>
+                            <h3 className="text-sm font-medium">
+                              {role === "provider" ? "Адреса" : "Объекты"}
+                            </h3>
                             {(addressesByCompany.get(company._id) ?? []).length ? (
                               <div className="grid gap-2">
                                 {(addressesByCompany.get(company._id) ?? []).map(
@@ -679,7 +695,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                               </div>
                             ) : (
                               <p className="text-sm text-muted-foreground">
-                                Адреса не добавлены
+                                {role === "provider"
+                                  ? "Адреса не добавлены"
+                                  : "Объекты не добавлены"}
                               </p>
                             )}
                           </section>
@@ -712,7 +730,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                           </section>
                         </div>
                       </div>
-                    </TableCell>
+                      </TableCell>
                     </TableRow>
                   )}
                 </Fragment>
@@ -720,7 +738,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={role === "provider" ? 4 : 10}
+                    colSpan={4}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены

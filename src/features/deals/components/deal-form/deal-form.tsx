@@ -20,12 +20,18 @@ import PrimaryInformationSection from "./primary-information";
 export default function DealForm({
   defaultDeal,
   initialProviderId,
+  initialCustomerId,
 }: {
   defaultDeal?: DealDto;
   initialProviderId?: string;
+  initialCustomerId?: string;
 }) {
   const navigate = useNavigate();
-  const formData = useDataFormHook(defaultDeal, initialProviderId);
+  const formData = useDataFormHook(
+    defaultDeal,
+    initialProviderId,
+    initialCustomerId
+  );
   const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services } =
     formData;
   const [submiting, setSubmiting] = useState(false);
