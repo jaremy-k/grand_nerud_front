@@ -185,7 +185,9 @@ export default function AddressSelect({
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="deal-new-address-administrative-district">Округ</Label>
+              <Label htmlFor="deal-new-address-administrative-district">
+                Округ
+              </Label>
               <Select
                 value={administrativeDistrict || "not-set"}
                 onValueChange={(value) =>
@@ -199,7 +201,9 @@ export default function AddressSelect({
                 <SelectContent>
                   <SelectItem value="not-set">Не указан</SelectItem>
                   {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((item) => (
-                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -47,7 +47,8 @@ export default function CompanyMaterialsSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<CompanyMaterialDto | null>(null);
+  const [deletingItem, setDeletingItem] =
+    useState<CompanyMaterialDto | null>(null);
   const [error, setError] = useState("");
 
   const loadItems = useCallback(async () => {
@@ -56,7 +57,9 @@ export default function CompanyMaterialsSection({
     try {
       setItems(await companyMaterialsService.getCompanyMaterials(companyId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось загрузить прайс-лист");
+      setError(
+        err instanceof Error ? err.message : "Не удалось загрузить прайс-лист"
+      );
     } finally {
       setLoading(false);
     }
@@ -111,7 +114,9 @@ export default function CompanyMaterialsSection({
       setFormOpen(false);
       setEditingId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось сохранить позицию");
+      setError(
+        err instanceof Error ? err.message : "Не удалось сохранить позицию"
+      );
     } finally {
       setSaving(false);
     }
@@ -121,7 +126,9 @@ export default function CompanyMaterialsSection({
     if (!deletingItem) return;
     try {
       await companyMaterialsService.deleteCompanyMaterial(deletingItem._id);
-      setItems((current) => current.filter((item) => item._id !== deletingItem._id));
+      setItems((current) =>
+        current.filter((item) => item._id !== deletingItem._id)
+      );
       setDeletingItem(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось удалить позицию");
@@ -200,7 +207,9 @@ export default function CompanyMaterialsSection({
               <Label>Материал</Label>
               <MaterialSelect
                 value={form.materialId}
-                onChange={(materialId) => setForm((current) => ({ ...current, materialId }))}
+                onChange={(materialId) =>
+                  setForm((current) => ({ ...current, materialId }))
+                }
                 disabled={saving}
                 name="company-material"
               />
@@ -211,7 +220,12 @@ export default function CompanyMaterialsSection({
                 id="company-material-price"
                 inputMode="decimal"
                 value={form.price}
-                onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    price: event.target.value,
+                  }))
+                }
                 disabled={saving}
               />
             </div>
@@ -220,7 +234,12 @@ export default function CompanyMaterialsSection({
               <Input
                 id="company-material-unit"
                 value={form.unit}
-                onChange={(event) => setForm((current) => ({ ...current, unit: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    unit: event.target.value,
+                  }))
+                }
                 disabled={saving}
               />
             </div>
@@ -229,13 +248,23 @@ export default function CompanyMaterialsSection({
               <Input
                 id="company-material-comment"
                 value={form.comment}
-                onChange={(event) => setForm((current) => ({ ...current, comment: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    comment: event.target.value,
+                  }))
+                }
                 disabled={saving}
               />
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => setFormOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={() => setFormOpen(false)}
+            >
               Отмена
             </Button>
             <Button type="button" disabled={saving} onClick={handleSave}>

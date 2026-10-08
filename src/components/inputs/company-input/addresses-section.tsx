@@ -198,13 +198,19 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
                   ? ` · ${String(address.adressDetail.entrance)}`
                   : ""}
               </p>
-              {(address.city || address.administrativeDistrict || address.district) && (
-                <p className="text-xs text-muted-foreground">
-                  {[address.city, address.administrativeDistrict, address.district]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
+              {(address.city ||
+                address.administrativeDistrict ||
+                address.district) && (
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      address.city,
+                      address.administrativeDistrict,
+                      address.district,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
               <p className="text-xs text-muted-foreground/70">
                 {address.coordinates?.join(", ")}
               </p>
@@ -282,11 +288,16 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="company-address-administrative-district">Округ</Label>
+              <Label htmlFor="company-address-administrative-district">
+                Округ
+              </Label>
               <Select
                 value={form.administrativeDistrict || "not-set"}
                 onValueChange={(value) =>
-                  updateField("administrativeDistrict", value === "not-set" ? "" : value)
+                  updateField(
+                    "administrativeDistrict",
+                    value === "not-set" ? "" : value
+                  )
                 }
                 disabled={saving}
               >
@@ -296,7 +307,9 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
                 <SelectContent>
                   <SelectItem value="not-set">Не указан</SelectItem>
                   {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((district) => (
-                    <SelectItem key={district} value={district}>{district}</SelectItem>
+                    <SelectItem key={district} value={district}>
+                      {district}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

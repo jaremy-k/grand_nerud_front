@@ -1,6 +1,6 @@
-export type CompanyRole = "provider" | "customer";
-
 import type CompanyMaterialDto from "./company-material";
+
+export type CompanyRole = "provider" | "customer";
 
 export type ContactPerson = {
   name: string;

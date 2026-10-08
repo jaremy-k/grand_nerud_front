@@ -122,10 +122,14 @@ export default function AddressesPage() {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="address-administrative-district-filter">Округ</Label>
+              <Label htmlFor="address-administrative-district-filter">
+                Округ
+              </Label>
               <Select
                 value={administrativeDistrict || "all"}
-                onValueChange={(value) => setAdministrativeDistrict(value === "all" ? "" : value)}
+                onValueChange={(value) =>
+                  setAdministrativeDistrict(value === "all" ? "" : value)
+                }
               >
                 <SelectTrigger id="address-administrative-district-filter">
                   <SelectValue placeholder="Все округа" />
@@ -133,7 +137,9 @@ export default function AddressesPage() {
                 <SelectContent>
                   <SelectItem value="all">Все округа</SelectItem>
                   {MOSCOW_ADMINISTRATIVE_DISTRICTS.map((item) => (
-                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
