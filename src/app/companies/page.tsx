@@ -5,6 +5,7 @@ import { CreatingModal } from "@/components/inputs/company-input/creating-modal"
 import { EditingCompanyModal } from "@/components/inputs/company-input/editing-modal";
 import { ImportCompaniesModal } from "@/components/inputs/company-input/import-modal";
 import CompanyContactDetails from "@/components/inputs/company-input/company-contact-details";
+import MaterialSearchFilter from "@/components/inputs/material-input/material-search-filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,6 +84,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   );
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
+  const selectedMaterial = materials.find((item) => item._id === materialId);
 
   useEffect(() => {
     if (role !== "provider") return;
@@ -307,24 +309,14 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
             <>
               <div className="grid gap-1.5">
                 <Label htmlFor="company-material-filter">Материал</Label>
-                <Select
-                  value={materialId || "all"}
-                  onValueChange={(value) =>
-                    setMaterialId(value === "all" ? "" : value)
-                  }
-                >
-                  <SelectTrigger id="company-material-filter">
-                    <SelectValue placeholder="Все материалы" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Все материалы</SelectItem>
-                    {materials.map((material) => (
-                      <SelectItem key={material._id} value={material._id}>
-                        {material.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MaterialSearchFilter
+                  materials={materials}
+                  value={materialId}
+                  onChange={(value) => {
+                    setMaterialId(value);
+                    if (value) setPriceSort("asc");
+                  }}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="company-max-price">Цена до, руб.</Label>
@@ -390,7 +382,11 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   <>
                     <TableHead className="w-[22%]">Исполнитель</TableHead>
                     <TableHead className="w-[26%]">География</TableHead>
-                    <TableHead className="w-[25%]">Цены</TableHead>
+                    <TableHead className="w-[25%]">
+                      {selectedMaterial
+                        ? `Цена: ${selectedMaterial.name}`
+                        : "Цены"}
+                    </TableHead>
                     <TableHead className="w-[290px]">Действия</TableHead>
                   </>
                 ) : (
