@@ -21,6 +21,7 @@ import {
   Handshake,
   House,
   MapPinIcon,
+  ListChecksIcon,
   ShoppingBagIcon,
   UsersIcon,
 } from "lucide-react";
@@ -67,6 +68,11 @@ const data = {
     },
   ],
   managerNav: [
+    {
+      title: "Управление этапами",
+      url: "/admin/stages",
+      icon: ListChecksIcon,
+    },
     {
       title: "Статистика",
       url: "/admin",
