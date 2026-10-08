@@ -1,9 +1,6 @@
-import { formatINN } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { CompanyDto } from "@definitions/dto";
 import { Check } from "lucide-react";
-import getTypeLabel from "./type-label";
-import CompanyContactDetails from "./company-contact-details";
 
 export default function CompanyButton({
   company,
@@ -18,7 +15,8 @@ export default function CompanyButton({
     <button
       key={company._id}
       onClick={onClick}
-      className="py-2.5 text-sm flex items-center gap-4 text-left hover:bg-slate-100 px-2.5 rounded-md cursor-pointer group w-full"
+      type="button"
+      className="flex w-full cursor-pointer items-center gap-3 rounded-md px-2.5 py-2.5 text-left text-sm hover:bg-muted"
     >
       <div
         className={cn(
@@ -32,28 +30,9 @@ export default function CompanyButton({
           className={cn("h-3 w-3", selected ? "opacity-100" : "opacity-0")}
         />
       </div>
-      <div className="min-w-0 flex-auto">
-        <div className="flex justify-between items-center gap-4">
-          <p className="truncate text-slate-700 group-hover:text-slate-900 flex-auto max-w-md">
-            {company.name}
-          </p>
-          {company.type && getTypeLabel(company.type)}
-        </div>
-        <div className="mt-1.5 max-w-xl">
-          <CompanyContactDetails
-            company={company}
-            interactive={false}
-            compact
-          />
-        </div>
-        <div className="mt-1 flex max-w-32 justify-end w-full">
-          {company.inn !== undefined && company.inn !== null && (
-            <p className="bg-slate-200 text-xs py-0.5 px-1.5 rounded-sm text-slate-700 text-nowrap">
-              {formatINN(company.inn)}
-            </p>
-          )}
-        </div>
-      </div>
+      <span className="min-w-0 flex-auto truncate text-foreground">
+        {company.name}
+      </span>
     </button>
   );
 }

@@ -2,9 +2,8 @@
 
 import { companiesService } from "@/services";
 import { CompanyDto, CompanyRole } from "@definitions/dto";
-import { IdCardIcon, PencilIcon, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Pagination } from "../../blocks";
+import { PencilIcon, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../ui/button";
 import {
   Dialog,
@@ -13,19 +12,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../ui/dialog";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "../../ui/empty";
 import { Input } from "../../ui/input";
 import CompanyButton from "./company-card";
 import { CreatingModal } from "./creating-modal";
 import { EditingCompanyModal } from "./editing-modal";
-import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
+
+function companyCreatedAt(company: CompanyDto): number {
+  const value = company.createdAt ?? company.created_at;
+  if (!value) return 0;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
 
 export function CompanyCombobox({
   value = "",
@@ -39,12 +36,7 @@ export function CompanyCombobox({
   role?: CompanyRole;
 }) {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
   const [searchValue, setSearchValue] = useState<string>("");
-  const [type, setType] = useState<string>("all");
-  const [filteredCompanies, setFilteredCompanies] = useState<CompanyDto[]>([]);
 
   const [open, setOpen] = useState(false);
   const [creatingOpen, setCreatingOpen] = useState(false);
@@ -69,28 +61,24 @@ export function CompanyCombobox({
       .catch(() => {});
   }, [companies, value]);
 
-  useEffect(() => {
-    const loweredSearch = searchValue.toLowerCase();
-    const matchType =
-      type === "all"
-        ? () => true
-        : type === IP_AND_LEGAL_TYPE
-          ? (el: CompanyDto) =>
-              el.type === "Индивидуальный предприниматель" ||
-              el.type === "Юридическое лицо"
-          : (el: CompanyDto) => el.type === type;
-    const filteredData = companies.filter(
-      (el) =>
-        matchType(el) &&
-        (el.name.toLowerCase().includes(loweredSearch) ||
-          (el.inn && el.inn.toString().includes(loweredSearch)) ||
-          (el.abbreviatedName &&
-            el.abbreviatedName.toLowerCase().includes(loweredSearch)))
-    );
-    setFilteredCompanies(filteredData);
-    setTotalPages(Math.ceil(filteredData.length / 10));
-    setCurrentPage(1);
-  }, [companies, type, searchValue]);
+  const visibleCompanies = useMemo(() => {
+    const loweredSearch = searchValue.trim().toLowerCase();
+    return companies
+      .map((company, index) => ({ company, index }))
+      .filter(({ company }) =>
+        loweredSearch
+          ? company.name.toLowerCase().includes(loweredSearch)
+          : true
+      )
+      .sort((left, right) => {
+        const dateDifference =
+          companyCreatedAt(right.company) - companyCreatedAt(left.company);
+        if (dateDifference !== 0) return dateDifference;
+        return right.index - left.index;
+      })
+      .slice(0, 15)
+      .map(({ company }) => company);
+  }, [companies, searchValue]);
 
   const handleCreateCompany = () => {
     setOpen(false);
@@ -132,12 +120,13 @@ export function CompanyCombobox({
         placeholder="Выберите компанию"
         onFocus={(e) => {
           e.target.blur();
+          setSearchValue("");
           setOpen(true);
         }}
         className="truncate overflow-hidden"
       />
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-4xl">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               Выбор {role === "provider" ? "исполнителя" : "заказчика"}
@@ -147,15 +136,13 @@ export function CompanyCombobox({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
-            <div className="flex">
-              <TypeSelector value={type} onChange={setType} />
-            </div>
-            <div className="flex justify-between items-center gap-4 -mt-1.5">
-              <div className="flex gap-4 flex-auto">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <Input
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
-                  placeholder="Поиск..."
+                  placeholder="Поиск по названию"
+                  autoFocus
                 />
               </div>
               <Button
@@ -163,68 +150,50 @@ export function CompanyCombobox({
                 onClick={handleCreateCompany}
                 variant="default"
               >
-                <Plus className="mr-1 h-4 w-4" />
+                <Plus />
                 Добавить компанию
               </Button>
             </div>
-            <div className="flex flex-col w-full overflow-hidden gap-0.5 pt-2 border-t">
-              {filteredCompanies.length === 0 && (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <IdCardIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>Нет данных</EmptyTitle>
-                    <EmptyDescription>
-                      Похоже, что клиента с такими фильтрами ещё нет.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent>
-                    <Button
-                      onClick={handleCreateCompany}
-                      type="button"
-                      className="pointer-events-auto"
-                    >
-                      Добавить компанию
-                    </Button>
-                  </EmptyContent>
-                </Empty>
+            <div className="flex max-h-[55dvh] w-full flex-col gap-0.5 overflow-y-auto border-t pt-2">
+              {visibleCompanies.length === 0 && (
+                <div className="grid justify-items-center gap-3 py-10 text-center">
+                  <p className="text-sm text-muted-foreground">Не найдено</p>
+                  <Button
+                    onClick={handleCreateCompany}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Plus />
+                    Добавить компанию
+                  </Button>
+                </div>
               )}
-              {filteredCompanies.length > 0 &&
-                filteredCompanies
-                  .slice((currentPage - 1) * 10, 10 * currentPage)
-                  .map((el) => (
-                    <div key={el._id} className="flex items-center gap-1">
-                      <CompanyButton
-                        company={el}
-                        selected={value === el._id}
-                        onClick={() => {
-                          onChange(el._id);
-                          setOpen(false);
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        className="shrink-0"
-                        aria-label={`Редактировать ${el.name}`}
-                        onClick={() => {
-                          setOpen(false);
-                          setEditingCompany(el);
-                        }}
-                      >
-                        <PencilIcon />
-                      </Button>
-                    </div>
-                  ))}
-            </div>
-            <div className="mt-4 mx-auto">
-              <Pagination
-                total={totalPages}
-                current={currentPage}
-                onClick={setCurrentPage}
-              />
+              {visibleCompanies.length > 0 &&
+                visibleCompanies.map((el) => (
+                  <div key={el._id} className="flex items-center gap-1">
+                    <CompanyButton
+                      company={el}
+                      selected={value === el._id}
+                      onClick={() => {
+                        onChange(el._id);
+                        setOpen(false);
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      className="shrink-0"
+                      aria-label={`Редактировать ${el.name}`}
+                      onClick={() => {
+                        setOpen(false);
+                        setEditingCompany(el);
+                      }}
+                    >
+                      <PencilIcon />
+                    </Button>
+                  </div>
+                ))}
             </div>
           </div>
         </DialogContent>

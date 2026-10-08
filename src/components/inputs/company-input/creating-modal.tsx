@@ -11,7 +11,7 @@ import { CreateCompanyRequest } from "@definitions/requests";
 import { useEffect, useState } from "react";
 import InnProviderForm from "./inn-provider-form";
 import ManualForm from "./manual-form";
-import TypeSelector, { IP_AND_LEGAL_TYPE } from "./type";
+import TypeSelector from "./type";
 import CompanyRoleSelector from "./company-role-selector";
 
 export function CreatingModal({
@@ -29,11 +29,18 @@ export function CreatingModal({
 }) {
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const [type, setType] = useState<string>(IP_AND_LEGAL_TYPE);
+  const [type, setType] = useState<string>("Юридическое лицо");
   const [roles, setRoles] = useState<CompanyRole[]>([initialRole]);
+  const [formVersion, setFormVersion] = useState(0);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-    if (open) setRoles([initialRole]);
+    if (open) {
+      setType("Юридическое лицо");
+      setRoles([initialRole]);
+      setFormVersion((version) => version + 1);
+      setSubmitError("");
+    }
   }, [initialRole, open]);
 
   const hanleCancel = () => {
@@ -41,7 +48,12 @@ export function CreatingModal({
   };
 
   const handleSubmit = async (data: CreateCompanyRequest) => {
+    if (roles.length === 0) {
+      setSubmitError("Выберите хотя бы одну роль компании");
+      return;
+    }
     setSubmitting(true);
+    setSubmitError("");
 
     try {
       const createdCompany = await companiesService.createCompany(data);
@@ -50,7 +62,9 @@ export function CreatingModal({
       // Callback
       onCreate(createdCompany);
     } catch (err) {
-      console.error(err);
+      setSubmitError(
+        err instanceof Error ? err.message : "Не удалось создать компанию"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -73,18 +87,23 @@ export function CreatingModal({
         <div className="flex pb-2.5">
           <TypeSelector value={type} onChange={setType} withoutAny />
         </div>
+        {submitError && (
+          <p className="text-sm text-destructive" role="alert">
+            {submitError}
+          </p>
+        )}
         {type === "Физическое лицо" && (
           <ManualForm
+            key={`person-${formVersion}`}
             onSubmit={handleSubmit}
             onCancel={hanleCancel}
             disabled={submitting}
             roles={roles}
           />
         )}
-        {(type === IP_AND_LEGAL_TYPE ||
-          type === "Индивидуальный предприниматель" ||
-          type === "Юридическое лицо") && (
+        {type === "Юридическое лицо" && (
           <InnProviderForm
+            key={`legal-${formVersion}`}
             withShortName
             onSubmit={handleSubmit}
             onCancel={hanleCancel}

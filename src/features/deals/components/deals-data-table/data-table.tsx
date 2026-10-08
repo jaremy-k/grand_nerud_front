@@ -13,6 +13,7 @@ import { useDebounce } from "@/lib/debouncer";
 import { companiesService, dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
 import { DealFilters } from "@features/deals/definitions";
+import { Columns3Icon, ListIcon } from "lucide-react";
 import {
   getLastUsedFilters,
   saveLastUsedFilters,
@@ -209,13 +210,46 @@ export default function DealsDataTable({
     [currentPage, debouncedFilters, pageSize]
   );
 
+  const handleViewModeChange = (mode: "table" | "kanban") => {
+    setCurrentPage(1);
+    setViewMode(mode);
+  };
+
   return (
     <div className="flex min-w-0 flex-col">
       <div className="sticky top-0 z-10 flex-shrink-0 space-y-3 border-b bg-background/95 pb-4 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button onClick={() => navigate("/deals/create")} variant="default">
             Создать сделку
           </Button>
+          <div
+            className="flex items-center rounded-md border bg-muted/30 p-0.5"
+            role="group"
+            aria-label="Режим отображения сделок"
+          >
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              className="shadow-none"
+              aria-pressed={viewMode === "table"}
+              onClick={() => handleViewModeChange("table")}
+            >
+              <ListIcon />
+              Таблица
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === "kanban" ? "secondary" : "ghost"}
+              className="shadow-none"
+              aria-pressed={viewMode === "kanban"}
+              onClick={() => handleViewModeChange("kanban")}
+            >
+              <Columns3Icon />
+              Канбан
+            </Button>
+          </div>
         </div>
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
           <ServiceFilter value={serviceFilter} onChange={setServiceFilter} />

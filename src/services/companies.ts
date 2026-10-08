@@ -124,7 +124,7 @@ function innLookupErrorMessage(err: unknown, inn: string): string {
     /http error! status: (404|422|400)/.test(lower);
 
   if (notFound) {
-    return `Компания с ИНН ${inn} не найдена. Проверьте номер или добавьте клиента как физическое лицо.`;
+    return `Компания с ИНН ${inn} не найдена. Заполните данные компании вручную.`;
   }
   return raw;
 }

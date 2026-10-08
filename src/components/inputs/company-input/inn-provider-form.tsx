@@ -26,46 +26,34 @@ export default function InnProviderForm({
 }) {
   const [searching, setSearching] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [lookupSuccess, setLookupSuccess] = useState(false);
 
   const [inn, setInn] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [abbreviatedName, setAbbreviatedName] = useState<string>("");
-  const [type, setType] = useState<string>("");
   const [kpp, setKpp] = useState<string>("");
   const [comment, setComment] = useState<string>("");
   const [contacts, setContacts] = useState<Record<string, unknown>[]>([]);
   const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
 
-  const resetFields = () => {
-    setName("");
-    setAbbreviatedName("");
-    setType("");
-    setKpp("");
-    setComment("");
-    setContacts([]);
-    setContactPersons([]);
-  };
-
   const handleLoadData = () => {
     setSearching(true);
     setError("");
-    resetFields();
+    setLookupSuccess(false);
     companiesService
       .getCompanyInfoByINN(inn)
       .then((res) => {
         if (!res?.name) {
           setError(
-            `Компания с ИНН ${inn.replace(/\D/g, "")} не найдена. Проверьте номер или добавьте клиента как физическое лицо.`
+            `Компания с ИНН ${inn.replace(/\D/g, "")} не найдена. Заполните данные вручную.`
           );
           return;
         }
         setName(res.name);
         setAbbreviatedName(res.abbreviatedName ?? "");
-        setContacts(res.contacts);
-        setType(res.type ?? "");
+        setContacts(res.contacts ?? []);
         setKpp(res.kpp ?? "");
-        setComment(res.comment ?? "");
-        setContactPersons(res.contactPersons ?? []);
+        setLookupSuccess(true);
       })
       .catch((err) => {
         setError(
@@ -78,21 +66,29 @@ export default function InnProviderForm({
   };
 
   const handleSubmit = () => {
+    if (!name.trim()) {
+      setError("Название компании обязательно");
+      return;
+    }
+    if (!inn.trim()) {
+      setError("ИНН обязателен для юридического лица");
+      return;
+    }
     if (!isValidContactPersons(contactPersons)) {
       setError("Укажите имя и корректный email для каждого контактного лица");
       return;
     }
 
     onSubmit({
-      type,
-      name,
-      abbreviatedName,
-      inn,
-      kpp,
+      type: "Юридическое лицо",
+      name: name.trim(),
+      abbreviatedName: abbreviatedName.trim(),
+      inn: inn.trim(),
+      kpp: kpp.trim(),
       roles,
       contacts,
       contactPersons,
-      comment,
+      comment: comment.trim(),
     });
   };
 
@@ -101,12 +97,13 @@ export default function InnProviderForm({
       <div className="grid gap-4">
         <div className="grid gap-3">
           <Label htmlFor="inn" className="gap-0.5">
-            ИНН<span className="text-red-600">*</span>
+            ИНН <span className="text-destructive">*</span>
           </Label>
           <Input
             value={inn}
             onChange={(e) => {
               setInn(e.target.value);
+              setLookupSuccess(false);
               if (error) setError("");
             }}
             disabled={disabled || searching}
@@ -119,49 +116,64 @@ export default function InnProviderForm({
           variant="outline"
           disabled={disabled || searching}
           onClick={handleLoadData}
-          className="-mt-1.5"
+          className="-mt-1.5 justify-self-start"
         >
-          Найти
+          {searching ? "Поиск..." : "Заполнить по ИНН"}
         </Button>
+        {lookupSuccess && (
+          <p className="text-sm text-emerald-700" role="status">
+            Данные компании заполнены. Их можно изменить вручную.
+          </p>
+        )}
         {error && (
-          <p className="text-sm text-red-600" role="alert">
+          <p className="text-sm text-destructive" role="alert">
             {error}
           </p>
         )}
-        {name && (
-          <div className="grid gap-3">
-            <Label htmlFor="name" className="gap-0.5">
-              Название
-            </Label>
-            <Input
-              defaultValue={name}
-              disabled
-              name="name"
-              autoComplete="off"
-            />
-          </div>
-        )}
-        {abbreviatedName && withShortName && (
+        <div className="grid gap-3">
+          <Label htmlFor="company-name" className="gap-0.5">
+            Название компании <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="company-name"
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (error) setError("");
+            }}
+            disabled={disabled || searching}
+            name="name"
+            autoComplete="off"
+          />
+        </div>
+        {withShortName && (
           <div className="grid gap-3">
             <Label htmlFor="abbreviated-name" className="gap-0.5">
               Короткое название
             </Label>
             <Input
-              defaultValue={abbreviatedName}
-              disabled
+              id="abbreviated-name"
+              value={abbreviatedName}
+              onChange={(event) => setAbbreviatedName(event.target.value)}
+              disabled={disabled || searching}
               name="abbreviated-name"
               autoComplete="off"
             />
           </div>
         )}
-        {kpp && (
-          <div className="grid gap-3">
-            <Label htmlFor="kpp" className="gap-0.5">
-              КПП
-            </Label>
-            <Input value={kpp} disabled name="kpp" autoComplete="off" />
-          </div>
-        )}
+        <div className="grid gap-3">
+          <Label htmlFor="kpp" className="gap-0.5">
+            КПП
+          </Label>
+          <Input
+            id="kpp"
+            value={kpp}
+            onChange={(event) => setKpp(event.target.value)}
+            disabled={disabled || searching}
+            name="kpp"
+            autoComplete="off"
+          />
+        </div>
         {contacts.length > 0 && (
           <details className="rounded-md border border-border/50 px-3 py-2 text-muted-foreground">
             <summary className="cursor-pointer text-xs font-medium">
@@ -212,7 +224,7 @@ export default function InnProviderForm({
           </Button>
         </DialogClose>
         <Button
-          disabled={disabled || name.trim().length === 0}
+          disabled={disabled || searching}
           type="button"
           onClick={handleSubmit}
         >

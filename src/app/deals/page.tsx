@@ -9,7 +9,6 @@ export default function DealsPage() {
 
   return (
     <Page breadcrumbLinks={[{ label: "Сделки", href: "/deals" }]}>
-      {/* Переключатель Таблица/Kanban — временно отключен */}
       <DealsDataTable viewMode={viewMode} setViewMode={setViewMode} />
     </Page>
   );

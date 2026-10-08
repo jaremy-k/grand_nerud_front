@@ -29,6 +29,8 @@ export default interface CompanyDto {
   segments?: string[];
   materialsWithPrices?: CompanyMaterialDto[];
   comment?: string;
+  createdAt?: string;
+  created_at?: string;
   deleted_at?: string;
   is_deleted?: boolean;
 }
