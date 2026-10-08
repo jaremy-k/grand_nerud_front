@@ -17,6 +17,8 @@ import CompanyButton from "./company-card";
 import { CreatingModal } from "./creating-modal";
 import { EditingCompanyModal } from "./editing-modal";
 
+const COMPANY_BATCH_SIZE = 15;
+
 function companyCreatedAt(company: CompanyDto): number {
   const value = company.createdAt ?? company.created_at;
   if (!value) return 0;
@@ -37,6 +39,7 @@ export function CompanyCombobox({
 }) {
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
+  const [visibleCount, setVisibleCount] = useState(COMPANY_BATCH_SIZE);
 
   const [open, setOpen] = useState(false);
   const [creatingOpen, setCreatingOpen] = useState(false);
@@ -61,7 +64,7 @@ export function CompanyCombobox({
       .catch(() => {});
   }, [companies, value]);
 
-  const visibleCompanies = useMemo(() => {
+  const filteredCompanies = useMemo(() => {
     const loweredSearch = searchValue.trim().toLowerCase();
     return companies
       .map((company, index) => ({ company, index }))
@@ -76,9 +79,27 @@ export function CompanyCombobox({
         if (dateDifference !== 0) return dateDifference;
         return right.index - left.index;
       })
-      .slice(0, 15)
       .map(({ company }) => company);
   }, [companies, searchValue]);
+
+  const visibleCompanies = filteredCompanies.slice(0, visibleCount);
+
+  useEffect(() => {
+    setVisibleCount(COMPANY_BATCH_SIZE);
+  }, [searchValue, role]);
+
+  const handleListScroll = (element: HTMLDivElement) => {
+    const remainingScroll =
+      element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (
+      remainingScroll < 80 &&
+      visibleCount < filteredCompanies.length
+    ) {
+      setVisibleCount((count) =>
+        Math.min(count + COMPANY_BATCH_SIZE, filteredCompanies.length)
+      );
+    }
+  };
 
   const handleCreateCompany = () => {
     setOpen(false);
@@ -121,6 +142,7 @@ export function CompanyCombobox({
         onFocus={(e) => {
           e.target.blur();
           setSearchValue("");
+          setVisibleCount(COMPANY_BATCH_SIZE);
           setOpen(true);
         }}
         className="truncate overflow-hidden"
@@ -154,8 +176,11 @@ export function CompanyCombobox({
                 Добавить компанию
               </Button>
             </div>
-            <div className="flex max-h-[55dvh] w-full flex-col gap-0.5 overflow-y-auto border-t pt-2">
-              {visibleCompanies.length === 0 && (
+            <div
+              className="flex max-h-[55dvh] w-full flex-col gap-0.5 overflow-y-auto border-t pt-2"
+              onScroll={(event) => handleListScroll(event.currentTarget)}
+            >
+              {filteredCompanies.length === 0 && (
                 <div className="grid justify-items-center gap-3 py-10 text-center">
                   <p className="text-sm text-muted-foreground">Не найдено</p>
                   <Button

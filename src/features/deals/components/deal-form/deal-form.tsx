@@ -17,9 +17,15 @@ import DeliveryInformationSection from "./delivery-information";
 import FinancialInformationSection from "./financial-information";
 import PrimaryInformationSection from "./primary-information";
 
-export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
+export default function DealForm({
+  defaultDeal,
+  initialProviderId,
+}: {
+  defaultDeal?: DealDto;
+  initialProviderId?: string;
+}) {
   const navigate = useNavigate();
-  const formData = useDataFormHook(defaultDeal);
+  const formData = useDataFormHook(defaultDeal, initialProviderId);
   const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services } =
     formData;
   const [submiting, setSubmiting] = useState(false);

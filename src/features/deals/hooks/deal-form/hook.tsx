@@ -131,12 +131,17 @@ function formatDeliveredQuantity(
 }
 
 export default function useDataFormHook(
-  defaultDeal?: DealDto
+  defaultDeal?: DealDto,
+  initialProviderId?: string
 ): DealDataFormHook {
   const [dealFormData, setDealFormData] = useState<DealFormData>({
     serviceId: defaultDeal?.serviceId || undefined,
     customerId: defaultDeal?.customerId || undefined,
-    providerId: defaultDeal?.providerId || defaultDeal?.provider?._id || undefined,
+    providerId:
+      defaultDeal?.providerId ||
+      defaultDeal?.provider?._id ||
+      initialProviderId ||
+      undefined,
     stageId: defaultDeal?.stageId || undefined,
     materialId: defaultDeal?.materialId || undefined,
     unitMeasurement:

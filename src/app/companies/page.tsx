@@ -35,13 +35,17 @@ import {
 } from "@definitions/dto";
 import {
   ArrowDownUpIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FilePlus2Icon,
   MapPinIcon,
   PencilIcon,
   PlusIcon,
   UploadIcon,
   XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const priceFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
@@ -58,6 +62,7 @@ function getComparablePrice(
 }
 
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
@@ -73,6 +78,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [creating, setCreating] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyDto | null>(null);
+  const [expandedCompanyIds, setExpandedCompanyIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
 
@@ -183,6 +191,15 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
     const prices = company.materialsWithPrices ?? [];
     if (!materialId) return prices;
     return prices.filter((item) => item.materialId === materialId);
+  };
+
+  const toggleCompanyDetails = (companyId: string) => {
+    setExpandedCompanyIds((current) => {
+      const next = new Set(current);
+      if (next.has(companyId)) next.delete(companyId);
+      else next.add(companyId);
+      return next;
+    });
   };
 
   return (
@@ -374,7 +391,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     <TableHead className="w-[22%]">Исполнитель</TableHead>
                     <TableHead className="w-[26%]">География</TableHead>
                     <TableHead className="w-[25%]">Цены</TableHead>
-                    <TableHead>Контакты</TableHead>
+                    <TableHead className="w-[290px]">Действия</TableHead>
                   </>
                 ) : (
                   <>
@@ -391,14 +408,17 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     <TableHead>Комментарий</TableHead>
                   </>
                 )}
-                <TableHead className="w-12">
-                  <span className="sr-only">Действия</span>
-                </TableHead>
+                {role !== "provider" && (
+                  <TableHead className="w-12">
+                    <span className="sr-only">Действия</span>
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCompanies.map((company) => (
-                <TableRow key={company._id}>
+                <Fragment key={company._id}>
+                  <TableRow>
                   {role === "provider" ? (
                     <>
                       <TableCell className="align-top">
@@ -470,8 +490,35 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="min-w-64 align-top">
-                        <CompanyContactDetails company={company} />
+                      <TableCell className="align-top">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/deals/create?providerId=${encodeURIComponent(company._id)}`
+                              )
+                            }
+                          >
+                            <FilePlus2Icon />
+                            Создать сделку
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            aria-expanded={expandedCompanyIds.has(company._id)}
+                            onClick={() => toggleCompanyDetails(company._id)}
+                          >
+                            Подробнее
+                            {expandedCompanyIds.has(company._id) ? (
+                              <ChevronUpIcon />
+                            ) : (
+                              <ChevronDownIcon />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </>
                   ) : (
@@ -521,23 +568,159 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                       <TableCell>{company.comment || "—"}</TableCell>
                     </>
                   )}
-                  <TableCell>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Редактировать ${company.name}`}
-                      onClick={() => setEditingCompany(company)}
-                    >
-                      <PencilIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                  {role !== "provider" && (
+                    <TableCell>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={`Редактировать ${company.name}`}
+                        onClick={() => setEditingCompany(company)}
+                      >
+                        <PencilIcon />
+                      </Button>
+                    </TableCell>
+                  )}
+                  </TableRow>
+                  {role === "provider" &&
+                    expandedCompanyIds.has(company._id) && (
+                    <TableRow>
+                    <TableCell colSpan={4} className="bg-muted/20 p-0">
+                      <div className="border-b px-4 py-4">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{company.name}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingCompany(company)}
+                          >
+                            <PencilIcon />
+                            Редактировать
+                          </Button>
+                        </div>
+                        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                          <section className="grid content-start gap-2">
+                            <h3 className="text-sm font-medium">О компании</h3>
+                            <dl className="grid gap-1.5 text-xs">
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">ИНН</dt>
+                                <dd>
+                                  {company.inn ? formatINN(company.inn) : "—"}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">КПП</dt>
+                                <dd>{company.kpp || "—"}</dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Источник</dt>
+                                <dd className="text-right">
+                                  {company.source || "—"}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Сегменты</dt>
+                                <dd className="text-right">
+                                  {company.segments?.join(", ") || "—"}
+                                </dd>
+                              </div>
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Данные ФНС</dt>
+                                <dd>
+                                  {company.contacts?.length
+                                    ? `${company.contacts.length} зап.`
+                                    : "—"}
+                                </dd>
+                              </div>
+                            </dl>
+                            {company.comment && (
+                              <p className="border-t pt-2 text-xs text-muted-foreground">
+                                {company.comment}
+                              </p>
+                            )}
+                          </section>
+
+                          <section className="grid content-start gap-2 border-t pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+                            <h3 className="text-sm font-medium">Контакты</h3>
+                            <CompanyContactDetails
+                              company={company}
+                              maxItems={3}
+                            />
+                          </section>
+
+                          <section className="grid content-start gap-2 border-t pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+                            <h3 className="text-sm font-medium">Адреса</h3>
+                            {(addressesByCompany.get(company._id) ?? []).length ? (
+                              <div className="grid gap-2">
+                                {(addressesByCompany.get(company._id) ?? []).map(
+                                  (address) => (
+                                    <div
+                                      key={address._id}
+                                      className="flex gap-2 text-xs"
+                                    >
+                                      <MapPinIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                                      <div>
+                                        <p>{address.adressDetail?.address || "—"}</p>
+                                        <p className="text-muted-foreground">
+                                          {[
+                                            address.administrativeDistrict,
+                                            address.district,
+                                          ]
+                                            .filter(Boolean)
+                                            .join(" · ") || "Район не указан"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                Адреса не добавлены
+                              </p>
+                            )}
+                          </section>
+
+                          <section className="grid content-start gap-2 border-t pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+                            <h3 className="text-sm font-medium">
+                              Материалы и цены
+                            </h3>
+                            {company.materialsWithPrices?.length ? (
+                              <div className="grid gap-1.5">
+                                {company.materialsWithPrices.map((item) => (
+                                  <div
+                                    key={item._id}
+                                    className="flex justify-between gap-3 text-xs"
+                                  >
+                                    <span>
+                                      {item.material?.name || "Материал"}
+                                    </span>
+                                    <span className="shrink-0 font-medium tabular-nums">
+                                      {priceFormatter.format(item.price)} руб./{item.unit}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                Цены не добавлены
+                              </p>
+                            )}
+                          </section>
+                        </div>
+                      </div>
+                    </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
               ))}
               {filteredCompanies.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={role === "provider" ? 5 : 10}
+                    colSpan={role === "provider" ? 4 : 10}
                     className="h-32 text-center text-muted-foreground"
                   >
                     Компании не найдены

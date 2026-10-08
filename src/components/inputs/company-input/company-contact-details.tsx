@@ -1,9 +1,19 @@
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CompanyDto } from "@definitions/dto";
-import { GlobeIcon, MailIcon, PhoneIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  GlobeIcon,
+  MailIcon,
+  PhoneIcon,
+} from "lucide-react";
+import { useState } from "react";
 
 function unique(values: Array<string | undefined>): string[] {
-  return [...new Set(values.map((value) => value?.trim()).filter(Boolean))] as string[];
+  return [
+    ...new Set(values.map((value) => value?.trim()).filter(Boolean)),
+  ] as string[];
 }
 
 function ContactValue({
@@ -15,7 +25,8 @@ function ContactValue({
   value: string;
   interactive: boolean;
 }) {
-  const Icon = type === "phone" ? PhoneIcon : type === "email" ? MailIcon : GlobeIcon;
+  const Icon =
+    type === "phone" ? PhoneIcon : type === "email" ? MailIcon : GlobeIcon;
   const href =
     type === "phone"
       ? `tel:${value.replace(/[^\d+]/g, "")}`
@@ -53,13 +64,16 @@ export default function CompanyContactDetails({
   company,
   interactive = true,
   compact = false,
+  maxItems,
   className,
 }: {
   company: CompanyDto;
   interactive?: boolean;
   compact?: boolean;
+  maxItems?: number;
   className?: string;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const people = company.contactPersons ?? [];
   const personPhones = new Set(
     people.map((person) => person.phone?.trim()).filter(Boolean)
@@ -74,6 +88,20 @@ export default function CompanyContactDetails({
     (email) => !personEmails.has(email.toLowerCase())
   );
   const websites = unique(company.websites ?? []);
+  const companyContacts: Array<{
+    type: "phone" | "email" | "website";
+    value: string;
+  }> = [
+    ...companyPhones.map((value) => ({ type: "phone" as const, value })),
+    ...companyEmails.map((value) => ({ type: "email" as const, value })),
+    ...websites.map((value) => ({ type: "website" as const, value })),
+  ];
+  const totalItems = people.length + companyContacts.length;
+  const visibleLimit = showAll ? totalItems : (maxItems ?? totalItems);
+  const visiblePeople = people.slice(0, visibleLimit);
+  const remainingCompanySlots = Math.max(0, visibleLimit - visiblePeople.length);
+  const visibleCompanyContacts = companyContacts.slice(0, remainingCompanySlots);
+  const hiddenCount = Math.max(0, totalItems - visibleLimit);
   const hasContacts =
     people.length > 0 ||
     companyPhones.length > 0 ||
@@ -86,8 +114,11 @@ export default function CompanyContactDetails({
 
   return (
     <div className={cn("grid min-w-0 gap-2", compact && "gap-1.5", className)}>
-      {people.map((person, index) => (
-        <div key={`${person.name}-${index}`} className="border-l-2 border-border pl-2">
+      {visiblePeople.map((person, index) => (
+        <div
+          key={`${person.name}-${index}`}
+          className="border-l-2 border-border pl-2"
+        >
           <div className="flex flex-wrap items-baseline gap-x-1.5">
             <span className="text-xs font-medium text-foreground">
               {person.name}
@@ -120,40 +151,34 @@ export default function CompanyContactDetails({
         </div>
       ))}
 
-      {(companyPhones.length > 0 ||
-        companyEmails.length > 0 ||
-        websites.length > 0) && (
+      {visibleCompanyContacts.length > 0 && (
         <div className="grid gap-1">
           {people.length > 0 && (
             <span className="text-[11px] font-medium text-muted-foreground">
               Компания
             </span>
           )}
-          {companyPhones.map((phone) => (
+          {visibleCompanyContacts.map((contact) => (
             <ContactValue
-              key={`phone-${phone}`}
-              type="phone"
-              value={phone}
-              interactive={interactive}
-            />
-          ))}
-          {companyEmails.map((email) => (
-            <ContactValue
-              key={`email-${email}`}
-              type="email"
-              value={email}
-              interactive={interactive}
-            />
-          ))}
-          {websites.map((website) => (
-            <ContactValue
-              key={`website-${website}`}
-              type="website"
-              value={website}
+              key={`${contact.type}-${contact.value}`}
+              type={contact.type}
+              value={contact.value}
               interactive={interactive}
             />
           ))}
         </div>
+      )}
+      {maxItems != null && (hiddenCount > 0 || showAll) && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 justify-self-start px-2 text-xs"
+          onClick={() => setShowAll((value) => !value)}
+        >
+          {showAll ? <ChevronUpIcon /> : <ChevronDownIcon />}
+          {showAll ? "Скрыть" : `Ещё ${hiddenCount}`}
+        </Button>
       )}
     </div>
   );
