@@ -20,6 +20,8 @@ import {
   FactoryIcon,
   Handshake,
   House,
+  ClipboardListIcon,
+  TargetIcon,
   MapPinIcon,
   ListChecksIcon,
   ShoppingBagIcon,
@@ -37,6 +39,8 @@ const data = {
       title: "Основное",
       url: "",
       items: [
+        { title: "Лиды", url: "/leads", icon: TargetIcon },
+        { title: "Задачи", url: "/tasks", icon: ClipboardListIcon },
         {
           title: "Сделки",
           url: "/deals",
@@ -68,6 +72,7 @@ const data = {
     },
   ],
   managerNav: [
+    { title: "Этапы лидов", url: "/admin/lead-stages", icon: ListChecksIcon },
     {
       title: "Управление этапами",
       url: "/admin/stages",
@@ -113,7 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
+                    <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>
                       <Link to={item.url}>
                         <item.icon />
                         {item.title}

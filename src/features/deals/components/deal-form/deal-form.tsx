@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
 import { isSalesService } from "@/config/services";
 import { dealsService } from "@/services";
+import { convertLead, getLead } from "@/services/leads";
+import type LeadDto from "@/definitions/dto/lead";
 import { DealDto } from "@definitions/dto";
 import { CreateDealRequest, UpdateDealRequest } from "@definitions/requests";
 import {
   formatDeliveredQuantity,
   useDataFormHook,
+  DealFormData,
 } from "@features/deals/hooks/deal-form";
 import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
@@ -21,26 +24,41 @@ export default function DealForm({
   defaultDeal,
   initialProviderId,
   initialCustomerId,
+  initialData,
+  sourceLead,
 }: {
   defaultDeal?: DealDto;
   initialProviderId?: string;
   initialCustomerId?: string;
+  initialData?: Partial<DealFormData>;
+  sourceLead?: LeadDto;
 }) {
   const navigate = useNavigate();
   const formData = useDataFormHook(
     defaultDeal,
     initialProviderId,
-    initialCustomerId
+    initialCustomerId,
+    initialData
   );
   const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services } =
     formData;
   const [submiting, setSubmiting] = useState(false);
-  const [error, setError] = useState<string | null>(); //eslint-disable-line @typescript-eslint/no-unused-vars
+  const [error, setError] = useState<string | null>();
+  const [conversionPending, setConversionPending] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmiting(true);
     setError(null);
+
+    if (sourceLead && conversionPending) {
+      try {
+        const converted = await convertLead(sourceLead._id, {});
+        navigate(`/deals/${converted.deal._id}`);
+      } catch (err) { setError(err instanceof Error ? err.message : "Не удалось завершить перевод"); }
+      finally { setSubmiting(false); }
+      return;
+    }
 
     if (
       !dealFormData.serviceId ||
@@ -95,11 +113,23 @@ export default function DealForm({
           customerId: dealFormData.customerId,
           providerId: dealFormData.providerId,
         };
+        if (sourceLead) {
+          const converted = await convertLead(sourceLead._id, dataToSend);
+          navigate(`/deals/${converted.deal._id}`);
+          return;
+        }
         await dealsService.createDeal(dataToSend);
       }
       navigate("/deals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
+      if (sourceLead) {
+        try {
+          const currentLead = await getLead(sourceLead._id);
+          if (currentLead.convertedAt && currentLead.dealId) navigate(`/deals/${currentLead.dealId}`);
+          else setConversionPending(Boolean(currentLead.conversionPending));
+        } catch { /* Keep the original API error visible. */ }
+      }
     } finally {
       setSubmiting(false);
     }
@@ -118,6 +148,8 @@ export default function DealForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      {error && <p className="mb-4 text-sm text-destructive" role="alert">{error}</p>}
+      {conversionPending && <div className="mb-4 flex flex-wrap items-center gap-3 border-y py-3"><p className="text-sm">Перевод начат. Завершите его с первоначальными данными.</p><Button type="submit" disabled={submiting}>Завершить перевод</Button></div>}
       <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
         <div className="min-w-0 space-y-6 pb-[380px] xl:pb-0">
           <PrimaryInformationSection

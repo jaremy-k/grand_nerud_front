@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -38,12 +39,14 @@ export function ImportCompaniesModal({
   const [result, setResult] = useState<CompanyImportResult | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [createLeads, setCreateLeads] = useState(false);
 
   useEffect(() => {
     if (open) return;
     setFile(null);
     setResult(null);
     setError("");
+    setCreateLeads(false);
   }, [open]);
 
   const handleFile = (selectedFile?: File) => {
@@ -74,7 +77,7 @@ export function ImportCompaniesModal({
     setUploading(true);
     setError("");
     try {
-      const importResult = await companiesService.importCompanies(file, role);
+      const importResult = await companiesService.importCompanies(file, role, createLeads);
       setResult(importResult);
       onImported();
     } catch (err) {
@@ -112,6 +115,8 @@ export function ImportCompaniesModal({
               Формат .xlsx, не более 10 МБ и 10 000 строк
             </p>
           </div>
+
+          {!result && <div className="flex items-center gap-3"><Switch id="import-create-leads" checked={createLeads} onCheckedChange={setCreateLeads} disabled={uploading} /><Label htmlFor="import-create-leads">Создать первичные лиды</Label></div>}
 
           {file && !result && (
             <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
@@ -151,6 +156,8 @@ export function ImportCompaniesModal({
                   </p>
                 </div>
               </div>
+
+              {(result.leadsCreated != null || result.leadsSkipped != null) && <p className="text-sm">Создано лидов: {result.leadsCreated ?? 0} · Уже существовали: {result.leadsSkipped ?? 0}</p>}
 
               {result.errors.length > 0 && (
                 <div className="grid gap-2">

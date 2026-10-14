@@ -9,6 +9,7 @@ import {
 
 export default interface DealDto {
   _id: string;
+  sourceLeadId?: string | null;
 
   userId: string;
   serviceId: string;

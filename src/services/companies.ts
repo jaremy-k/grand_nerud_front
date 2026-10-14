@@ -62,11 +62,15 @@ function normalizeContactPersons(
 
 export async function importCompanies(
   file: File,
-  role?: CompanyRole
+  role?: CompanyRole,
+  createLeads = false
 ): Promise<CompanyImportResult> {
   const formData = new FormData();
   formData.append("file", file);
-  const query = role ? `?role=${encodeURIComponent(role)}` : "";
+  const params = new URLSearchParams();
+  if (role) params.set("role", role);
+  if (createLeads) params.set("createLeads", "true");
+  const query = params.size ? `?${params.toString()}` : "";
   return securePostFormData(apiPath(`/companies/import${query}`), formData);
 }
 

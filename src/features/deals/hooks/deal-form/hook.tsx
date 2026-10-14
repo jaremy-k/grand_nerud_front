@@ -133,7 +133,8 @@ function formatDeliveredQuantity(
 export default function useDataFormHook(
   defaultDeal?: DealDto,
   initialProviderId?: string,
-  initialCustomerId?: string
+  initialCustomerId?: string,
+  initialData?: Partial<DealFormData>
 ): DealDataFormHook {
   const [dealFormData, setDealFormData] = useState<DealFormData>({
     serviceId: defaultDeal?.serviceId || undefined,
@@ -170,6 +171,7 @@ export default function useDataFormHook(
         date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
         amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
       })) || [],
+    ...(!defaultDeal ? initialData : {}),
   });
 
   const [calculatedData, setCalculatedData] = useState(EMPTY_CALC);

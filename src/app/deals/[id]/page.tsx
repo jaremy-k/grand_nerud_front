@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import useAuthContext from "@/contexts/auth-context";
 import CompanyContactDetails from "@/components/inputs/company-input/company-contact-details";
+import TaskList from "@/features/tasks/components/task-list";
 import { formatCurrency, formatINN } from "@/lib/formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
 import {
@@ -40,7 +41,7 @@ import {
   CompanyMaterialDto,
   DealDto,
 } from "@definitions/dto";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function DealDetailPage() {
@@ -516,6 +517,11 @@ export default function DealDetailPage() {
           )}
         </TableBody>
       </Table>
+      <section className="grid gap-3 border-t py-5 mt-6">
+        <h2 className="text-base font-medium">Задачи по сделке</h2>
+        {deal.sourceLeadId && <Link className="text-sm text-primary hover:underline" to={`/leads/${deal.sourceLeadId}`}>Открыть исходный лид</Link>}
+        <TaskList filters={{ dealId: deal._id }} context={{ dealId: deal._id, companyId: deal.customerId, ownerId: deal.userId }} />
+      </section>
       <div className="inline-flex gap-2.5 mt-6">
         <AlertDialog open={deleteOpen}>
           <AlertDialogContent>

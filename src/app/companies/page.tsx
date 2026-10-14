@@ -36,6 +36,8 @@ import {
 } from "@definitions/dto";
 import {
   ArrowDownUpIcon,
+  ClipboardListIcon,
+  TargetIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   FilePlus2Icon,
@@ -46,7 +48,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const priceFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
@@ -601,6 +603,10 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                           <div>
                             <p className="font-medium">{company.name}</p>
                           </div>
+                          <div className="flex flex-wrap gap-2">
+                          <Button asChild type="button" size="sm" variant="outline"><Link to={`/leads?companyId=${encodeURIComponent(company._id)}&create=true`}><TargetIcon />Новый лид</Link></Button>
+                          <Button asChild type="button" size="sm" variant="outline"><Link to={`/leads?companyId=${encodeURIComponent(company._id)}`}><TargetIcon />Лиды</Link></Button>
+                          <Button asChild type="button" size="sm" variant="outline"><Link to={`/tasks?companyId=${encodeURIComponent(company._id)}`}><ClipboardListIcon />Задачи</Link></Button>
                           <Button
                             type="button"
                             size="sm"
@@ -610,6 +616,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                             <PencilIcon />
                             Редактировать
                           </Button>
+                          </div>
                         </div>
                         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                           <section className="grid content-start gap-2">

@@ -8,5 +8,7 @@ export default interface CompanyImportResult {
   created: number;
   updated: number;
   skipped: number;
+  leadsCreated?: number;
+  leadsSkipped?: number;
   errors: CompanyImportError[];
 }

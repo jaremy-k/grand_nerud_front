@@ -2,6 +2,10 @@ import AdminPage from "@/app/admin/page";
 import CalculationRulesAdminPage from "@/app/admin/calculation-rules/page";
 import AdminUsersPage from "@/app/admin/users/page";
 import AdminStagesPage from "@/app/admin/stages/page";
+import LeadStagesPage from "@/app/admin/lead-stages/page";
+import LeadsPage from "@/app/leads/page";
+import LeadDetailPage from "@/app/leads/[id]/page";
+import TasksPage from "@/app/tasks/page";
 import DealDetailPage from "@/app/deals/[id]/page";
 import EditDealPage from "@/app/deals/[id]/edit/page";
 import CreateDealPage from "@/app/deals/create/page";
@@ -27,6 +31,10 @@ export function AppRoutes() {
         }
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
+      <Route path="/leads/:id" element={<ProtectedRoute><LeadDetailPage /></ProtectedRoute>} />
+      <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+      <Route path="/admin/lead-stages" element={<ProtectedRoute managerOrAdmin><LeadStagesPage /></ProtectedRoute>} />
       <Route
         path="/deals"
         element={
