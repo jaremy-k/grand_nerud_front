@@ -3,7 +3,7 @@ import { secureGetData } from "@/lib/fetch";
 import { getWorkspaceLeads, getWorkspaceTasks } from "@/services/workspace";
 
 vi.mock("@/lib/fetch", () => ({ secureGetData: vi.fn() }));
-beforeEach(() => vi.mocked(secureGetData).mockResolvedValue({}));
+beforeEach(() => { vi.mocked(secureGetData).mockResolvedValue({}); });
 
 describe("Клиент API рабочего стола", () => {
   it("использует новые роуты с общей временной зоной и лимитом", async () => {
