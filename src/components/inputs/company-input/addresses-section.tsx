@@ -20,6 +20,7 @@ import {
 import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import useAuthContext from "@/contexts/auth-context";
 import { addressesService } from "@/services";
+import { parseCoordinates } from "@/lib/number-input";
 import { AddressDto } from "@definitions/dto";
 import { MapPinIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -99,19 +100,18 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
   };
 
   const handleSave = async () => {
-    const longitude = Number(form.longitude);
-    const latitude = Number(form.latitude);
+    const coordinates = parseCoordinates(form.longitude, form.latitude);
     if (!form.address.trim() || !form.typeAdress.trim()) {
       setError("Укажите адрес и его тип");
       return;
     }
-    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
-      setError("Укажите корректные координаты");
+    if (!coordinates) {
+      setError("Укажите долготу от -180 до 180 и широту от -90 до 90");
       return;
     }
 
     const data = {
-      coordinates: [longitude, latitude] as [number, number],
+      coordinates,
       city: form.city.trim() || undefined,
       administrativeDistrict: form.administrativeDistrict || undefined,
       district: form.district.trim() || undefined,

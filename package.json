@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "tsc --project tsconfig.test.json && vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -45,6 +46,7 @@
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9.29.0",
     "@tailwindcss/postcss": "^4.1.11",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -54,13 +56,20 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
+    "jsdom": "^27.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "typescript": "^5",
     "typescript-eslint": "^8.35.1",
-    "vite": "^8.1.3"
+    "vite": "^8.1.3",
+    "vitest": "^3.2.7"
   },
   "overrides": {
-    "ajv": ">=8.18.0"
+    "eslint": {
+      "ajv": "^6.12.6"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.12.6"
+    }
   }
 }

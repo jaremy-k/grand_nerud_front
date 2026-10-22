@@ -9,23 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useDebounce } from "@/lib/debouncer";
 import { companiesService, dealsService } from "@/services";
-import { DealDto } from "@definitions/dto";
-import { DealFilters } from "@features/deals/definitions";
-import { Columns3Icon, ListIcon } from "lucide-react";
-import {
-  getLastUsedFilters,
-  saveLastUsedFilters,
-} from "@features/deals/utils/filter-presets";
+import { Columns3Icon, ListIcon, RotateCwIcon } from "lucide-react";
 import { useStages } from "@features/deals/hooks/use-stages";
-import { delayedPromise } from "@features/deals/utils";
+import { useDealsQuery } from "@features/deals/hooks/use-deals-query";
 import { useNavigate } from "react-router-dom";
 import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -47,84 +39,12 @@ export default function DealsDataTable({
 }) {
   const navigate = useNavigate();
   const { stages } = useStages();
-  const [deals, setDeals] = useState<DealDto[]>([]);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [loading, setLoading] = useState(true);
+  const { deals, totalPages, currentPage, setCurrentPage, loading, error, retry, filters, changeFilter } = useDealsQuery(viewMode === "kanban" ? 50 : 15);
+  const [stageError, setStageError] = useState("");
   const [updatingStageId, setUpdatingStageId] = useState<string | null>(null);
   const [customerNames, setCustomerNames] = useState<Record<string, string>>(
     {}
   );
-
-  const pageSize = viewMode === "kanban" ? 50 : 15;
-
-  const handleFetchDeals = useCallback(
-    (signal: AbortSignal, page: number, requsetFilters: DealFilters = {}) => {
-      setLoading(true);
-      delayedPromise(
-        dealsService.getDeals(
-          {
-            pageSize,
-            page: page,
-            includeRelations: true,
-            includeDeleted: false,
-            filters: { ...requsetFilters },
-          },
-          {
-            signal: signal,
-          }
-        ),
-        500
-      )
-        .then((data) => {
-          setDeals(data.items);
-          setTotalPages(data.totalPages);
-        })
-        .catch((err) => console.log(err))
-        .finally(() => setLoading(false));
-    },
-    [pageSize, setDeals, setTotalPages, setLoading]
-  );
-
-  // Filters — применяем последние при монтировании
-  const [stageFilter, setStageFilter] = useState("all");
-  const [serviceFilter, setServiceFilter] = useState("all");
-  const [userFilter, setUserFilter] = useState("all");
-  const [materialFilter, setMaterialFilter] = useState("all");
-
-  useEffect(() => {
-    const last = getLastUsedFilters();
-    if (last) {
-      setStageFilter(last.stageId ?? "all");
-      setServiceFilter(last.serviceId ?? "all");
-      setUserFilter(last.userId ?? "all");
-      setMaterialFilter(last.materialId ?? "all");
-    }
-    hasInitializedLastUsed.current = true;
-  }, []);
-
-  const filters = useMemo(
-    () => ({
-      stageId: stageFilter,
-      serviceId: serviceFilter,
-      userId: userFilter,
-      materialId: materialFilter,
-    }),
-    [stageFilter, serviceFilter, userFilter, materialFilter]
-  );
-  const debouncedFilters = useDebounce(filters, 300);
-  const hasInitializedLastUsed = useRef(false);
-
-  useEffect(() => {
-    if (!hasInitializedLastUsed.current) return;
-    saveLastUsedFilters(filters);
-  }, [filters]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    handleFetchDeals(controller.signal, currentPage, debouncedFilters);
-    return () => controller.abort("Called fetch with other params");
-  }, [currentPage, debouncedFilters, handleFetchDeals]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -165,7 +85,7 @@ export default function DealsDataTable({
     const ro = new ResizeObserver(updateWidth);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [viewMode, deals, stages]);
+  }, [viewMode, deals, stages, loading, error]);
 
   const handleTopScroll = useCallback(() => {
     if (!topScrollRef.current || !bottomScrollRef.current || isScrollingRef.current)
@@ -190,24 +110,17 @@ export default function DealsDataTable({
   const handleStageChange = useCallback(
     async (dealId: string, stageId: string) => {
       setUpdatingStageId(dealId);
+      setStageError("");
       try {
         await dealsService.updateDealStage(dealId, stageId);
-        const data = await dealsService.getDeals({
-          pageSize,
-          page: currentPage,
-          includeRelations: true,
-          includeDeleted: false,
-          filters: debouncedFilters,
-        });
-        setDeals(data.items);
-        setTotalPages(data.totalPages);
+        retry();
       } catch (err) {
-        console.error(err instanceof Error ? err.message : "Ошибка смены этапа");
+        setStageError(err instanceof Error ? err.message : "Ошибка смены этапа");
       } finally {
         setUpdatingStageId(null);
       }
     },
-    [currentPage, debouncedFilters, pageSize]
+    [retry]
   );
 
   const handleViewModeChange = (mode: "table" | "kanban") => {
@@ -252,18 +165,26 @@ export default function DealsDataTable({
           </div>
         </div>
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
-          <ServiceFilter value={serviceFilter} onChange={setServiceFilter} />
-          <StageFilter value={stageFilter} onChange={setStageFilter} />
+          <ServiceFilter value={filters.serviceId ?? "all"} onChange={(value) => changeFilter("serviceId", value)} />
+          <StageFilter value={filters.stageId ?? "all"} onChange={(value) => changeFilter("stageId", value)} />
             <ManagerFilter
               deals={deals}
-              value={userFilter}
-              onChange={setUserFilter}
+              value={filters.userId ?? "all"}
+              onChange={(value) => changeFilter("userId", value)}
             />
-          <MaterialFilter value={materialFilter} onChange={setMaterialFilter} />
+          <MaterialFilter value={filters.materialId ?? "all"} onChange={(value) => changeFilter("materialId", value)} />
         </div>
       </div>
+      {stageError && <p className="py-3 text-sm text-destructive" role="alert">{stageError}</p>}
       <div className="min-h-0 flex-1">
-      {viewMode === "kanban" ? (
+      {error ? (
+        <div className="space-y-3 py-8 text-center" role="alert">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button type="button" variant="outline" onClick={retry}><RotateCwIcon /> Повторить загрузку</Button>
+        </div>
+      ) : viewMode === "kanban" && loading ? (
+        <p className="py-8 text-sm text-muted-foreground" role="status">Загрузка сделок...</p>
+      ) : viewMode === "kanban" ? (
         <div className="flex min-w-0 flex-1 flex-col">
           <div
             ref={topScrollRef}
@@ -320,13 +241,13 @@ export default function DealsDataTable({
       </div>
       )}
       </div>
-      <div className="mt-4 flex-shrink-0">
+      {!loading && !error && <div className="mt-4 flex-shrink-0">
         <Pagination
           total={totalPages}
           current={currentPage}
           onClick={setCurrentPage}
         />
-      </div>
+      </div>}
     </div>
   );
 }

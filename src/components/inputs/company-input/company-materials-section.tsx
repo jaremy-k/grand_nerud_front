@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { createCompanyMaterialPayload } from "@/lib/company-materials";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MaterialSelect } from "@/components/inputs/material-input/material-select";
@@ -89,22 +90,10 @@ export default function CompanyMaterialsSection({
   };
 
   const handleSave = async () => {
-    const price = Number(form.price.replace(",", "."));
-    if (!form.materialId || !form.unit.trim() || !Number.isFinite(price)) {
-      setError("Выберите материал, укажите цену и единицу измерения");
-      return;
-    }
-
     setSaving(true);
     setError("");
     try {
-      const payload = {
-        companyId,
-        materialId: form.materialId,
-        price,
-        unit: form.unit.trim(),
-        comment: form.comment.trim() || undefined,
-      };
+      const payload = createCompanyMaterialPayload(companyId, form);
       if (editingId) {
         await companyMaterialsService.updateCompanyMaterial(editingId, payload);
       } else {

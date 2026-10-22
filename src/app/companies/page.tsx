@@ -26,6 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatINN } from "@/lib/formatters";
+import { compareCompanyPrices, getComparablePrice, getMaterialUnits, normalizeMaterialUnit } from "@/lib/company-materials";
+import { parseDecimalInput } from "@/lib/number-input";
 import { addressesService, companiesService, materialsService } from "@/services";
 import {
   AddressDto,
@@ -54,16 +56,6 @@ const priceFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
 });
 
-function getComparablePrice(
-  company: CompanyDto,
-  materialId: string
-): number | null {
-  const prices = (company.materialsWithPrices ?? [])
-    .filter((item) => !materialId || item.materialId === materialId)
-    .map((item) => item.price);
-  return prices.length ? Math.min(...prices) : null;
-}
-
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
@@ -74,6 +66,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [administrativeDistrict, setAdministrativeDistrict] = useState("");
   const [district, setDistrict] = useState("");
   const [materialId, setMaterialId] = useState("");
+  const [priceUnit, setPriceUnit] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [priceSort, setPriceSort] = useState("default");
   const [loading, setLoading] = useState(true);
@@ -87,6 +80,10 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
   const selectedMaterial = materials.find((item) => item._id === materialId);
+  const materialUnits = useMemo(() => getMaterialUnits(companies, materialId), [companies, materialId]);
+  const selectedPriceUnit = priceUnit;
+  const priceUnitOptions = priceUnit && !materialUnits.includes(priceUnit) ? [...materialUnits, priceUnit] : materialUnits;
+  const canComparePrices = Boolean(materialId && selectedPriceUnit);
 
   useEffect(() => {
     if (role !== "provider") return;
@@ -97,6 +94,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   }, [role]);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
     setError("");
     Promise.all([
@@ -110,21 +108,22 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
       addressesService.getAddresses(),
     ])
       .then(([companyData, addressData]) => {
+        if (!active) return;
         setCompanies(companyData);
         setAddresses(addressData);
       })
-      .catch((err) =>
-        setError(
+      .catch((err) => {
+        if (active) setError(
           err instanceof Error ? err.message : "Не удалось загрузить компании"
-        )
-      )
-      .finally(() => setLoading(false));
+        );
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [role, city, administrativeDistrict, district]);
 
   const filteredCompanies = useMemo(() => {
     const value = search.trim().toLowerCase();
-    const ceiling = Number(maxPrice.replace(",", "."));
-    const hasCeiling = maxPrice.trim() !== "" && Number.isFinite(ceiling);
+    const ceiling = canComparePrices ? parseDecimalInput(maxPrice) : null;
 
     const filtered = companies.filter((company) => {
       const matchesSearch =
@@ -146,23 +145,18 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
       if (!matchesSearch) return false;
       if (role !== "provider") return true;
 
-      const comparablePrice = getComparablePrice(company, materialId);
-      if (materialId && comparablePrice === null) return false;
-      if (hasCeiling && (comparablePrice === null || comparablePrice > ceiling)) {
+      if (materialId && !(company.materialsWithPrices ?? []).some((item) => item.materialId === materialId)) return false;
+      const comparablePrice = getComparablePrice(company, materialId, selectedPriceUnit);
+      if (canComparePrices && comparablePrice === null) return false;
+      if (ceiling !== null && (comparablePrice === null || comparablePrice > ceiling)) {
         return false;
       }
       return true;
     });
 
-    if (role !== "provider" || priceSort === "default") return filtered;
-    return [...filtered].sort((left, right) => {
-      const leftPrice = getComparablePrice(left, materialId) ?? Infinity;
-      const rightPrice = getComparablePrice(right, materialId) ?? Infinity;
-      return priceSort === "asc"
-        ? leftPrice - rightPrice
-        : rightPrice - leftPrice;
-    });
-  }, [companies, materialId, maxPrice, priceSort, role, search]);
+    if (role !== "provider" || priceSort === "default" || !canComparePrices) return filtered;
+    return [...filtered].sort((left, right) => compareCompanyPrices(left, right, materialId, selectedPriceUnit, priceSort));
+  }, [companies, materialId, maxPrice, priceSort, role, search, canComparePrices, selectedPriceUnit]);
 
   const addressesByCompany = useMemo(() => {
     const grouped = new Map<string, AddressDto[]>();
@@ -187,6 +181,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
     setAdministrativeDistrict("");
     setDistrict("");
     setMaterialId("");
+    setPriceUnit("");
     setMaxPrice("");
     setPriceSort("default");
   };
@@ -194,7 +189,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const visiblePrices = (company: CompanyDto): CompanyMaterialDto[] => {
     const prices = company.materialsWithPrices ?? [];
     if (!materialId) return prices;
-    return prices.filter((item) => item.materialId === materialId);
+    return prices.filter((item) => item.materialId === materialId && (!selectedPriceUnit || normalizeMaterialUnit(item.unit) === selectedPriceUnit));
   };
 
   const toggleCompanyDetails = (companyId: string) => {
@@ -231,7 +226,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         <div
           className={
             role === "provider"
-              ? "grid gap-3 border-y py-4 lg:grid-cols-6"
+              ? "grid gap-3 border-y py-4 sm:grid-cols-2 xl:grid-cols-4"
               : "grid gap-3 lg:grid-cols-4"
           }
         >
@@ -316,15 +311,29 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   value={materialId}
                   onChange={(value) => {
                     setMaterialId(value);
+                    const units = getMaterialUnits(companies, value);
+                    setPriceUnit(units.length === 1 ? units[0] : "");
+                    setMaxPrice("");
                     if (value) setPriceSort("asc");
                   }}
                 />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="company-price-unit">Единица цены</Label>
+                <Select value={selectedPriceUnit || "all"} onValueChange={(value) => setPriceUnit(value === "all" ? "" : value)} disabled={!materialId}>
+                  <SelectTrigger id="company-price-unit"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все единицы</SelectItem>
+                    {priceUnitOptions.map((unit) => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="company-max-price">Цена до, руб.</Label>
                 <Input
                   id="company-max-price"
                   inputMode="decimal"
+                  disabled={!canComparePrices}
                   value={maxPrice}
                   onChange={(event) => setMaxPrice(event.target.value)}
                   placeholder="Например, 1500"
@@ -332,7 +341,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="company-price-sort">Сортировка</Label>
-                <Select value={priceSort} onValueChange={setPriceSort}>
+                <Select value={canComparePrices ? priceSort : "default"} onValueChange={setPriceSort} disabled={!canComparePrices}>
                   <SelectTrigger id="company-price-sort">
                     <ArrowDownUpIcon />
                     <SelectValue />

@@ -40,7 +40,7 @@ export default function PrimaryInformationSection({
   formData: DealDataFormHook;
   defaultDeal?: DealDto;
 }) {
-  const { dealFormData, updateField, services } = formData;
+  const { dealFormData, updateField, services, unitLocked } = formData;
   const [stages, setStages] = useState<StageDto[]>([]);
 
   useEffect(() => {
@@ -86,10 +86,7 @@ export default function PrimaryInformationSection({
               role="customer"
               disabled={!!defaultDeal}
               value={dealFormData.customerId ?? ""}
-              onChange={(val) => {
-                updateField("customerId", val);
-                updateField("deliveryAddressId", "");
-              }}
+              onChange={(val) => updateField("customerId", val)}
             />
           </Field>
           <Field className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
@@ -102,10 +99,7 @@ export default function PrimaryInformationSection({
             <CompanyCombobox
               role="provider"
               value={dealFormData.providerId ?? ""}
-              onChange={(val) => {
-                updateField("providerId", val);
-                updateField("shippingAddressId", "");
-              }}
+              onChange={(val) => updateField("providerId", val)}
             />
           </Field>
           <Field className="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors focus-within:border-primary/40 focus-within:bg-muted/50">
@@ -119,6 +113,7 @@ export default function PrimaryInformationSection({
               value={dealFormData.serviceId}
               onValueChange={(val) => updateField("serviceId", val)}
               name="service"
+              disabled={!!defaultDeal}
             >
               <SelectTrigger className={inputClass}>
                 <SelectValue placeholder="Выберите услугу" />
@@ -221,6 +216,7 @@ export default function PrimaryInformationSection({
                   </FieldLabel>
                   <Select
                     name="measurementUnit"
+                    disabled={unitLocked}
                     value={dealFormData.unitMeasurement}
                     onValueChange={(e) =>
                       updateField("unitMeasurement", e as MeasurementUnit)
@@ -237,6 +233,7 @@ export default function PrimaryInformationSection({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                  {unitLocked && <p className="text-xs text-muted-foreground">Единица зафиксирована доставками</p>}
                 </Field>
                 <Field>
                   <FieldLabel

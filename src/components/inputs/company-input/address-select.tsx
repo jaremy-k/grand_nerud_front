@@ -18,6 +18,7 @@ import {
 import useAuthContext from "@/contexts/auth-context";
 import { MOSCOW_ADMINISTRATIVE_DISTRICTS } from "@/config/addresses";
 import { addressesService } from "@/services";
+import { parseCoordinates } from "@/lib/number-input";
 import { AddressDto } from "@definitions/dto";
 import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -76,14 +77,13 @@ export default function AddressSelect({
 
   const handleCreate = async () => {
     if (!companyId) return;
-    const longitudeValue = Number(longitude);
-    const latitudeValue = Number(latitude);
+    const coordinates = parseCoordinates(longitude, latitude);
     if (!address.trim() || !typeAdress.trim()) {
       setError("Укажите адрес и его тип");
       return;
     }
-    if (!Number.isFinite(longitudeValue) || !Number.isFinite(latitudeValue)) {
-      setError("Укажите корректные координаты");
+    if (!coordinates) {
+      setError("Укажите долготу от -180 до 180 и широту от -90 до 90");
       return;
     }
 
@@ -92,7 +92,7 @@ export default function AddressSelect({
     try {
       const created = await addressesService.createAddress({
         companyId,
-        coordinates: [longitudeValue, latitudeValue],
+        coordinates,
         city: city.trim() || undefined,
         administrativeDistrict: administrativeDistrict || undefined,
         district: district.trim() || undefined,
@@ -143,7 +143,7 @@ export default function AddressSelect({
       )}
 
       <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Новый адрес</DialogTitle>
           </DialogHeader>

@@ -1,134 +1,15 @@
 "use client";
 
-import {
-  isSalesService,
-  isTransportService,
-} from "@/config/services";
-import { useDebounce } from "@/lib/debouncer";
+import { useLatestRequest } from "@/hooks/use-latest-request";
 import { dealsService, servicesService } from "@/services";
-import { DealDto, ServiceDto } from "@definitions/dto";
-import { PreviewDealResult } from "@definitions/requests";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  DealDataFormHook,
-  DealFormData,
-  MeasurementUnit,
-  PaymentMethod,
-  ReceivingMethod,
-} from "./types";
+import type { DealDto, ServiceDto } from "@definitions/dto";
+import type { PreviewDealRequest } from "@definitions/requests";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { changeDealField, createDealFormData, formatDeliveredQuantity, hasActualDeliveries, isFormDataEqual } from "./model";
+import type { DealDataFormHook, DealFormData } from "./types";
 
-const EMPTY_CALC: PreviewDealResult = {
-  taxAmount: 0,
-  companyProfit: 0,
-  managerProfit: 0,
-  amountPurchaseTotal: 0,
-  amountSalesTotal: 0,
-  actualCompanyProfit: 0,
-  actualAmountSalesTotal: 0,
-  actualAmountPurchaseTotal: 0,
-  totalDeliveredQuantity: 0,
-  ndsPercent: 0,
-  managerShare: 0,
-  totalAmount: 0,
-};
-
-function dealToFormData(d: DealDto): DealFormData {
-  return {
-    serviceId: d.serviceId,
-    customerId: d.customerId,
-    providerId: d.providerId ?? d.provider?._id ?? undefined,
-    stageId: d.stageId,
-    materialId: d.materialId ?? undefined,
-    unitMeasurement: (d.unitMeasurement as MeasurementUnit) || "тонна",
-    quantity: String(d.quantity || "0"),
-    amountPurchaseUnit: String(d.amountPurchaseUnit || "0"),
-    amountSalesUnit: String(d.amountSalesUnit || "0"),
-    amountDelivery: String(d.amountDelivery || "0"),
-    paymentMethod: (d.paymentMethod as PaymentMethod) || "наличный расчет",
-    methodReceiving: (d.methodReceiving as ReceivingMethod) || "самовывоз",
-    deliveryAddressId: d.deliveryAddressId || "",
-    shippingAddressId: d.shippingAddressId || "",
-    ossig: d.OSSIG || false,
-    notes: d.notes || "",
-    extraExpenses:
-      d.addExpenses?.map((el) => ({
-        ...el,
-        amount: el.amount.toString(),
-      })) || [],
-    deliveredQuantity:
-      d.deliveredQuantity?.map((el) => ({
-        quantity: String(el.quantity || ""),
-        date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
-        amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
-      })) || [],
-  };
-}
-
-function isFormDataEqual(a: DealFormData, b: DealFormData): boolean {
-  if (
-    a.serviceId !== b.serviceId ||
-    a.customerId !== b.customerId ||
-    a.providerId !== b.providerId ||
-    a.stageId !== b.stageId ||
-    a.materialId !== b.materialId ||
-    a.unitMeasurement !== b.unitMeasurement ||
-    a.quantity !== b.quantity ||
-    a.amountPurchaseUnit !== b.amountPurchaseUnit ||
-    a.amountSalesUnit !== b.amountSalesUnit ||
-    a.amountDelivery !== b.amountDelivery ||
-    a.paymentMethod !== b.paymentMethod ||
-    a.methodReceiving !== b.methodReceiving ||
-    a.deliveryAddressId !== b.deliveryAddressId ||
-    a.shippingAddressId !== b.shippingAddressId ||
-    a.ossig !== b.ossig ||
-    a.notes !== b.notes
-  ) {
-    return false;
-  }
-  if (a.extraExpenses.length !== b.extraExpenses.length) return false;
-  for (let i = 0; i < a.extraExpenses.length; i++) {
-    if (
-      a.extraExpenses[i].name !== b.extraExpenses[i].name ||
-      a.extraExpenses[i].amount !== b.extraExpenses[i].amount
-    ) {
-      return false;
-    }
-  }
-  if (a.deliveredQuantity.length !== b.deliveredQuantity.length) return false;
-  for (let i = 0; i < a.deliveredQuantity.length; i++) {
-    const da = a.deliveredQuantity[i];
-    const db = b.deliveredQuantity[i];
-    if (da.quantity !== db.quantity || da.amountPurchase !== db.amountPurchase)
-      return false;
-    const dateA = da.date ? da.date.toISOString().slice(0, 10) : "";
-    const dateB = db.date ? db.date.toISOString().slice(0, 10) : "";
-    if (dateA !== dateB) return false;
-  }
-  return true;
-}
-
-function formatDeliveredQuantity(
-  items: DealFormData["deliveredQuantity"],
-  unitMeasurement: MeasurementUnit
-) {
-  return items
-    .filter((dq) => dq.date && dq.quantity)
-    .map((dq) => {
-      const amountPurchaseNum = dq.amountPurchase
-        ? Number(dq.amountPurchase)
-        : undefined;
-      return {
-        quantity: Number(dq.quantity),
-        unit: unitMeasurement,
-        date: `${dq.date!.getFullYear()}-${(dq.date!.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")}-${dq.date!.getDate().toString().padStart(2, "0")} 00:00`,
-        ...(amountPurchaseNum != null && !Number.isNaN(amountPurchaseNum)
-          ? { amountPurchase: amountPurchaseNum }
-          : {}),
-      };
-    });
-}
+const loadPreview = (payload: PreviewDealRequest, signal: AbortSignal) =>
+  dealsService.previewDeal(payload, { signal });
 
 export default function useDataFormHook(
   defaultDeal?: DealDto,
@@ -136,215 +17,57 @@ export default function useDataFormHook(
   initialCustomerId?: string,
   initialData?: Partial<DealFormData>
 ): DealDataFormHook {
-  const [dealFormData, setDealFormData] = useState<DealFormData>({
-    serviceId: defaultDeal?.serviceId || undefined,
-    customerId: defaultDeal?.customerId || initialCustomerId || undefined,
-    providerId:
-      defaultDeal?.providerId ||
-      defaultDeal?.provider?._id ||
-      initialProviderId ||
-      undefined,
-    stageId: defaultDeal?.stageId || undefined,
-    materialId: defaultDeal?.materialId || undefined,
-    unitMeasurement:
-      (defaultDeal?.unitMeasurement as MeasurementUnit) || "тонна",
-    quantity: String(defaultDeal?.quantity || "0"),
-    amountPurchaseUnit: String(defaultDeal?.amountPurchaseUnit || "0"),
-    amountSalesUnit: String(defaultDeal?.amountSalesUnit || "0"),
-    amountDelivery: String(defaultDeal?.amountDelivery || "0"),
-    paymentMethod:
-      (defaultDeal?.paymentMethod as PaymentMethod) || "наличный расчет",
-    methodReceiving:
-      (defaultDeal?.methodReceiving as ReceivingMethod) || "самовывоз",
-    deliveryAddressId: defaultDeal?.deliveryAddressId || "",
-    shippingAddressId: defaultDeal?.shippingAddressId || "",
-    ossig: defaultDeal?.OSSIG || false,
-    notes: defaultDeal?.notes || "",
-    extraExpenses:
-      defaultDeal?.addExpenses?.map((el) => ({
-        ...el,
-        amount: el.amount.toString(),
-      })) || [],
-    deliveredQuantity:
-      defaultDeal?.deliveredQuantity?.map((el) => ({
-        quantity: String(el.quantity || ""),
-        date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
-        amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
-      })) || [],
-    ...(!defaultDeal ? initialData : {}),
-  });
-
-  const [calculatedData, setCalculatedData] = useState(EMPTY_CALC);
+  const [initialFormData] = useState(() => createDealFormData(defaultDeal, initialProviderId, initialCustomerId, initialData));
+  const [dealFormData, setDealFormData] = useState(initialFormData);
   const [services, setServices] = useState<ServiceDto[]>([]);
 
   useEffect(() => {
-    servicesService.getServices().then(setServices).catch(() => setServices([]));
+    let active = true;
+    servicesService.getServices().then((items) => {
+      if (active) setServices(items);
+    }).catch(() => { /* The service selector stays empty if unavailable. */ });
+    return () => { active = false; };
   }, []);
 
+  const unitLocked = initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(dealFormData);
+  const editing = Boolean(defaultDeal);
   const updateField = useCallback(
-    (key: keyof DealFormData, value: DealFormData[keyof DealFormData]) => {
-      setDealFormData((c) => ({
-        ...c,
-        [key]: value,
-      }));
+    <K extends keyof DealFormData>(key: K, value: DealFormData[K]) => {
+      if (editing && (key === "serviceId" || key === "customerId")) return;
+      setDealFormData((current) => changeDealField(
+        current, key, value, services,
+        initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(current)
+      ));
     },
-    [setDealFormData]
+    [services, initialFormData, editing]
   );
 
-  const previewPayload = useMemo(
-    () => ({
-      quantity: dealFormData.quantity,
-      amountPurchaseUnit: dealFormData.amountPurchaseUnit,
-      amountSalesUnit: dealFormData.amountSalesUnit,
-      paymentMethod: dealFormData.paymentMethod,
-      amountDelivery: dealFormData.amountDelivery,
-      extraExpenses: dealFormData.extraExpenses,
-      deliveredQuantity: dealFormData.deliveredQuantity,
-      unitMeasurement: dealFormData.unitMeasurement,
-    }),
-    [
-      dealFormData.quantity,
-      dealFormData.amountPurchaseUnit,
-      dealFormData.amountSalesUnit,
-      dealFormData.paymentMethod,
-      dealFormData.amountDelivery,
-      dealFormData.extraExpenses,
-      dealFormData.deliveredQuantity,
-      dealFormData.unitMeasurement,
-    ]
-  );
-  const debouncedPreview = useDebounce(previewPayload, 300);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    dealsService
-      .previewDeal(
-        {
-          quantity: Number(debouncedPreview.quantity),
-          amountPurchaseUnit: Number(debouncedPreview.amountPurchaseUnit),
-          amountSalesUnit: Number(debouncedPreview.amountSalesUnit),
-          amountDelivery: Number(debouncedPreview.amountDelivery),
-          paymentMethod: debouncedPreview.paymentMethod,
-          addExpenses: debouncedPreview.extraExpenses.map((v) => ({
-            name: v.name,
-            amount: Number(v.amount || 0),
-          })),
-          deliveredQuantity: formatDeliveredQuantity(
-            debouncedPreview.deliveredQuantity,
-            debouncedPreview.unitMeasurement
-          ),
-        },
-        { signal: controller.signal }
-      )
-      .then(setCalculatedData)
-      .catch(() => {});
-
-    return () => controller.abort();
-  }, [debouncedPreview]);
-
-  const prevServiceIdRef = useRef<string | undefined>(defaultDeal?.serviceId);
-
-  useEffect(() => {
-    if (!dealFormData.serviceId) return;
-
-    const prevServiceId = prevServiceIdRef.current;
-    const currServiceId = dealFormData.serviceId;
-    const prevWasSales = isSalesService(prevServiceId, services);
-    const currIsSales = isSalesService(currServiceId, services);
-    const currIsTransport = isTransportService(currServiceId, services);
-
-    prevServiceIdRef.current = currServiceId;
-
-    if (defaultDeal && defaultDeal.serviceId === currServiceId) {
-      setDealFormData((c) => ({
-        ...c,
-        stageId: defaultDeal.stageId || undefined,
-        materialId: defaultDeal.materialId || undefined,
-        unitMeasurement:
-          (defaultDeal.unitMeasurement as MeasurementUnit) || "тонна",
-        quantity: String(defaultDeal.quantity || "0"),
-        amountPurchaseUnit: String(defaultDeal.amountPurchaseUnit || "0"),
-        amountSalesUnit: String(defaultDeal.amountSalesUnit || "0"),
-        amountDelivery: String(defaultDeal.amountDelivery || "0"),
-        paymentMethod:
-          (defaultDeal.paymentMethod as PaymentMethod) || "наличный расчет",
-        methodReceiving:
-          (defaultDeal.methodReceiving as ReceivingMethod) ||
-          (currIsTransport ? "доставка" : "самовывоз"),
-        deliveryAddressId: defaultDeal.deliveryAddressId || "",
-        shippingAddressId: defaultDeal.shippingAddressId || "",
-        ossig: defaultDeal.OSSIG || false,
-        deliveredQuantity:
-          defaultDeal?.deliveredQuantity?.map((el) => ({
-            quantity: String(el.quantity || ""),
-            date: el.date ? new Date(el.date.split(" ")[0]) : undefined,
-            amountPurchase: el.amountPurchase != null ? String(el.amountPurchase) : "",
-          })) || [],
-      }));
-      return;
-    }
-
-    const switchedBetweenSalesAndTransport = prevWasSales !== currIsSales;
-
-    if (switchedBetweenSalesAndTransport) {
-      setDealFormData((c) => ({
-        ...c,
-        stageId: "",
-        materialId: "",
-        unitMeasurement: "тонна",
-        quantity: "0",
-        amountPurchaseUnit: "0",
-        amountSalesUnit: "0",
-        amountDelivery: "0",
-        paymentMethod: "наличный расчет",
-        methodReceiving: currIsTransport ? "доставка" : "самовывоз",
-        deliveryAddressId: "",
-        shippingAddressId: "",
-        ossig: false,
-      }));
-    }
-  }, [dealFormData.serviceId, defaultDeal, services]);
-
-  useEffect(() => {
-    if (
-      dealFormData.serviceId &&
-      isTransportService(dealFormData.serviceId, services) &&
-      dealFormData.methodReceiving !== "доставка"
-    ) {
-      updateField("methodReceiving", "доставка");
-    }
-  }, [dealFormData.serviceId, dealFormData.methodReceiving, updateField, services]);
-
-  useEffect(() => {
-    if (
-      defaultDeal &&
-      defaultDeal.methodReceiving === dealFormData.methodReceiving
-    ) {
-      updateField("deliveryAddressId", defaultDeal.deliveryAddressId || "");
-      updateField("amountDelivery", String(defaultDeal.amountDelivery || "0"));
-      return;
-    }
-    updateField("deliveryAddressId", "");
-    updateField("amountDelivery", "0");
-  }, [dealFormData.methodReceiving, defaultDeal, updateField]);
-
-  const initialFormData = useMemo(
-    () => (defaultDeal ? dealToFormData(defaultDeal) : null),
-    [defaultDeal?._id]
-  );
-
-  const isDirty =
-    !initialFormData || !isFormDataEqual(dealFormData, initialFormData);
+  const previewPayload = useMemo<PreviewDealRequest>(() => ({
+    quantity: Number(dealFormData.quantity),
+    amountPurchaseUnit: Number(dealFormData.amountPurchaseUnit),
+    amountSalesUnit: Number(dealFormData.amountSalesUnit),
+    amountDelivery: Number(dealFormData.amountDelivery),
+    paymentMethod: dealFormData.paymentMethod,
+    addExpenses: dealFormData.extraExpenses.map((item) => ({ name: item.name, amount: Number(item.amount || 0) })),
+    deliveredQuantity: formatDeliveredQuantity(dealFormData.deliveredQuantity, dealFormData.unitMeasurement),
+  }), [
+    dealFormData.quantity, dealFormData.amountPurchaseUnit, dealFormData.amountSalesUnit,
+    dealFormData.amountDelivery, dealFormData.paymentMethod, dealFormData.extraExpenses,
+    dealFormData.deliveredQuantity, dealFormData.unitMeasurement,
+  ]);
+  const preview = useLatestRequest(previewPayload, loadPreview, 300);
 
   return {
     dealFormData,
     updateField,
-    taxPercent: calculatedData.ndsPercent,
-    managerShare: calculatedData.managerShare,
-    calculatedData,
-    isDirty,
+    unitLocked,
+    taxPercent: preview.data?.ndsPercent ?? 0,
+    managerShare: preview.data?.managerShare ?? 0,
+    calculatedData: preview.data,
+    calculationLoading: preview.loading,
+    calculationError: preview.error,
+    retryCalculation: preview.retry,
+    isDirty: !defaultDeal || !isFormDataEqual(dealFormData, initialFormData),
     services,
   };
 }
-
-export { formatDeliveredQuantity };

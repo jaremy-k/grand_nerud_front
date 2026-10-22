@@ -1,2 +1,3 @@
-export { default as useDataFormHook, formatDeliveredQuantity } from "./hook";
+export { default as useDataFormHook } from "./hook";
+export { formatDeliveredQuantity } from "./model";
 export * from "./types";

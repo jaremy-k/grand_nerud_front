@@ -1,4 +1,5 @@
 import { ServiceDto } from "@definitions/dto";
+import type { PreviewDealResult } from "@definitions/requests";
 
 export type MeasurementUnit = "тонна" | "куб.м" | "шт";
 export type PaymentMethod = "наличный расчет" | "безналичный расчет";
@@ -7,32 +8,27 @@ export type ReceivingMethod = "самовывоз" | "доставка";
 export type ExtraExpenses = { name: string; amount: string };
 export type DeliveredQuantity = {
   quantity: string;
+  unit: string;
   date: Date | undefined;
   amountPurchase: string;
 };
 
 export type DealDataFormHook = {
   dealFormData: DealFormData;
-  updateField: (
-    key: keyof DealFormData,
-    value: DealFormData[keyof DealFormData]
+  updateField: <K extends keyof DealFormData>(
+    key: K,
+    value: DealFormData[K]
   ) => void;
 
   taxPercent: number;
   managerShare: number;
   isDirty: boolean;
   services: ServiceDto[];
-
-  calculatedData: {
-    taxAmount: number;
-    companyProfit: number;
-    managerProfit: number;
-    amountPurchaseTotal: number;
-    amountSalesTotal: number;
-    actualCompanyProfit: number;
-    actualAmountSalesTotal: number;
-    totalDeliveredQuantity: number;
-  };
+  unitLocked: boolean;
+  calculatedData: PreviewDealResult | null;
+  calculationLoading: boolean;
+  calculationError: string | null;
+  retryCalculation: () => void;
 };
 
 export type DealFormData = {

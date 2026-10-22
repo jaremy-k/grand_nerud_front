@@ -262,13 +262,7 @@ export default function AdditionalInformationSection({
                     </TableCell>
                     <TableCell>
                       <div className="h-9 flex items-center px-2 text-sm text-muted-foreground">
-                        {dealFormData.unitMeasurement === "тонна"
-                          ? "тонн"
-                          : dealFormData.unitMeasurement === "куб.м"
-                            ? "куб.м"
-                            : dealFormData.unitMeasurement === "шт"
-                              ? "шт"
-                              : dealFormData.unitMeasurement}
+                        {el.unit || dealFormData.unitMeasurement}
                       </div>
                     </TableCell>
                     <TableCell className="p-2">
@@ -364,7 +358,7 @@ export default function AdditionalInformationSection({
                     onClick={() =>
                       updateField("deliveredQuantity", [
                         ...dealFormData.deliveredQuantity,
-                        { quantity: "", date: undefined, amountPurchase: "" },
+                        { quantity: "", unit: dealFormData.unitMeasurement, date: undefined, amountPurchase: "" },
                       ])
                     }
                   >

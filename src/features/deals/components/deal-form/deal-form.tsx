@@ -15,6 +15,7 @@ import {
 } from "@features/deals/hooks/deal-form";
 import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
+import { Loader2Icon, RotateCwIcon } from "lucide-react";
 import AdditionalInformationSection from "./additional-information";
 import DeliveryInformationSection from "./delivery-information";
 import FinancialInformationSection from "./financial-information";
@@ -40,7 +41,8 @@ export default function DealForm({
     initialCustomerId,
     initialData
   );
-  const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services } =
+  const { dealFormData, calculatedData, taxPercent, managerShare, isDirty, services,
+    calculationLoading, calculationError, retryCalculation } =
     formData;
   const [submiting, setSubmiting] = useState(false);
   const [error, setError] = useState<string | null>();
@@ -136,7 +138,7 @@ export default function DealForm({
   };
 
   const totalAmountWithoutTax =
-    dealFormData.paymentMethod === "безналичный расчет"
+    !calculatedData ? 0 : dealFormData.paymentMethod === "безналичный расчет"
       ? calculatedData.amountSalesTotal / (1 + taxPercent)
       : calculatedData.amountSalesTotal;
 
@@ -167,6 +169,21 @@ export default function DealForm({
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground xl:mb-4">
                 Итог по сделке
               </h3>
+              {calculationLoading && (
+                <div className="flex min-h-24 items-center gap-2 text-sm text-muted-foreground" role="status">
+                  <Loader2Icon className="size-4 animate-spin" /> Расчёт...
+                </div>
+              )}
+              {calculationError && (
+                <div className="space-y-2 py-3 text-sm" role="alert">
+                  <p className="text-destructive">Расчёт недоступен. Суммы не подтверждены.</p>
+                  <p className="break-words text-muted-foreground">{calculationError}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={retryCalculation}>
+                    <RotateCwIcon /> Повторить расчёт
+                  </Button>
+                </div>
+              )}
+              {calculatedData && <>
               <div className="mb-4 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
                 <div className="flex justify-between gap-2 text-sm">
                   <span className="text-muted-foreground">
@@ -296,6 +313,7 @@ export default function DealForm({
                   )}
                 </div>
               </dl>
+              </>}
               <Button
                 type="submit"
                 size="lg"
