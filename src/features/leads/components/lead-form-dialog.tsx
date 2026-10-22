@@ -14,13 +14,13 @@ import ReferenceSelect from "@/features/crm/reference-select";
 import { useCrmReferences } from "@/features/crm/use-references";
 import { fromMoscowInput, leadIsLocked, PRIORITY_LABELS, splitContactValues, toMoscowInput, userName, validateLeadStage } from "@/features/crm/utils";
 
-export default function LeadFormDialog({ open, onClose, onSaved, lead, initialCompanyId }: {
-  open: boolean; onClose: () => void; onSaved: (lead: LeadDto) => void; lead?: LeadDto; initialCompanyId?: string;
+export default function LeadFormDialog({ open, onClose, onSaved, lead, initialCompanyId, initialOwnerId }: {
+  open: boolean; onClose: () => void; onSaved: (lead: LeadDto) => void; lead?: LeadDto; initialCompanyId?: string; initialOwnerId?: string;
 }) {
   const refs = useCrmReferences();
   const [title, setTitle] = useState(lead?.title ?? "");
   const [companyId, setCompanyId] = useState(lead?.companyId ?? initialCompanyId ?? "");
-  const [ownerId, setOwnerId] = useState(lead?.ownerId ?? "");
+  const [ownerId, setOwnerId] = useState(lead?.ownerId ?? initialOwnerId ?? "");
   const [stageId, setStageId] = useState(lead?.stageId ?? "");
   const [priority, setPriority] = useState<LeadPriority>(lead?.priority ?? "normal");
   const [source, setSource] = useState(lead?.source ?? "");

@@ -1,58 +1,49 @@
 import { Pagination } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { formatCrmDate, TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/features/crm/utils";
 import type TaskDto from "@/definitions/dto/task";
 import type { PaginatedResult } from "@/definitions/dto/lead";
-import { deleteTask, getTasks, updateTask, TaskFilters } from "@/services/tasks";
+import { deleteTask, getTasks, TaskFilters } from "@/services/tasks";
+import { crmQuery } from "@/services/crm-query";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import RequestError from "@/features/crm/request-error";
 import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import TaskFormDialog, { TaskContext } from "./task-form-dialog";
+import TaskActionDialog from "./task-action-dialog";
 
-export default function TaskList({ filters = {}, context, onChanged, ownerNames = {}, companyNames = {} }: {
+type TaskListProps = {
   filters?: TaskFilters; context?: TaskContext; onChanged?: () => void;
   ownerNames?: Record<string, string>; companyNames?: Record<string, string>;
-}) {
-  const [result, setResult] = useState<PaginatedResult<TaskDto> | null>(null);
+  filtered?: boolean; onResetFilters?: () => void; emptyMessage?: string; initialOwnerId?: string;
+};
+type TaskQuery = { filters: TaskFilters; page: number };
+const loadTasks = (query: TaskQuery, signal: AbortSignal): Promise<PaginatedResult<TaskDto>> =>
+  getTasks({ ...query.filters, page: query.page, pageSize: 25 }, { signal });
+
+export default function TaskList(props: TaskListProps) {
+  return <TaskListContent key={crmQuery(props.filters ?? {})} {...props} />;
+}
+
+function TaskListContent({ filters = {}, context, onChanged, ownerNames = {}, companyNames = {}, filtered, onResetFilters, emptyMessage, initialOwnerId }: TaskListProps) {
+  // A new filter key remounts this list, including its pagination and dialogs.
+  const [initialFilters] = useState(filters);
   const [page, setPage] = useState(1);
-  const [revision, setRevision] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const query = useMemo(() => ({ filters: initialFilters, page }), [initialFilters, page]);
+  const request = useLatestRequest(query, loadTasks);
+  const { data: result, loading } = request;
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TaskDto | null>(null);
   const [action, setAction] = useState<{ task: TaskDto; status: "completed" | "cancelled" } | null>(null);
   const [deleting, setDeleting] = useState<TaskDto | null>(null);
-  const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
-  const filterKey = JSON.stringify(filters);
-  useEffect(() => { setPage(1); }, [filterKey]);
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true); setError("");
-    getTasks({ ...JSON.parse(filterKey), page, pageSize: 25 }, { signal: controller.signal }).then((data) => {
-      if (!controller.signal.aborted) {
-        setResult(data);
-        if (page > Math.max(1, data.totalPages)) setPage(Math.max(1, data.totalPages));
-      }
-    }).catch((err) => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Не удалось загрузить задачи"); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [filterKey, page, revision]);
-  const changed = () => { setRevision((value) => value + 1); onChanged?.(); };
-  const performAction = async () => {
-    if (!action) return;
-    setSaving(true); setError("");
-    try {
-      await updateTask(action.task._id, { status: action.status,
-        ...(action.status === "completed" ? { result: comment.trim() || null } : { comment: comment.trim() || null }) });
-      setAction(null); changed();
-    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось обновить задачу"); }
-    finally { setSaving(false); }
-  };
+    if (result && page > Math.max(1, result.totalPages)) setPage(Math.max(1, result.totalPages));
+  }, [result, page]);
+  const changed = () => { request.retry(); onChanged?.(); };
   const remove = async () => {
     if (!deleting) return;
     setSaving(true); setError("");
@@ -62,9 +53,9 @@ export default function TaskList({ filters = {}, context, onChanged, ownerNames 
   };
   return (
     <section className="grid min-w-0 gap-3">
-      <div className="flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Задач: {result?.total ?? 0}</p><Button type="button" size="sm" onClick={() => setCreating(true)}><PlusIcon />Новая задача</Button></div>
+      <div className="flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{result ? `Задач: ${result.total}` : "Задачи"}</p><Button type="button" size="sm" onClick={() => setCreating(true)}><PlusIcon />Новая задача</Button></div>
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-      {loading ? <p className="py-6 text-center text-sm text-muted-foreground">Загрузка...</p> : <div className="divide-y border-y">
+      {loading ? <p className="py-6 text-center text-sm text-muted-foreground" role="status">Загрузка...</p> : request.error ? <RequestError error={request.error} onRetry={request.retry} /> : <div className="divide-y border-y">
         {result?.items.map((task) => <article key={task._id} className="grid gap-3 py-3 sm:grid-cols-[1fr_auto]">
           <div className="min-w-0 space-y-1">
             <p className="break-words text-sm font-medium">{task.title}</p>
@@ -74,16 +65,16 @@ export default function TaskList({ filters = {}, context, onChanged, ownerNames 
             {task.result && <p className="whitespace-pre-wrap break-words text-xs">Результат: {task.result}</p>}
           </div>
           <div className="flex items-start gap-1">
-            {task.status === "open" && <><Button type="button" size="icon-sm" variant="ghost" title="Завершить" aria-label="Завершить задачу" onClick={() => { setComment(""); setAction({ task, status: "completed" }); }}><CheckIcon /></Button><Button type="button" size="icon-sm" variant="ghost" title="Отменить" aria-label="Отменить задачу" onClick={() => { setComment(""); setAction({ task, status: "cancelled" }); }}><XIcon /></Button><Button type="button" size="icon-sm" variant="ghost" title="Редактировать" aria-label="Редактировать задачу" onClick={() => setEditing(task)}><PencilIcon /></Button></>}
+            {task.status === "open" && <><Button type="button" size="icon-sm" variant="ghost" title="Завершить" aria-label="Завершить задачу" onClick={() => setAction({ task, status: "completed" })}><CheckIcon /></Button><Button type="button" size="icon-sm" variant="ghost" title="Отменить" aria-label="Отменить задачу" onClick={() => setAction({ task, status: "cancelled" })}><XIcon /></Button><Button type="button" size="icon-sm" variant="ghost" title="Редактировать" aria-label="Редактировать задачу" onClick={() => setEditing(task)}><PencilIcon /></Button></>}
             <Button type="button" size="icon-sm" variant="ghost" title="Удалить" aria-label="Удалить задачу" onClick={() => setDeleting(task)}><Trash2Icon /></Button>
           </div>
         </article>)}
-        {!result?.items.length && <p className="py-8 text-center text-sm text-muted-foreground">Задачи не найдены</p>}
+        {result?.total === 0 && <div className="space-y-3 py-8 text-center"><p className="text-sm text-muted-foreground">{filtered ? "Задачи не найдены" : emptyMessage || "Задач пока нет"}</p>{filtered && onResetFilters ? <Button type="button" size="sm" variant="outline" onClick={onResetFilters}>Сбросить фильтры</Button> : <Button type="button" size="sm" variant="outline" onClick={() => setCreating(true)}><PlusIcon />Новая задача</Button>}</div>}
       </div>}
-      {result && <Pagination total={result.totalPages} current={page} onClick={setPage} />}
-      {creating && <TaskFormDialog open onClose={() => setCreating(false)} onSaved={changed} context={context} />}
+      {result && !loading && !request.error && <Pagination total={result.totalPages} current={page} onClick={setPage} />}
+      {creating && <TaskFormDialog open onClose={() => setCreating(false)} onSaved={changed} context={context} initialOwnerId={initialOwnerId} />}
       {editing && <TaskFormDialog open task={editing} context={context} onClose={() => setEditing(null)} onSaved={changed} />}
-      <Dialog open={Boolean(action)} onOpenChange={(open) => !open && !saving && setAction(null)}><DialogContent><DialogHeader><DialogTitle>{action?.status === "completed" ? "Завершить задачу" : "Отменить задачу"}</DialogTitle></DialogHeader><p className="text-sm">{action?.task.title}</p><Label htmlFor="task-result">{action?.status === "completed" ? "Результат" : "Причина отмены"}</Label><Textarea id="task-result" value={comment} onChange={(e) => setComment(e.target.value)} />{error && <p className="text-sm text-destructive">{error}</p>}<DialogFooter><Button type="button" variant="outline" disabled={saving} onClick={() => setAction(null)}>Назад</Button><Button type="button" disabled={saving} onClick={performAction}>{saving ? "Сохранение..." : "Подтвердить"}</Button></DialogFooter></DialogContent></Dialog>
+      {action && <TaskActionDialog task={action.task} status={action.status} onClose={() => setAction(null)} onSaved={changed} />}
       <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && !saving && setDeleting(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Удалить задачу?</AlertDialogTitle><AlertDialogDescription>{deleting?.title}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={saving}>Отмена</AlertDialogCancel><Button variant="destructive" disabled={saving} onClick={remove}>Удалить</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </section>
   );

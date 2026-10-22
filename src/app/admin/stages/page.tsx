@@ -1,6 +1,7 @@
 "use client";
 
 import { Page } from "@/components/blocks";
+import FunnelNavigation from "@/features/crm/funnel-navigation";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -162,9 +163,11 @@ export default function AdminStagesPage() {
   return (
     <Page
       breadcrumbLinks={[
-        { label: "Управление этапами", href: "/admin/stages" },
+        { label: "Воронки", href: "/admin/funnels" },
+        { label: "Этапы сделок", href: "/admin/stages" },
       ]}
     >
+      <FunnelNavigation />
       <div className="grid gap-6 py-4">
         <section className="grid max-w-xl gap-2">
           <Label htmlFor="new-stage-name">Новый этап</Label>

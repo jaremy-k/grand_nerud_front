@@ -13,8 +13,8 @@ export default interface TaskDto {
   companyId?: string | null;
   leadId?: string | null;
   dealId?: string | null;
-  company?: CompanyDto | null;
-  lead?: LeadDto | null;
+  company?: Pick<CompanyDto, "_id" | "name"> | null;
+  lead?: Pick<LeadDto, "_id" | "title"> | null;
   comment?: string | null;
   result?: string | null;
   createdAt?: string;

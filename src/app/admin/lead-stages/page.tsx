@@ -1,4 +1,5 @@
 import { Page } from "@/components/blocks";
+import FunnelNavigation from "@/features/crm/funnel-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +51,8 @@ export default function LeadStagesPage() {
     catch (err) { setError(err instanceof Error ? err.message : "Не удалось удалить этап"); setDeleting(null); }
     finally { setSaving(false); }
   };
-  return <Page breadcrumbLinks={[{ label: "Этапы лидов", href: "/admin/lead-stages" }]}>
+  return <Page breadcrumbLinks={[{ label: "Воронки", href: "/admin/funnels" }, { label: "Этапы лидов", href: "/admin/lead-stages" }]}>
+    <FunnelNavigation />
     <div className="grid gap-4 py-4"><Button className="justify-self-start" onClick={() => start()}><PlusIcon />Добавить этап</Button>{error && !open && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {loading ? <p className="py-10 text-center text-muted-foreground">Загрузка...</p> : <Table><TableHeader><TableRow><TableHead>Порядок</TableHead><TableHead>Название</TableHead><TableHead>Тип этапа</TableHead><TableHead className="w-24">Действия</TableHead></TableRow></TableHeader><TableBody>{stages.map((stage) => <TableRow key={stage._id}><TableCell>{stage.order ?? "—"}</TableCell><TableCell className="font-medium">{stage.name}</TableCell><TableCell>{LEAD_STAGE_LABELS[stage.kind]}</TableCell><TableCell><div className="flex gap-1"><Button size="icon-sm" variant="ghost" title="Редактировать этап" aria-label="Редактировать этап" onClick={() => start(stage)}><PencilIcon /></Button><Button size="icon-sm" variant="ghost" title="Удалить этап" aria-label="Удалить этап" disabled={(stage.kind === "new" || stage.kind === "converted") && stages.filter((item) => item.kind === stage.kind).length === 1} onClick={() => setDeleting(stage)}><Trash2Icon /></Button></div></TableCell></TableRow>)}</TableBody></Table>}
     </div>

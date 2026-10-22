@@ -14,8 +14,8 @@ import { createTask, updateTask } from "@/services/tasks";
 import { useState } from "react";
 
 export type TaskContext = { companyId?: string; leadId?: string; dealId?: string; ownerId?: string };
-export default function TaskFormDialog({ open, onClose, onSaved, task, context = {} }: {
-  open: boolean; onClose: () => void; onSaved: () => void; task?: TaskDto; context?: TaskContext;
+export default function TaskFormDialog({ open, onClose, onSaved, task, context = {}, initialOwnerId }: {
+  open: boolean; onClose: () => void; onSaved: () => void; task?: TaskDto; context?: TaskContext; initialOwnerId?: string;
 }) {
   const refs = useCrmReferences();
   const [title, setTitle] = useState(task?.title ?? "");
@@ -24,7 +24,7 @@ export default function TaskFormDialog({ open, onClose, onSaved, task, context =
   const [companyId, setCompanyId] = useState(task?.companyId ?? context.companyId ?? "");
   const [leadId, setLeadId] = useState(task?.leadId ?? context.leadId ?? "");
   const [dealId, setDealId] = useState(task?.dealId ?? context.dealId ?? "");
-  const [ownerId, setOwnerId] = useState(task?.ownerId ?? context.ownerId ?? "");
+  const [ownerId, setOwnerId] = useState(task?.ownerId ?? context.ownerId ?? initialOwnerId ?? "");
   const [comment, setComment] = useState(task?.comment ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

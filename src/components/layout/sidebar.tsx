@@ -32,11 +32,10 @@ import * as React from "react";
 import { NavUser } from "./footer";
 import { Header } from "./header";
 
-// This is sample data.
 const data = {
   navMain: [
     {
-      title: "Основное",
+      title: "Работа",
       url: "",
       items: [
         { title: "Лиды", url: "/leads", icon: TargetIcon },
@@ -46,6 +45,12 @@ const data = {
           url: "/deals",
           icon: Handshake,
         },
+      ],
+    },
+    {
+      title: "Компании и объекты",
+      url: "",
+      items: [
         {
           title: "Заказчики",
           url: "/customers",
@@ -72,10 +77,9 @@ const data = {
     },
   ],
   managerNav: [
-    { title: "Этапы лидов", url: "/admin/lead-stages", icon: ListChecksIcon },
     {
-      title: "Управление этапами",
-      url: "/admin/stages",
+      title: "Воронки",
+      url: "/admin/funnels",
       icon: ListChecksIcon,
     },
     {
@@ -104,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild isActive={pathname === "/"}>
               <Link to="/">
                 <House />
-                <span>Главная</span>
+                <span>Рабочий стол</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -140,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname === item.url}
+                        isActive={pathname === item.url || (item.url === "/admin/funnels" && ["/admin/stages", "/admin/lead-stages"].includes(pathname))}
                       >
                         <Link to={item.url}>
                           <item.icon />

@@ -12,12 +12,11 @@ import CreateDealPage from "@/app/deals/create/page";
 import DealsPage from "@/app/deals/page";
 import CompaniesPage from "@/app/companies/page";
 import AddressesPage from "@/app/addresses/page";
-import DashboardPage from "@/app/dashboard/page";
 import LoginPage from "@/app/login/page";
 import HomePage from "@/app/page";
 import NotFoundPage from "@/app/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 export function AppRoutes() {
   return (
@@ -35,6 +34,7 @@ export function AppRoutes() {
       <Route path="/leads/:id" element={<ProtectedRoute><LeadDetailPage /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
       <Route path="/admin/lead-stages" element={<ProtectedRoute managerOrAdmin><LeadStagesPage /></ProtectedRoute>} />
+      <Route path="/admin/funnels" element={<ProtectedRoute managerOrAdmin><Navigate to="/admin/lead-stages" replace /></ProtectedRoute>} />
       <Route
         path="/deals"
         element={
@@ -127,7 +127,7 @@ export function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Navigate to="/" replace />
           </ProtectedRoute>
         }
       />

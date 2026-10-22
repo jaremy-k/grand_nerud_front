@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!loading && user && pathname === "/login") {
-      navigate("/deals", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [loading, user, pathname, navigate]);
 

@@ -7,47 +7,69 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import LeadFormDialog from "@/features/leads/components/lead-form-dialog";
 import ReferenceSelect from "@/features/crm/reference-select";
 import { useCrmReferences } from "@/features/crm/use-references";
-import { formatCrmDate, PRIORITY_LABELS, STAGE_COLORS, userName } from "@/features/crm/utils";
-import { useDebounce } from "@/lib/debouncer";
-import { getLeads } from "@/services/leads";
+import OwnerScopeSelect from "@/features/crm/owner-scope-select";
+import { crmPage, updateCrmParams } from "@/features/crm/owner-scope";
+import { useOwnerScope } from "@/features/crm/use-owner-scope";
+import RequestError from "@/features/crm/request-error";
+import { formatCrmDate, LEAD_STAGE_LABELS, PRIORITY_LABELS, STAGE_COLORS, userName } from "@/features/crm/utils";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import { getLeads, LeadFilters } from "@/services/leads";
 import type LeadDto from "@/definitions/dto/lead";
-import type { LeadPriority, PaginatedResult } from "@/definitions/dto/lead";
+import type { LeadPriority } from "@/definitions/dto/lead";
 import { Columns3Icon, ListIcon, PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+
+type LeadQuery = { filters: LeadFilters; error: string | null };
+const loadLeads = (query: LeadQuery, signal: AbortSignal) => query.error
+  ? Promise.reject(new Error(query.error))
+  : getLeads(query.filters, { signal });
 
 export default function LeadsPage() {
   const refs = useCrmReferences();
-  const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 300);
-  const [stageId, setStageId] = useState("");
-  const [priority, setPriority] = useState("");
-  const [companyId, setCompanyId] = useState(searchParams.get("companyId") ?? "");
-  const [ownerId, setOwnerId] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { scope, changeScope } = useOwnerScope();
+  const search = searchParams.get("search") || "";
+  const stageId = searchParams.get("stageId") || "";
+  const priority = searchParams.get("priority") || "";
+  const status = searchParams.get("status") || "";
+  const companyId = searchParams.get("companyId") || "";
+  const page = crmPage(searchParams);
+  const setFilter = (key: string, value: string) => setSearchParams(updateCrmParams(searchParams, { [key]: value || undefined }), { replace: key === "search" });
+  const setPage = (value: number) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(value));
+    setSearchParams(next);
+  };
+  const resetFilters = () => setSearchParams(updateCrmParams(searchParams, { search: undefined, stageId: undefined, priority: undefined, status: undefined, companyId: undefined }));
+  const filtered = Boolean(search || stageId || priority || status || companyId);
   const [mode, setMode] = useState<"kanban" | "table">(() => {
     try { return localStorage.getItem("leads-view-mode") === "table" ? "table" : "kanban"; }
     catch { return "kanban"; }
   });
-  const [page, setPage] = useState(1);
-  const [revision, setRevision] = useState(0);
-  const [result, setResult] = useState<PaginatedResult<LeadDto> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [creating, setCreating] = useState(searchParams.get("create") === "true");
-  const filterKey = JSON.stringify({ search: debouncedSearch, stageId, priority: priority || undefined, companyId, ownerId: refs.elevated ? ownerId : undefined });
-  useEffect(() => { setPage(1); }, [filterKey]);
+  const query = useMemo<LeadQuery>(() => ({
+    filters: { search: search || undefined, stageId: stageId || undefined, priority: (priority || undefined) as LeadPriority | undefined,
+      status: status || undefined, companyId: companyId || undefined, ownerId: scope.ownerId, page, pageSize: 50 },
+    error: scope.error,
+  }), [search, stageId, priority, status, companyId, scope.ownerId, scope.error, page]);
+  const request = useLatestRequest(query, loadLeads, 300);
+  const { data: result, loading, error } = request;
   useEffect(() => {
-    const controller = new AbortController(); setLoading(true); setError("");
-    getLeads({ ...JSON.parse(filterKey), page, pageSize: 50 }, { signal: controller.signal }).then((data) => {
-      if (!controller.signal.aborted) {
-        setResult(data);
-        if (page > Math.max(1, data.totalPages)) setPage(Math.max(1, data.totalPages));
-      }
-    }).catch((err) => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Не удалось загрузить лиды"); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [filterKey, page, revision]);
+    if (result && page > Math.max(1, result.totalPages)) {
+      const next = new URLSearchParams(searchParams);
+      next.set("page", String(Math.max(1, result.totalPages)));
+      setSearchParams(next, { replace: true });
+    }
+  }, [result, page, searchParams, setSearchParams]);
+  const closeCreating = () => {
+    setCreating(false);
+    if (searchParams.has("create")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("create");
+      setSearchParams(next, { replace: true });
+    }
+  };
   const changeMode = (value: "table" | "kanban") => { setMode(value); try { localStorage.setItem("leads-view-mode", value); } catch { /* Storage may be unavailable. */ } };
   const ownerName = (id: string) => { const owner = refs.owners.find((item) => (item.id ?? item._id) === id); return owner ? userName(owner) : ""; };
   const companyName = (lead: LeadDto) => lead.company?.name || refs.companies.find((item) => item._id === lead.companyId)?.name || "Без компании";
@@ -64,19 +86,22 @@ export default function LeadsPage() {
             <Button size="sm" variant={mode === "kanban" ? "secondary" : "ghost"} aria-pressed={mode === "kanban"} onClick={() => changeMode("kanban")}><Columns3Icon />Канбан</Button>
           </div>
         </div>
-        <div className="grid gap-3 border-y py-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="grid gap-1.5"><Label htmlFor="leads-search">Поиск</Label><Input id="leads-search" placeholder="Потребность или компания" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label htmlFor="leads-stage">Этап</Label><ReferenceSelect id="leads-stage" value={stageId} onChange={setStageId} placeholder="Все этапы" options={refs.stages.map((stage) => ({ value: stage._id, label: stage.name }))} /></div>
-          <div className="grid gap-1.5"><Label htmlFor="leads-priority">Приоритет</Label><Select value={priority || "all"} onValueChange={(value) => setPriority(value === "all" ? "" : value)}><SelectTrigger id="leads-priority"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все приоритеты</SelectItem>{Object.entries(PRIORITY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-          <div className="grid gap-1.5"><Label htmlFor="leads-company">Компания</Label><ReferenceSelect id="leads-company" value={companyId} onChange={setCompanyId} placeholder="Все компании" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} /></div>
-          {refs.elevated && <div className="grid gap-1.5"><Label htmlFor="leads-owner">Ответственный</Label><ReferenceSelect id="leads-owner" value={ownerId} onChange={setOwnerId} placeholder="Все ответственные" options={refs.owners.map((item) => ({ value: item.id ?? item._id ?? "", label: userName(item) }))} /></div>}
+        <div className="grid gap-3 border-y py-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-1.5"><Label htmlFor="leads-search">Поиск</Label><Input id="leads-search" placeholder="Потребность или компания" value={search} onChange={(e) => setFilter("search", e.target.value)} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="leads-stage">Этап</Label><ReferenceSelect id="leads-stage" value={stageId} onChange={(value) => setFilter("stageId", value)} placeholder="Все этапы" options={refs.stages.map((stage) => ({ value: stage._id, label: stage.name }))} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="leads-status">Состояние</Label><Select value={status || "all"} onValueChange={(value) => setFilter("status", value === "all" ? "" : value)}><SelectTrigger id="leads-status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все состояния</SelectItem>{Object.entries(LEAD_STAGE_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+          <div className="grid gap-1.5"><Label htmlFor="leads-priority">Приоритет</Label><Select value={priority || "all"} onValueChange={(value) => setFilter("priority", value === "all" ? "" : value)}><SelectTrigger id="leads-priority"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все приоритеты</SelectItem>{Object.entries(PRIORITY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
+          <div className="grid gap-1.5"><Label htmlFor="leads-company">Компания</Label><ReferenceSelect id="leads-company" value={companyId} onChange={(value) => setFilter("companyId", value)} placeholder="Все компании" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} /></div>
+          <OwnerScopeSelect id="leads-owner" scope={scope} onChange={changeScope} owners={refs.owners} />
         </div>
-        <p className="text-xs text-muted-foreground">Лидов: {result?.total ?? 0}{result && result.totalPages > 1 ? ` · Страница ${page} из ${result.totalPages}` : ""}</p>
-        {(error || refs.error) && <p className="text-sm text-destructive" role="alert">{error || refs.error}</p>}
-        {loading ? <p className="py-10 text-center text-muted-foreground">Загрузка...</p> : mode === "kanban" ? (
+        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted-foreground">{result ? `Лидов: ${result.total}` : "Лиды"}{result && result.totalPages > 1 ? ` · Страница ${page} из ${result.totalPages}` : ""}</p>{filtered && <Button size="sm" variant="ghost" onClick={resetFilters}>Сбросить фильтры</Button>}</div>
+        {refs.error && <p className="text-sm text-destructive" role="alert">{refs.error}</p>}
+        {loading ? <p className="py-10 text-center text-muted-foreground" role="status">Загрузка...</p> : error ? <RequestError error={error} onRetry={request.retry} /> : result?.total === 0 ? (
+          <div className="space-y-3 border-y py-10 text-center"><p className="text-sm text-muted-foreground">{filtered ? "Лиды не найдены" : "Лидов пока нет"}</p>{filtered ? <Button size="sm" variant="outline" onClick={resetFilters}>Сбросить фильтры</Button> : <Button size="sm" variant="outline" onClick={() => setCreating(true)}><PlusIcon />Новый лид</Button>}</div>
+        ) : mode === "kanban" ? (
           <div className="max-w-full overflow-x-auto pb-3"><div className="flex items-start gap-4">
             {columns.map((column) => <section key={column.id} aria-label={column.name} className="w-72 shrink-0">
-              <h2 className={`mb-3 flex items-center justify-between gap-3 border-b px-2 py-2 text-sm font-medium ${STAGE_COLORS[column.kind]}`}><span>{column.name}</span><span className="text-xs">{column.leads.length}</span></h2>
+              <h2 className={`mb-3 flex items-center justify-between gap-3 border-b px-2 py-2 text-sm font-medium ${STAGE_COLORS[column.kind]}`}><span>{column.name}</span><span className="text-xs" title="Лидов на текущей странице">{column.leads.length}</span></h2>
               <div className="grid gap-2">{column.leads.map((lead) => <Link key={lead._id} to={`/leads/${lead._id}`} className="grid gap-2 rounded-md border bg-card p-3 hover:border-primary/50 focus-visible:outline-primary">
                 <p className="break-words text-sm font-medium">{lead.title}</p><p className="text-xs text-muted-foreground">{companyName(lead)}</p>
                 <p className="text-xs">{lead.materials?.map((item) => item.name).join(", ") || "Материал не указан"}</p>
@@ -92,9 +117,9 @@ export default function LeadsPage() {
             {!result?.items.length && <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Лиды не найдены</TableCell></TableRow>}
           </TableBody></Table>
         )}
-        {result && <Pagination total={result.totalPages} current={page} onClick={setPage} />}
+        {result && !loading && !error && <Pagination total={result.totalPages} current={page} onClick={setPage} />}
       </div>
-      {creating && <LeadFormDialog open initialCompanyId={companyId || undefined} onClose={() => setCreating(false)} onSaved={() => setRevision((value) => value + 1)} />}
+      {creating && <LeadFormDialog open initialCompanyId={companyId || undefined} initialOwnerId={scope.ownerId} onClose={closeCreating} onSaved={request.retry} />}
     </Page>
   );
 }
