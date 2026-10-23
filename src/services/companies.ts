@@ -113,8 +113,8 @@ export async function getCompanies(
   );
 }
 
-export async function getCompany(id: string): Promise<CompanyDto> {
-  return secureGetData(apiPath(`/companies/${id}`));
+export async function getCompany(id: string, options: RequestInit = {}): Promise<CompanyDto> {
+  return secureGetData(apiPath(`/companies/${id}`), options);
 }
 
 function innLookupErrorMessage(err: unknown, inn: string): string {

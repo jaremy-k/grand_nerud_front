@@ -13,6 +13,23 @@ import {
   UpdateDealRequest,
 } from "@definitions/requests";
 import { DealFilters } from "@features/deals/definitions";
+import { crmQuery } from "./crm-query";
+
+type DealResponse = Omit<DealDto, "shippingAddress" | "deliveryAddress"> & {
+  shippingAddress?: DealDto["shippingAddress"] | string;
+  deliveryAddress?: DealDto["deliveryAddress"] | string;
+  shipping_address?: DealDto["shippingAddress"];
+  delivery_address?: DealDto["deliveryAddress"];
+};
+
+function normalizeDeal(deal: DealResponse): DealDto {
+  return { ...deal,
+    shippingAddress: typeof deal.shippingAddress === "object" && deal.shippingAddress
+      ? deal.shippingAddress : deal.shipping_address ?? null,
+    deliveryAddress: typeof deal.deliveryAddress === "object" && deal.deliveryAddress
+      ? deal.deliveryAddress : deal.delivery_address ?? null,
+  };
+}
 
 export async function getDeals(
   params: {
@@ -22,6 +39,8 @@ export async function getDeals(
     sortOrder?: string;
     includeDeleted?: boolean;
     includeRelations?: boolean;
+    search?: string;
+    companyId?: string;
     filters?: DealFilters;
   } = {},
   options: RequestInit = {}
@@ -37,19 +56,14 @@ export async function getDeals(
   const sortBy = params?.sortBy || "createdAt";
   const sortOrder = params?.sortOrder || "desc";
 
-  const filters = Object.entries(params.filters || {}).reduce(
-    (pv, [key, val]) => (val === "all" ? pv : `${pv}&${key}=${val}`),
-    ""
-  );
-
-  return secureGetData(
-    apiPath(
-      `/deals?sortBy=${sortBy}&sortOrder=${sortOrder}&page_size=${pageSize}&page=${page}&includeDeleted=${
-        params.includeDeleted === false ? "false" : "true"
-      }&includeRelations=${params.includeRelations ? "true" : "false"}${filters}`
-    ),
-    options
-  );
+  const filters = Object.fromEntries(Object.entries(params.filters ?? {}).filter(([, value]) => value && value !== "all"));
+  const response = await secureGetData<{
+    items: DealResponse[]; total: number; page: number; pageSize: number; totalPages: number;
+  }>(apiPath(`/deals${crmQuery({ ...filters, sortBy, sortOrder, page_size: pageSize, page,
+    includeDeleted: params.includeDeleted !== false, includeRelations: Boolean(params.includeRelations),
+    search: params.search?.trim() || undefined, companyId: params.companyId || undefined,
+  })}`), options);
+  return { ...response, items: response.items.map(normalizeDeal) };
 }
 
 export async function getDealsAdmin(): Promise<DealDto[]> {
@@ -69,8 +83,8 @@ export async function createDeal(
   return securePostData(apiPath("/deals"), dealData);
 }
 
-export async function getDeal(id: string): Promise<DealDto> {
-  return secureGetData(apiPath(`/deals/${id}`));
+export async function getDeal(id: string, options: RequestInit = {}): Promise<DealDto> {
+  return normalizeDeal(await secureGetData<DealResponse>(apiPath(`/deals/${id}`), options));
 }
 
 export async function updateDeal(id: string, body: UpdateDealRequest) {

@@ -11,6 +11,7 @@ import EditDealPage from "@/app/deals/[id]/edit/page";
 import CreateDealPage from "@/app/deals/create/page";
 import DealsPage from "@/app/deals/page";
 import CompaniesPage from "@/app/companies/page";
+import CompanyDetailPage from "@/app/companies/[id]/page";
 import AddressesPage from "@/app/addresses/page";
 import LoginPage from "@/app/login/page";
 import HomePage from "@/app/page";
@@ -33,6 +34,7 @@ export function AppRoutes() {
       <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
       <Route path="/leads/:id" element={<ProtectedRoute><LeadDetailPage /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
+      <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetailPage /></ProtectedRoute>} />
       <Route path="/admin/lead-stages" element={<ProtectedRoute managerOrAdmin><LeadStagesPage /></ProtectedRoute>} />
       <Route path="/admin/funnels" element={<ProtectedRoute managerOrAdmin><Navigate to="/admin/lead-stages" replace /></ProtectedRoute>} />
       <Route

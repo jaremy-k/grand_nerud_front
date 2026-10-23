@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dealsService, servicesService } from "@/services";
 import useDataFormHook from "@features/deals/hooks/deal-form/hook";
@@ -29,15 +30,29 @@ const calculation: PreviewDealResult = {
   actualAmountPurchaseTotal: 0, totalDeliveredQuantity: 0, ndsPercent: 0, managerShare: 0.1, totalAmount: 150000,
 };
 const tick = () => act(async () => { await vi.advanceTimersByTimeAsync(300); });
+function DataRouter({ children }: { children: ReactNode }) {
+  const router = createMemoryRouter([{ path: "*", element: children }]);
+  return <RouterProvider router={router} />;
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.mocked(servicesService.getServices).mockResolvedValue(services);
   vi.mocked(dealsService.previewDeal).mockResolvedValue(calculation);
+  vi.mocked(dealsService.createDeal).mockResolvedValue(deal);
+  vi.mocked(dealsService.updateDeal).mockResolvedValue(deal);
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe("Форма сделки и перенос из лида", () => {
+  it("считает новую форму изменённой только после ручной правки", () => {
+    const { result } = renderHook(() => useDataFormHook());
+    expect(result.current.isDirty).toBe(false);
+    act(() => result.current.updateField("notes", "Правка"));
+    expect(result.current.isDirty).toBe(true);
+    act(() => result.current.updateField("notes", ""));
+    expect(result.current.isDirty).toBe(false);
+  });
   it("сохраняет перенесённую потребность после открытия и первого выбора продажи", async () => {
     const initialData = leadToDealInitialData({ companyId: "customer", materialIds: ["sand"], quantity: 100, unitMeasurement: "м³", objectAddressId: "object", notes: "Потребность лида" } as LeadDto);
     const { result } = renderHook(() => useDataFormHook(undefined, undefined, undefined, initialData));
@@ -87,7 +102,7 @@ describe("Форма сделки и перенос из лида", () => {
   it("сохраняет кнопку сделки при ошибке калькулятора, скрывает старые суммы и повторяет расчёт", async () => {
     const failed = deferred<PreviewDealResult>();
     vi.mocked(dealsService.previewDeal).mockResolvedValueOnce(calculation).mockReturnValueOnce(failed.promise).mockResolvedValueOnce({ ...calculation, companyProfit: 67890 });
-    render(<MemoryRouter><DealForm defaultDeal={deal} /></MemoryRouter>);
+    render(<DataRouter><DealForm defaultDeal={deal} /></DataRouter>);
     await tick();
     expect(screen.getAllByText(/12\s?345/).length).toBeGreaterThan(0);
     fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
@@ -104,19 +119,72 @@ describe("Форма сделки и перенос из лида", () => {
   it("отправляет перенесённую потребность при переводе лида без повторного создания сделки", async () => {
     const lead = { _id: "lead", companyId: "customer", materialIds: ["sand"], quantity: 100, unitMeasurement: "м³", objectAddressId: "object", notes: "Потребность лида" } as LeadDto;
     vi.mocked(convertLead).mockResolvedValue({ deal: { ...deal, _id: "converted" }, lead });
-    render(<MemoryRouter><DealForm sourceLead={lead} initialData={{
+    render(<DataRouter><DealForm sourceLead={lead} initialData={{
       ...leadToDealInitialData(lead), serviceId: "sales", providerId: "provider", stageId: "stage", shippingAddressId: "shipping",
-    }} /></MemoryRouter>);
+    }} /></DataRouter>);
     await tick();
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Создать сделку" })));
     expect(convertLead).toHaveBeenCalledWith("lead", expect.objectContaining({ quantity: 100, unitMeasurement: "куб.м", materialId: "sand", deliveryAddressId: "object", notes: "Потребность лида" }));
     expect(dealsService.createDeal).not.toHaveBeenCalled();
   });
   it("обновляет сделку без изменения единиц уже внесённых доставок", async () => {
-    render(<MemoryRouter><DealForm defaultDeal={deal} /></MemoryRouter>);
+    render(<DataRouter><DealForm defaultDeal={deal} /></DataRouter>);
     await tick();
     fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Обновить сделку" })));
     expect(dealsService.updateDeal).toHaveBeenCalledWith("deal", expect.objectContaining({ deliveredQuantity: deal.deliveredQuantity, unitMeasurement: "тонна", quantity: 150 }));
+  });
+  it("после сохранения открывает карточку без предупреждения об уходе", async () => {
+    const router = createMemoryRouter([{ path: "/edit", element: <DealForm defaultDeal={deal} /> }, { path: "/deals/:id", element: <p>Карточка сохранённой сделки</p> }], { initialEntries: ["/edit"] });
+    render(<RouterProvider router={router} />);
+    await tick();
+    fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Обновить сделку" })));
+    expect(router.state.location.pathname).toBe("/deals/deal");
+    expect(screen.getByText("Карточка сохранённой сделки")).toBeTruthy();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+  it("ошибка сохранения не отключает защиту несохранённых изменений", async () => {
+    vi.mocked(dealsService.updateDeal).mockRejectedValueOnce(new Error("Сохранение не удалось"));
+    render(<DataRouter><DealForm defaultDeal={deal} /></DataRouter>);
+    await tick();
+    fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Обновить сделку" })));
+    expect(screen.getByText("Сохранение не удалось")).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Отмена" })));
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
+  });
+  it("разворачивает и сворачивает мобильный калькулятор без потери кнопки сохранения", async () => {
+    render(<DataRouter><DealForm defaultDeal={deal} /></DataRouter>);
+    await tick();
+    const expand = screen.getByRole("button", { name: "Развернуть калькулятор" });
+    expect(expand.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(expand);
+    expect(screen.getByRole("button", { name: "Свернуть калькулятор" }).getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Свернуть калькулятор" }));
+    expect(screen.getByRole("button", { name: "Обновить сделку" })).toBeTruthy();
+  });
+  it("после создания открывает новую сделку по ID сервера", async () => {
+    vi.mocked(dealsService.createDeal).mockResolvedValueOnce({ ...deal, _id: "created" });
+    const router = createMemoryRouter([{ path: "/create", element: <DealForm initialData={{ serviceId: "sales", customerId: "customer", providerId: "provider", stageId: "stage", materialId: "sand", quantity: "100", shippingAddressId: "shipping" }} /> }, { path: "/deals/:id", element: <p>Новая карточка</p> }], { initialEntries: ["/create"] });
+    render(<RouterProvider router={router} />);
+    await tick();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Создать сделку" })));
+    expect(router.state.location.pathname).toBe("/deals/created");
+    expect(screen.getByText("Новая карточка")).toBeTruthy();
+  });
+  it("позднее сохранение не возвращает пользователя в покинутую карточку", async () => {
+    const pending = deferred<unknown>();
+    vi.mocked(dealsService.updateDeal).mockReturnValueOnce(pending.promise);
+    const router = createMemoryRouter([{ path: "/edit", element: <DealForm defaultDeal={deal} /> }, { path: "/other", element: <p>Другой экран</p> }, { path: "/deals/:id", element: <p>Карточка</p> }], { initialEntries: ["/edit"] });
+    render(<RouterProvider router={router} />);
+    await tick();
+    fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Обновить сделку" })));
+    await act(async () => { await router.navigate("/other"); });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Выйти без сохранения" })));
+    await act(async () => pending.resolve(deal));
+    expect(router.state.location.pathname).toBe("/other");
+    expect(screen.getByText("Другой экран")).toBeTruthy();
   });
 });

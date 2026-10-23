@@ -38,6 +38,7 @@ import {
 } from "@definitions/dto";
 import {
   ArrowDownUpIcon,
+  ArrowUpRightIcon,
   ClipboardListIcon,
   TargetIcon,
   ChevronDownIcon,
@@ -417,7 +418,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     {role === "provider" ? (
                       <>
                       <TableCell className="align-top">
-                        <p className="font-medium">{company.name}</p>
+                        <Link to={`/companies/${company._id}`} className="font-medium hover:underline">{company.name}</Link>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {company.inn ? `ИНН ${formatINN(company.inn)}` : "ИНН не указан"}
                           {company.kpp ? ` · КПП ${company.kpp}` : ""}
@@ -519,7 +520,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                     ) : (
                       <>
                       <TableCell className="align-top">
-                        <p className="font-medium">{company.name}</p>
+                        <Link to={`/companies/${company._id}`} className="font-medium hover:underline">{company.name}</Link>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {company.inn
                             ? `ИНН ${formatINN(company.inn)}`
@@ -613,6 +614,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                             <p className="font-medium">{company.name}</p>
                           </div>
                           <div className="flex flex-wrap gap-2">
+                          <Button asChild type="button" size="sm" variant="outline"><Link to={`/companies/${company._id}`}><ArrowUpRightIcon />Карточка компании</Link></Button>
                           <Button asChild type="button" size="sm" variant="outline"><Link to={`/leads?companyId=${encodeURIComponent(company._id)}&create=true`}><TargetIcon />Новый лид</Link></Button>
                           <Button asChild type="button" size="sm" variant="outline"><Link to={`/leads?companyId=${encodeURIComponent(company._id)}`}><TargetIcon />Лиды</Link></Button>
                           <Button asChild type="button" size="sm" variant="outline"><Link to={`/tasks?companyId=${encodeURIComponent(company._id)}`}><ClipboardListIcon />Задачи</Link></Button>

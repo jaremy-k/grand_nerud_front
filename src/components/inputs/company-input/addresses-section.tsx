@@ -23,7 +23,11 @@ import { addressesService } from "@/services";
 import { parseCoordinates } from "@/lib/number-input";
 import { AddressDto } from "@definitions/dto";
 import { MapPinIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import RequestError from "@/features/crm/request-error";
+
+const loadAddresses = (companyId: string) => addressesService.getAddresses(companyId);
 
 type AddressFormState = {
   address: string;
@@ -51,26 +55,15 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
   const { user } = useAuthContext();
   const canEdit = Boolean(user?.admin || user?.manager);
   const canDelete = Boolean(user?.admin);
-  const [addresses, setAddresses] = useState<AddressDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const request = useLatestRequest(companyId, loadAddresses);
+  const addresses = request.data ?? [];
+  const loading = request.loading;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<AddressFormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingAddress, setDeletingAddress] = useState<AddressDto | null>(null);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    addressesService
-      .getAddresses(companyId)
-      .then(setAddresses)
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Не удалось загрузить адреса")
-      )
-      .finally(() => setLoading(false));
-  }, [companyId]);
 
   const updateField = (key: keyof AddressFormState, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -126,17 +119,14 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
     setError("");
     try {
       if (editingId) {
-        const updated = await addressesService.updateAddress(editingId, data);
-        setAddresses((current) =>
-          current.map((item) => (item._id === updated._id ? updated : item))
-        );
+        await addressesService.updateAddress(editingId, data);
       } else {
-        const created = await addressesService.createAddress({
+        await addressesService.createAddress({
           ...data,
           companyId,
         });
-        setAddresses((current) => [...current, created]);
       }
+      request.retry();
       setFormOpen(false);
       setEditingId(null);
     } catch (err) {
@@ -151,9 +141,7 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
     setError("");
     try {
       await addressesService.deleteAddress(deletingAddress._id);
-      setAddresses((current) =>
-        current.filter((item) => item._id !== deletingAddress._id)
-      );
+      request.retry();
       setDeletingAddress(null);
     } catch (err) {
       setError(
@@ -179,7 +167,8 @@ export default function AddressesSection({ companyId }: { companyId: string }) {
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">Загрузка...</p>}
-      {!loading && addresses.length === 0 && !formOpen && (
+      {request.error && <RequestError error={request.error} onRetry={request.retry} />}
+      {!loading && !request.error && addresses.length === 0 && !formOpen && (
         <p className="text-sm text-muted-foreground">Адреса не добавлены</p>
       )}
       <div className="grid gap-2">

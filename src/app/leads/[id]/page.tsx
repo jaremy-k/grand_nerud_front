@@ -90,7 +90,7 @@ export default function LeadDetailPage() {
         {loading && !lead && <p className="py-10 text-center text-muted-foreground">Загрузка...</p>}
         {lead && <>
           <section className="grid gap-4 border-b pb-4">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h1 className="break-words text-xl font-semibold">{lead.title}</h1><p className="mt-1 text-sm text-muted-foreground">{lead.company?.name || refs.companies.find((item) => item._id === lead.companyId)?.name || "Без компании"}</p></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h1 className="break-words text-xl font-semibold">{lead.title}</h1><p className="mt-1 text-sm text-muted-foreground">{lead.companyId ? <Link to={`/companies/${lead.companyId}`} className="text-primary hover:underline">{lead.company?.name || refs.companies.find((item) => item._id === lead.companyId)?.name || "Открыть компанию"}</Link> : "Без компании"}</p></div>
               <div className="flex flex-wrap gap-2">
                 {lead.conversionPending ? <Button disabled={busy} onClick={retryConversion}>Завершить перевод</Button> : lead.dealId ? <Button asChild><Link to={`/deals/${lead.dealId}`}>Открыть сделку</Link></Button> : stage?.kind === "qualified" ? <Button asChild><Link to={`/deals/create?leadId=${encodeURIComponent(id)}`}><FilePlus2Icon />Создать сделку</Link></Button> : null}
                 {!locked && <><Button variant="outline" onClick={() => setEditing(true)}><PencilIcon />Редактировать</Button><Button variant="ghost" size="icon" title="Удалить лид" aria-label="Удалить лид" onClick={() => setDeleting(true)}><Trash2Icon /></Button></>}

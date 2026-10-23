@@ -51,7 +51,7 @@ describe("Формы компаний используют валидацию д
       _id: "price", companyId: "company", materialId: "sand", price: 1200, unit: "т", comment: "Устаревший комментарий",
     }]);
     await act(async () => render(<CompanyMaterialsSection companyId="company" />));
-    fireEvent.click(screen.getByRole("button", { name: "Редактировать позицию" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Редактировать позицию" }));
     fireEvent.change(screen.getByLabelText("Комментарий"), { target: { value: "" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Сохранить" })));
     expect(companyMaterialsService.updateCompanyMaterial).toHaveBeenCalledWith("price", expect.objectContaining({ comment: "", price: 1200 }));

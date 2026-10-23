@@ -17,7 +17,11 @@ import { MaterialSelect } from "@/components/inputs/material-input/material-sele
 import { companyMaterialsService } from "@/services";
 import { CompanyMaterialDto } from "@definitions/dto";
 import { PackageIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import RequestError from "@/features/crm/request-error";
+
+const loadMaterials = (companyId: string) => companyMaterialsService.getCompanyMaterials(companyId);
 
 type FormState = {
   materialId: string;
@@ -42,8 +46,9 @@ export default function CompanyMaterialsSection({
 }: {
   companyId: string;
 }) {
-  const [items, setItems] = useState<CompanyMaterialDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const request = useLatestRequest(companyId, loadMaterials);
+  const items = request.data ?? [];
+  const loading = request.loading;
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -51,24 +56,6 @@ export default function CompanyMaterialsSection({
   const [deletingItem, setDeletingItem] =
     useState<CompanyMaterialDto | null>(null);
   const [error, setError] = useState("");
-
-  const loadItems = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      setItems(await companyMaterialsService.getCompanyMaterials(companyId));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Не удалось загрузить прайс-лист"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [companyId]);
-
-  useEffect(() => {
-    void loadItems();
-  }, [loadItems]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -99,7 +86,7 @@ export default function CompanyMaterialsSection({
       } else {
         await companyMaterialsService.createCompanyMaterial(payload);
       }
-      await loadItems();
+      request.retry();
       setFormOpen(false);
       setEditingId(null);
     } catch (err) {
@@ -115,9 +102,7 @@ export default function CompanyMaterialsSection({
     if (!deletingItem) return;
     try {
       await companyMaterialsService.deleteCompanyMaterial(deletingItem._id);
-      setItems((current) =>
-        current.filter((item) => item._id !== deletingItem._id)
-      );
+      request.retry();
       setDeletingItem(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось удалить позицию");
@@ -141,7 +126,8 @@ export default function CompanyMaterialsSection({
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">Загрузка...</p>}
-      {!loading && items.length === 0 && !formOpen && (
+      {request.error && <RequestError error={request.error} onRetry={request.retry} />}
+      {!loading && !request.error && items.length === 0 && !formOpen && (
         <p className="text-sm text-muted-foreground">Прайс-лист пока пуст</p>
       )}
 

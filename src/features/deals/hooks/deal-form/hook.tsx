@@ -67,7 +67,7 @@ export default function useDataFormHook(
     calculationLoading: preview.loading,
     calculationError: preview.error,
     retryCalculation: preview.retry,
-    isDirty: !defaultDeal || !isFormDataEqual(dealFormData, initialFormData),
+    isDirty: !isFormDataEqual(dealFormData, initialFormData),
     services,
   };
 }

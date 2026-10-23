@@ -14,8 +14,10 @@ import {
   DealFormData,
 } from "@features/deals/hooks/deal-form";
 import { useNavigate } from "react-router-dom";
-import { FormEvent, useState } from "react";
-import { Loader2Icon, RotateCwIcon } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import UnsavedChangesGuard from "@/features/crm/unsaved-changes-guard";
+import { ChevronDownIcon, ChevronUpIcon, Loader2Icon, RotateCwIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import AdditionalInformationSection from "./additional-information";
 import DeliveryInformationSection from "./delivery-information";
 import FinancialInformationSection from "./financial-information";
@@ -47,6 +49,15 @@ export default function DealForm({
   const [submiting, setSubmiting] = useState(false);
   const [error, setError] = useState<string | null>();
   const [conversionPending, setConversionPending] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const allowNavigation = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const openSavedDeal = (id: string) => {
+    if (!mounted.current) return;
+    allowNavigation.current = true;
+    navigate(`/deals/${id}`);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +67,7 @@ export default function DealForm({
     if (sourceLead && conversionPending) {
       try {
         const converted = await convertLead(sourceLead._id, {});
-        navigate(`/deals/${converted.deal._id}`);
+        openSavedDeal(converted.deal._id);
       } catch (err) { setError(err instanceof Error ? err.message : "Не удалось завершить перевод"); }
       finally { setSubmiting(false); }
       return;
@@ -108,6 +119,7 @@ export default function DealForm({
           providerId: dealFormData.providerId,
         };
         await dealsService.updateDeal(defaultDeal._id, dataToSend);
+        openSavedDeal(defaultDeal._id);
       } else {
         const dataToSend: CreateDealRequest = {
           ...shared,
@@ -117,18 +129,18 @@ export default function DealForm({
         };
         if (sourceLead) {
           const converted = await convertLead(sourceLead._id, dataToSend);
-          navigate(`/deals/${converted.deal._id}`);
+          openSavedDeal(converted.deal._id);
           return;
         }
-        await dealsService.createDeal(dataToSend);
+        const created = await dealsService.createDeal(dataToSend);
+        openSavedDeal(created._id);
       }
-      navigate("/deals");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Произошла ошибка");
       if (sourceLead) {
         try {
           const currentLead = await getLead(sourceLead._id);
-          if (currentLead.convertedAt && currentLead.dealId) navigate(`/deals/${currentLead.dealId}`);
+          if (currentLead.convertedAt && currentLead.dealId) openSavedDeal(currentLead.dealId);
           else setConversionPending(Boolean(currentLead.conversionPending));
         } catch { /* Keep the original API error visible. */ }
       }
@@ -149,11 +161,13 @@ export default function DealForm({
   const managerSharePercent = (managerShare * 100).toFixed(0);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} aria-busy={submiting}>
+      <UnsavedChangesGuard when={isDirty} bypass={allowNavigation} />
+      <div className="flex justify-end py-3"><Button type="button" variant="outline" size="sm" disabled={submiting} onClick={() => navigate(defaultDeal ? `/deals/${defaultDeal._id}` : "/deals")}>Отмена</Button></div>
       {error && <p className="mb-4 text-sm text-destructive" role="alert">{error}</p>}
       {conversionPending && <div className="mb-4 flex flex-wrap items-center gap-3 border-y py-3"><p className="text-sm">Перевод начат. Завершите его с первоначальными данными.</p><Button type="submit" disabled={submiting}>Завершить перевод</Button></div>}
-      <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
-        <div className="min-w-0 space-y-6 pb-[380px] xl:pb-0">
+      <fieldset disabled={submiting} className="min-w-0 xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
+        <div className={cn("min-w-0 space-y-6 xl:pb-0", summaryExpanded ? "pb-[70dvh]" : "pb-[200px]")}>
           <PrimaryInformationSection
             formData={formData}
             defaultDeal={defaultDeal}
@@ -165,10 +179,13 @@ export default function DealForm({
 
         {showSummary && (
           <aside className="fixed bottom-0 left-0 right-0 z-10 mt-6 border-t bg-card shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] xl:bottom-auto xl:mt-0 xl:border-t-0 xl:shadow-none xl:sticky xl:top-4">
-            <div className="max-h-[70dvh] overflow-y-auto rounded-t-xl border-x border-t border-b-0 bg-card p-4 xl:max-h-none xl:rounded-xl xl:border xl:border-b xl:p-5 xl:shadow-sm">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground xl:mb-4">
-                Итог по сделке
-              </h3>
+            <div className="max-h-[70dvh] overflow-y-auto rounded-t-lg border-x border-t border-b-0 bg-card p-4 xl:max-h-none xl:rounded-lg xl:border xl:border-b xl:p-5 xl:shadow-sm">
+              <div className="mb-3 flex items-start justify-between gap-3 xl:mb-4">
+                <div><h3 className="text-sm font-semibold text-muted-foreground">Итог по сделке</h3>
+                  {calculatedData && <p className="mt-1 text-base font-semibold tabular-nums xl:hidden">{formatCurrency(calculatedData.totalDeliveredQuantity > 0 ? calculatedData.actualAmountSalesTotal : calculatedData.amountSalesTotal)}</p>}
+                </div>
+                <Button type="button" variant="ghost" size="icon-sm" className="xl:hidden" aria-label={summaryExpanded ? "Свернуть калькулятор" : "Развернуть калькулятор"} title={summaryExpanded ? "Свернуть калькулятор" : "Развернуть калькулятор"} aria-expanded={summaryExpanded} onClick={() => setSummaryExpanded((value) => !value)}>{summaryExpanded ? <ChevronDownIcon /> : <ChevronUpIcon />}</Button>
+              </div>
               {calculationLoading && (
                 <div className="flex min-h-24 items-center gap-2 text-sm text-muted-foreground" role="status">
                   <Loader2Icon className="size-4 animate-spin" /> Расчёт...
@@ -183,7 +200,7 @@ export default function DealForm({
                   </Button>
                 </div>
               )}
-              {calculatedData && <>
+              {calculatedData && <div id="deal-calculator-details" className={cn(!summaryExpanded && "hidden xl:block")}>
               <div className="mb-4 space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
                 <div className="flex justify-between gap-2 text-sm">
                   <span className="text-muted-foreground">
@@ -313,7 +330,7 @@ export default function DealForm({
                   )}
                 </div>
               </dl>
-              </>}
+              </div>}
               <Button
                 type="submit"
                 size="lg"
@@ -336,7 +353,7 @@ export default function DealForm({
             </div>
           </aside>
         )}
-      </div>
+      </fieldset>
     </form>
   );
 }

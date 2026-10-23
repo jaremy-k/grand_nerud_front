@@ -3,4 +3,6 @@ export default interface DealFilters {
   serviceId?: string;
   materialId?: string;
   stageId?: string;
+  customerId?: string;
+  providerId?: string;
 }
