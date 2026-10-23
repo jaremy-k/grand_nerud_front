@@ -10,6 +10,9 @@ import { getLeads } from "@/services/leads";
 import { getTasks } from "@/services/tasks";
 import type { CompanyDto, DealDto } from "@definitions/dto";
 import { deal, deferred } from "./fixtures";
+import { getDealOperations } from "@/services/deal-operations";
+import { operationFixture } from "./operation-fixtures";
+vi.mock("@/services/deal-operations", () => ({ getDealOperations: vi.fn(), saveDealPayment: vi.fn(), saveDealShipment: vi.fn(), cancelDealOperation: vi.fn() }));
 
 vi.mock("@/components/blocks", () => ({
   Page: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -43,6 +46,7 @@ function renderPage(path: string) {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(dealsService.getDeal).mockResolvedValue(details);
+  vi.mocked(getDealOperations).mockResolvedValue(structuredClone(operationFixture));
   vi.mocked(companiesService.getCompany).mockImplementation(async (id) => id === "provider" ? provider : company);
   vi.mocked(addressesService.getAddresses).mockResolvedValue([]);
   vi.mocked(companyMaterialsService.getCompanyMaterials).mockResolvedValue([]);
@@ -55,7 +59,7 @@ afterEach(cleanup);
 it("разделяет обзор, финансы, объёмы и задачи и связывает обе компании", async () => {
   renderPage("/deals/deal");
   await screen.findByRole("heading", { name: company.name });
-  expect(screen.getAllByRole("tab").map((item) => item.textContent)).toEqual(["Обзор", "Финансы", "Доставленные объёмы", "Задачи"]);
+  expect(screen.getAllByRole("tab").map((item) => item.textContent)).toEqual(["Обзор", "Финансы", "Оплаты", "Поставки", "История операций", "Задачи"]);
   expect(screen.getByRole("link", { name: company.name }).getAttribute("href")).toBe("/companies/customer");
   expect(screen.getByRole("link", { name: provider.name }).getAttribute("href")).toBe("/companies/provider");
   expect(screen.getByText("Адрес карьера")).toBeTruthy();
@@ -73,19 +77,19 @@ it("открывает вкладку из URL и не подменяет неи
 });
 
 it("не складывает разные единицы и не вычисляет из них остаток", async () => {
-  vi.mocked(dealsService.getDeal).mockResolvedValue({ ...details, deliveredQuantity: [...details.deliveredQuantity!, { quantity: 5, unit: "м³", date: "2026-10-21" }] });
+  vi.mocked(getDealOperations).mockResolvedValue({ ...operationFixture, summary: { ...operationFixture.summary, deliveredQuantity: null, remainingQuantity: null, warning: "Проверьте объёмы и единицы существующих поставок" } });
   renderPage("/deals/deal?tab=deliveries");
-  await screen.findByText("20 т; 5 м³");
-  expect(screen.getByText("Разные единицы измерения")).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Изменить объёмы" }).getAttribute("href")).toBe("/deals/deal/edit");
+  await screen.findByText("Проверьте объёмы и единицы существующих поставок");
+  expect(screen.getAllByText("Нет данных").length).toBeGreaterThan(0);
+  expect(screen.getByRole("button", { name: "Добавить поставку" })).toBeTruthy();
 });
 
 it("считает остаток в сопоставимых единицах и отдельно показывает превышение", async () => {
-  vi.mocked(dealsService.getDeal).mockResolvedValue({ ...details, deliveredQuantity: [{ quantity: 120, unit: "т", date: "2026-10-21" }] });
+  vi.mocked(getDealOperations).mockResolvedValue({ ...operationFixture, summary: { ...operationFixture.summary, deliveredQuantity: 120, remainingQuantity: 0, overDeliveredQuantity: 20 } });
   renderPage("/deals/deal?tab=deliveries");
   await screen.findByText("Сверх плана");
   expect(screen.getByText("20 т")).toBeTruthy();
-  expect(screen.getByText("0 т")).toBeTruthy();
+  expect(screen.getAllByText("0 т").length).toBeGreaterThan(0);
 });
 
 it("загружает задачи только для выбранной сделки", async () => {

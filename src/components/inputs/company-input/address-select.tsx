@@ -28,11 +28,13 @@ export default function AddressSelect({
   value,
   onChange,
   placeholder = "Выберите адрес",
+  id,
 }: {
   companyId?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  id?: string;
 }) {
   const { user } = useAuthContext();
   const canCreate = Boolean(user?.admin || user?.manager);
@@ -114,9 +116,9 @@ export default function AddressSelect({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full min-w-0 items-center gap-2">
       <Select value={value} onValueChange={onChange} disabled={!companyId || loading}>
-        <SelectTrigger className="h-9 min-w-0 flex-1">
+        <SelectTrigger id={id} className="h-9 w-0 min-w-0 flex-1 [&>span]:min-w-0 [&>span]:truncate [&>svg]:shrink-0">
           <SelectValue placeholder={loading ? "Загрузка..." : placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -132,6 +134,7 @@ export default function AddressSelect({
           type="button"
           size="icon"
           variant="outline"
+          className="shrink-0"
           aria-label="Добавить адрес"
           onClick={() => {
             resetForm();

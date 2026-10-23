@@ -132,7 +132,8 @@ describe("Форма сделки и перенос из лида", () => {
     await tick();
     fireEvent.change(screen.getByRole("textbox", { name: "Количество" }), { target: { value: "150" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Обновить сделку" })));
-    expect(dealsService.updateDeal).toHaveBeenCalledWith("deal", expect.objectContaining({ deliveredQuantity: deal.deliveredQuantity, unitMeasurement: "тонна", quantity: 150 }));
+    expect(dealsService.updateDeal).toHaveBeenCalledWith("deal", expect.objectContaining({ unitMeasurement: "тонна", quantity: 150 }));
+    expect(vi.mocked(dealsService.updateDeal).mock.calls[0][1]).not.toHaveProperty("deliveredQuantity");
   });
   it("после сохранения открывает карточку без предупреждения об уходе", async () => {
     const router = createMemoryRouter([{ path: "/edit", element: <DealForm defaultDeal={deal} /> }, { path: "/deals/:id", element: <p>Карточка сохранённой сделки</p> }], { initialEntries: ["/edit"] });

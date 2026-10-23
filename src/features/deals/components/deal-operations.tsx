@@ -26,7 +26,8 @@ function Metrics({ summary, payment }: { summary: OperationSummary; payment: boo
   const rows = payment ? [["Сумма сделки", money(summary.customerAmount)], ["Получено от заказчика", money(summary.customerPaid)], ["Осталось получить", money(summary.customerDebt)],
     ["Исполнителю оплачено", money(summary.providerPaid)], ["Осталось за материал", money(summary.providerDebt)], ["Оплачено за доставку", money(summary.deliveryPaid)],
     ["Прочие выплаты", money(summary.otherPaid)], ["Движение средств, нетто", money(summary.cashBalance)],
-    ...(summary.customerOverpayment ? [["Переплата заказчика", money(summary.customerOverpayment)]] : [])]
+    ...(summary.customerOverpayment ? [["Переплата заказчика", money(summary.customerOverpayment)]] : []),
+    ...(summary.providerOverpayment ? [["Переплата исполнителю", money(summary.providerOverpayment)]] : [])]
     : [["Заказано", count(summary.orderedQuantity, summary.unit)], ["Подтверждено", count(summary.deliveredQuantity, summary.unit)], ["В плане поставок", count(summary.plannedQuantity, summary.unit)],
       ["Осталось поставить", count(summary.remainingQuantity, summary.unit)], ["Не запланировано", count(summary.unplannedQuantity, summary.unit)], ["Исполнено", summary.progress == null ? "Нет данных" : `${summary.progress}%`],
       ...(summary.overDeliveredQuantity ? [["Сверх плана", count(summary.overDeliveredQuantity, summary.unit)]] : [])];
@@ -35,7 +36,7 @@ function Metrics({ summary, payment }: { summary: OperationSummary; payment: boo
 
 function History({ rows }: { rows: OperationHistory[] }) {
   const fieldLabels: Record<string, string> = { status: "Статус", kind: "Направление", amount: "Сумма", quantity: "Объём", unit: "Единица", dueDate: "Плановая дата", plannedDate: "Плановая дата", actualDate: "Фактическая дата",
-    reference: "Документ", comment: "Комментарий", amountPurchase: "Закупка", deliveryCost: "Доставка", cancelReason: "Причина отмены", amountSalesUnit: "Цена продажи", amountPurchaseUnit: "Цена закупки", amountDelivery: "Доставка сделки", unitMeasurement: "Единица сделки" };
+    reference: "Документ", comment: "Комментарий", notes: "Комментарий сделки", amountPurchase: "Закупка", deliveryCost: "Доставка", cancelReason: "Причина отмены", amountSalesUnit: "Цена продажи", amountPurchaseUnit: "Цена закупки", amountDelivery: "Доставка сделки", unitMeasurement: "Единица сделки", shippingAddressText: "Адрес погрузки", deliveryAddressText: "Адрес разгрузки" };
   const display = (field: string, value: unknown) => value == null ? "Не указано" : typeof value === "object" ? JSON.stringify(value) : field === "status" ? labels[String(value)] ?? String(value) : field === "kind" ? PAYMENT_KINDS[value as keyof typeof PAYMENT_KINDS] ?? String(value) : String(value);
   return rows.length ? <Table><TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Операция</TableHead><TableHead>Сотрудник</TableHead><TableHead>Изменения</TableHead></TableRow></TableHeader><TableBody>{rows.map((row) => <TableRow key={row._id}>
     <TableCell className="whitespace-nowrap align-top">{new Date(row.at).toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })}</TableCell>

@@ -3,6 +3,8 @@ import type TaskDto from "@/definitions/dto/task";
 import type { AddressDto, CompanyDto, CompanyMaterialDto, DealDto, UserDto } from "@definitions/dto";
 import type { PaginatedResult } from "@/definitions/dto/lead";
 import { toMoscowInput } from "@/features/crm/utils";
+import { fixtureOperations, writeFixtureOperation } from "./fixture-operations";
+import type { OperationResource } from "@/definitions/dto/deal-operations";
 
 export const fixtureUser: UserDto = { id: "me", _id: "me", email: "maria@example.com", name: "Мария", lastName: "Соколова", manager: new URLSearchParams(location.search).get("role") !== "employee", admin: false };
 const owners = [fixtureUser, { ...fixtureUser, id: "employee", _id: "employee", name: "Алексей", lastName: "Иванов", manager: false }];
@@ -30,6 +32,7 @@ const stages = [
   { _id: "work", name: "В работе", kind: "in_progress", order: 1 },
   { _id: "qualified", name: "Квалифицирован", kind: "qualified", order: 2 },
 ];
+deals.forEach(fixtureOperations);
 const now = Date.now();
 const leads: LeadDto[] = [
   { _id: "lead", title: "Песок для нового объекта на Автозаводской", ownerId: "me", stageId: "new", status: "new", priority: "high", materialIds: ["sand"], companyId: "company", company: companies[0], quantity: 100, unitMeasurement: "т", materials: [{ _id: "sand", name: "Песок" }], nextContactAt: new Date(now + 3_600_000).toISOString() },
@@ -53,6 +56,15 @@ function paginated<T>(items: T[], params: URLSearchParams) {
 export async function secureGetData<T>(input: string): Promise<T> {
   const url = new URL(input);
   const params = url.searchParams;
+  const operations = url.pathname.match(/^\/deals\/([^/]+)\/operations$/);
+  if (operations) {
+    const deal = deals.find((row) => row._id === operations[1]);
+    if (!deal) throw new Error("Сделка не найдена");
+    const response = structuredClone(fixtureOperations(deal));
+    const page = Number(params.get("historyPage") || 1);
+    response.history.items = response.history.items.slice((page - 1) * 25, page * 25); response.history.page = page;
+    return response as T;
+  }
   let result: unknown;
   const matches = (item: { ownerId: string; companyId?: string | null }) =>
     (!params.get("ownerId") || item.ownerId === params.get("ownerId")) && (!params.get("companyId") || item.companyId === params.get("companyId"));
@@ -137,6 +149,12 @@ export async function secureGetData<T>(input: string): Promise<T> {
 }
 export async function securePatchData<T>(input: string, data: object): Promise<T> {
   const path = new URL(input).pathname;
+  const operation = path.match(/^\/deals\/([^/]+)\/(payments|shipments)\/([^/]+)$/);
+  if (operation) {
+    const deal = deals.find((row) => row._id === operation[1]);
+    if (!deal) throw new Error("Сделка не найдена");
+    return structuredClone(writeFixtureOperation(deal, operation[2] as OperationResource, operation[3], data as Record<string, unknown>)) as T;
+  }
   const id = path.split("/").pop();
   if (path.startsWith("/companies/")) {
     const index = companies.findIndex((company) => company._id === id);
@@ -148,6 +166,7 @@ export async function securePatchData<T>(input: string, data: object): Promise<T
     const index = deals.findIndex((deal) => deal._id === id);
     if (index < 0) throw new Error("Сделка не найдена");
     deals[index] = { ...deals[index], ...data };
+    fixtureOperations(deals[index]);
     return structuredClone(deals[index]) as T;
   }
   const index = tasks.findIndex((task) => task._id === id);
@@ -157,6 +176,12 @@ export async function securePatchData<T>(input: string, data: object): Promise<T
 }
 export async function securePostData<T>(input: string, data: object): Promise<T> {
   const pathname = new URL(input).pathname;
+  const operation = pathname.match(/^\/deals\/([^/]+)\/(payments|shipments)(?:\/([^/]+)\/cancel)?$/);
+  if (operation) {
+    const deal = deals.find((row) => row._id === operation[1]);
+    if (!deal) throw new Error("Сделка не найдена");
+    return structuredClone(writeFixtureOperation(deal, operation[2] as OperationResource, operation[3], data as Record<string, unknown>, Boolean(operation[3]))) as T;
+  }
   if (pathname === "/deals/preview") return structuredClone({ taxAmount: 0, companyProfit: 30000, managerProfit: 3000, amountPurchaseTotal: 145000, amountSalesTotal: 190000, actualCompanyProfit: 6000, actualAmountSalesTotal: 76000, actualAmountPurchaseTotal: 58000, totalDeliveredQuantity: 40, ndsPercent: 0, managerShare: 0.1, totalAmount: 190000 }) as T;
   const item = { _id: crypto.randomUUID(), ownerId: "me", ...data };
   if (pathname === "/tasks") tasks.push({ status: "open", ...item } as TaskDto);

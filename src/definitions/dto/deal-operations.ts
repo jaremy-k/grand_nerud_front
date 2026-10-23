@@ -6,13 +6,14 @@ export type OperationResource = "payments" | "shipments";
 export interface OperationSummary {
   currency: "RUB"; paymentStatus: PaymentStatus; executionStatus: ExecutionStatus;
   customerAmount: number | null; customerPaid: number; customerDebt: number | null; customerOverpayment: number | null;
-  providerAmount: number | null; providerPaid: number; providerDebt: number | null; deliveryPaid: number; otherPaid: number; cashBalance: number;
+  providerAmount: number | null; providerPaid: number; providerDebt: number | null; providerOverpayment: number | null; deliveryPaid: number; otherPaid: number; cashBalance: number;
   orderedQuantity: number | null; unit: string; deliveredQuantity: number | null; plannedQuantity: number | null;
   remainingQuantity: number | null; unplannedQuantity: number | null; overDeliveredQuantity: number | null; progress: number | null;
   overduePayments: number; overdueShipments: number; warning: string | null;
 }
 interface OperationBase { _id: string; requestId?: string; comment: string; createdAt?: string; updatedAt?: string; cancelReason?: string; cancelledAt?: string }
 export interface DealPayment extends OperationBase {
+  companyId?: string | null;
   kind: PaymentKind; status: "planned" | "paid" | "cancelled"; amount: number; dueDate: string | null; actualDate: string | null; reference: string;
 }
 export interface DealShipment extends OperationBase {
