@@ -1,7 +1,7 @@
 import useAuthContext from "@/contexts/auth-context";
-import { companiesService, materialsService, usersService } from "@/services";
+import { materialsService, usersService } from "@/services";
 import { getLeadStages } from "@/services/lead-stages";
-import type { CompanyDto, MaterialDto, UserDto } from "@definitions/dto";
+import type { MaterialDto, UserDto } from "@definitions/dto";
 import type { LeadStageDto } from "@/definitions/dto/lead";
 import { useEffect, useState } from "react";
 import { sortLeadStages } from "./utils";
@@ -9,7 +9,6 @@ import { sortLeadStages } from "./utils";
 export function useCrmReferences() {
   const { user } = useAuthContext();
   const elevated = Boolean(user?.admin || user?.manager);
-  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
   const [owners, setOwners] = useState<UserDto[]>([]);
   const [stages, setStages] = useState<LeadStageDto[]>([]);
@@ -17,18 +16,17 @@ export function useCrmReferences() {
   useEffect(() => {
     let active = true;
     Promise.allSettled([
-      companiesService.getCompanies(), materialsService.getMaterials(), getLeadStages(),
+      materialsService.getMaterials(), getLeadStages(),
       elevated ? usersService.getUsers() : Promise.resolve([] as UserDto[]),
-    ]).then(([companyResult, materialResult, stageResult, ownerResult]) => {
+    ]).then(([materialResult, stageResult, ownerResult]) => {
       if (!active) return;
-      if (companyResult.status === "fulfilled") setCompanies(companyResult.value);
       if (materialResult.status === "fulfilled") setMaterials(materialResult.value.filter((item) => !item.is_deleted));
       if (stageResult.status === "fulfilled") setStages(sortLeadStages(stageResult.value));
       if (ownerResult.status === "fulfilled") setOwners((elevated ? ownerResult.value : user ? [user] : []).filter((item) => !item.is_deleted && !item.isDeleted));
-      const failure = [companyResult, materialResult, stageResult, ownerResult].find((item) => item.status === "rejected");
+      const failure = [materialResult, stageResult, ownerResult].find((item) => item.status === "rejected");
       if (failure?.status === "rejected") setError(failure.reason instanceof Error ? failure.reason.message : "Не удалось загрузить справочники");
     });
     return () => { active = false; };
   }, [elevated, user]);
-  return { companies, materials, owners, stages, elevated, user, error };
+  return { materials, owners, stages, elevated, user, error };
 }

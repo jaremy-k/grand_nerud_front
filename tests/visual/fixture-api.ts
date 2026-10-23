@@ -7,8 +7,8 @@ import { toMoscowInput } from "@/features/crm/utils";
 export const fixtureUser: UserDto = { id: "me", _id: "me", email: "maria@example.com", name: "Мария", lastName: "Соколова", manager: new URLSearchParams(location.search).get("role") !== "employee", admin: false };
 const owners = [fixtureUser, { ...fixtureUser, id: "employee", _id: "employee", name: "Алексей", lastName: "Иванов", manager: false }];
 const companies: CompanyDto[] = [
-  { _id: "company", name: "ООО Стройпроект", inn: "7707083893", kpp: "773601001", roles: ["customer"], contactPersons: [{ name: "Иван Петров", position: "Руководитель снабжения", phone: "+7 999 123-45-67", email: "ivan@example.com" }], contacts: [{ Директор: "Иван Петров", Адрес: "Москва" }], phones: ["+7 495 123-45-67", "+7 495 765-43-21"], emails: ["office@stroy.example.com"], source: "Рекомендация", segments: ["Строительство"], comment: "Пропуск на объект оформляется за день до поставки." },
-  { _id: "quarry", name: "Северный карьер", inn: "7707083894", kpp: "773601002", roles: ["provider"], contactPersons: [{ name: "Анна Сидорова", position: "Менеджер", phone: "+7 999 234-56-78", email: "anna@example.com" }], phones: ["+7 495 234-56-78"], contacts: [] },
+  { _id: "company", name: "ООО Стройпроект", inn: "7707083893", kpp: "773601001", roles: ["customer"], contactPersons: [{ name: "Иван Петров", position: "Руководитель снабжения", phone: "+7 999 123-45-67", phones: ["+7 999 765-43-21"], email: "ivan@example.com", emails: ["supply@stroy.example.com"] }], contacts: [{ Директор: "Иван Петров", Адрес: "Москва" }], phones: ["+7 495 123-45-67", "+7 495 765-43-21"], emails: ["office@stroy.example.com", "orders@stroy.example.com"], source: "Рекомендация", segments: ["Строительство"], comment: "Пропуск на объект оформляется за день до поставки." },
+  { _id: "quarry", name: "Северный карьер", inn: "7707083894", kpp: "773601002", roles: ["provider"], contactPersons: [{ name: "Анна Сидорова", position: "Менеджер", phone: "+7 999 234-56-78", phones: ["+7 999 876-54-32"], email: "anna@example.com", emails: ["sales@quarry.example.com"] }], phones: ["+7 495 234-56-78", "+7 495 876-54-32"], emails: ["office@quarry.example.com", "orders@quarry.example.com"], contacts: [] },
 ];
 const addresses: AddressDto[] = [
   { _id: "shipping", companyId: "quarry", city: "Москва", administrativeDistrict: "САО", district: "Дмитровский", coordinates: [37.55, 55.86], adressDetail: { address: "Москва, Дмитровское шоссе, д. 157", entrance: "Въезд через вторые ворота" }, typeAdress: "Склад", deletedAt: null },
@@ -16,7 +16,7 @@ const addresses: AddressDto[] = [
 ];
 const prices: CompanyMaterialDto[] = [{ _id: "price", companyId: "quarry", materialId: "sand", price: 1450, unit: "т", comment: "Цена без доставки", material: { _id: "sand", name: "Песок" } }];
 const deals: DealDto[] = [{
-  _id: "deal", userId: "me", serviceId: "sales", customerId: "company", providerId: "quarry", stageId: "deal-new", materialId: "sand", quantity: 100, unitMeasurement: "тонна",
+  _id: "deal", number: "СД-000123", numberSequence: 123, userId: "me", serviceId: "sales", customerId: "company", providerId: "quarry", stageId: "deal-new", materialId: "sand", quantity: 100, unitMeasurement: "тонна",
   amountPurchaseUnit: 1450, amountPurchaseTotal: 145000, amountSalesUnit: 1900, amountSalesTotal: 190000, amountDelivery: 15000,
   companyProfit: 30000, managerProfit: 3000, actualCompanyProfit: 6000, actualAmountSalesTotal: 76000, actualAmountPurchaseTotal: 58000, totalDeliveredQuantity: 40,
   ndsAmount: 0, ndsPercent: 0, totalAmount: 190000, paymentMethod: "наличный расчет", methodReceiving: "доставка", shippingAddressId: "shipping", deliveryAddressId: "object", shippingAddress: addresses[0], deliveryAddress: addresses[1],
@@ -75,6 +75,19 @@ export async function secureGetData<T>(input: string): Promise<T> {
     }
     case "/auth/all": result = owners; break;
     case "/auth/me": result = fixtureUser; break;
+    case "/companies/page": {
+      const search = params.get("search")?.trim().toLowerCase();
+      let rows = companies.filter((company) => (!params.get("role") || company.roles.includes(params.get("role") as "customer" | "provider"))
+        && (!search || [company.name, String(company.inn), ...company.phones ?? [], ...company.emails ?? []].some((value) => value.toLowerCase().includes(search))))
+        .map((company) => ({ ...company, addresses: addresses.filter((address) => address.companyId === company._id), materialsWithPrices: prices.filter((price) => price.companyId === company._id) }));
+      rows = rows.filter((company) => (!params.get("city") && !params.get("district") && !params.get("administrativeDistrict")) || company.addresses.some((address) =>
+        (!params.get("city") || address.city === params.get("city")) && (!params.get("district") || address.district === params.get("district"))
+        && (!params.get("administrativeDistrict") || address.administrativeDistrict === params.get("administrativeDistrict"))));
+      if (params.get("materialId")) rows = rows.map((company) => ({ ...company, materialsWithPrices: company.materialsWithPrices.filter((price) => price.materialId === params.get("materialId")
+        && (!params.get("priceUnit") || price.unit === params.get("priceUnit")) && (!params.get("maxPrice") || price.price <= Number(params.get("maxPrice")))) })).filter((company) => company.materialsWithPrices.length > 0);
+      result = paginated(rows, params);
+      break;
+    }
     case "/companies": result = companies.filter((company) => !params.get("role") || company.roles.includes(params.get("role") as "customer" | "provider")).map((company) => ({ ...company, materialsWithPrices: prices.filter((price) => price.companyId === company._id) })); break;
     case "/materials": result = [{ _id: "sand", name: "Песок" }]; break;
     case "/services": result = [{ _id: "sales", name: "Продажа", kind: "sales" }, { _id: "transport", name: "Перевозка", kind: "transport" }]; break;
@@ -88,7 +101,7 @@ export async function secureGetData<T>(input: string): Promise<T> {
       if (params.get("customerId") && deal.customerId !== params.get("customerId")) return false;
       if (params.get("userId") && deal.userId !== params.get("userId")) return false;
       const search = params.get("search")?.toLowerCase();
-      return !search || [deal.customer?.name, deal.customer?.inn, deal.provider?.name, deal.provider?.inn, deal.material?.name, deal._id].some((value) => value?.toLowerCase().includes(search));
+      return !search || [deal.number, deal.customer?.name, deal.customer?.inn, deal.provider?.name, deal.provider?.inn, deal.material?.name, deal._id].some((value) => value?.toLowerCase().includes(search));
     }), params); break;
     case "/leads": result = paginated(leads.filter((lead) => matches(lead)
       && (!params.get("status") || lead.status === params.get("status"))
@@ -125,6 +138,12 @@ export async function secureGetData<T>(input: string): Promise<T> {
 export async function securePatchData<T>(input: string, data: object): Promise<T> {
   const path = new URL(input).pathname;
   const id = path.split("/").pop();
+  if (path.startsWith("/companies/")) {
+    const index = companies.findIndex((company) => company._id === id);
+    if (index < 0) throw new Error("Компания не найдена");
+    companies[index] = { ...companies[index], ...data };
+    return structuredClone(companies[index]) as T;
+  }
   if (path.startsWith("/deals/")) {
     const index = deals.findIndex((deal) => deal._id === id);
     if (index < 0) throw new Error("Сделка не найдена");

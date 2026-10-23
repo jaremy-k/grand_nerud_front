@@ -5,16 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ContactPerson } from "@definitions/dto";
 import { PlusIcon, Trash2Icon } from "lucide-react";
+import { personPhones, personEmails } from "@/lib/company-contacts";
+import ContactValuesEditor from "./contact-values-editor";
 
 const EMPTY_CONTACT_PERSON: ContactPerson = { name: "" };
-
-export function isValidContactPersons(contactPersons: ContactPerson[]) {
-  return contactPersons.every(
-    (person) =>
-      person.name.trim().length > 0 &&
-      (!person.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(person.email))
-  );
-}
 
 export default function ContactPersonsEditor({
   value,
@@ -114,29 +108,6 @@ export default function ContactPersonsEditor({
                 }
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor={`contact-person-phone-${index}`}>Телефон</Label>
-              <Input
-                id={`contact-person-phone-${index}`}
-                value={person.phone ?? ""}
-                disabled={disabled}
-                onChange={(event) =>
-                  updatePerson(index, "phone", event.target.value)
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor={`contact-person-email-${index}`}>Email</Label>
-              <Input
-                id={`contact-person-email-${index}`}
-                type="email"
-                value={person.email ?? ""}
-                disabled={disabled}
-                onChange={(event) =>
-                  updatePerson(index, "email", event.target.value)
-                }
-              />
-            </div>
             <div className="flex items-center gap-2 self-end pb-2">
               <Switch
                 id={`contact-person-primary-${index}`}
@@ -156,6 +127,12 @@ export default function ContactPersonsEditor({
                 Основной контакт
               </Label>
             </div>
+          </div>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <ContactValuesEditor label={`Телефоны контактного лица ${index + 1}`} type="tel" value={person.phones ?? personPhones(person)} disabled={disabled}
+              onChange={(phones) => onChange(value.map((item, at) => at === index ? { ...item, phones, phone: undefined } : item))} />
+            <ContactValuesEditor label={`Email контактного лица ${index + 1}`} type="email" value={person.emails ?? personEmails(person)} disabled={disabled}
+              onChange={(emails) => onChange(value.map((item, at) => at === index ? { ...item, emails, email: undefined } : item))} />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor={`contact-person-comment-${index}`}>

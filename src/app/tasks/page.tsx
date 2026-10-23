@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ReferenceSelect from "@/features/crm/reference-select";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
 import { useCrmReferences } from "@/features/crm/use-references";
 import OwnerScopeSelect from "@/features/crm/owner-scope-select";
 import { updateCrmParams } from "@/features/crm/owner-scope";
@@ -52,7 +52,7 @@ export default function TasksPage() {
       <div role="group" aria-label="Сроки задач" className="flex flex-wrap gap-1 border-b pb-3">{BUCKETS.map((item) => <Button key={item.value} size="sm" variant={bucket === item.value ? "secondary" : "ghost"} aria-pressed={bucket === item.value} onClick={() => setFilter("bucket", item.value)}>{item.label}</Button>)}</div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="grid gap-1.5"><Label htmlFor="tasks-type">Тип</Label><Select value={type || "all"} onValueChange={(value) => setFilter("type", value === "all" ? "" : value)}><SelectTrigger id="tasks-type"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все типы</SelectItem>{Object.entries(TASK_TYPE_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-        <div className="grid gap-1.5"><Label htmlFor="tasks-company">Компания</Label><ReferenceSelect id="tasks-company" value={companyId} onChange={(value) => setFilter("companyId", value)} placeholder="Все компании" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} /></div>
+        <div className="grid gap-1.5"><Label htmlFor="tasks-company">Компания</Label><CompanyCombobox id="tasks-company" value={companyId} role="all" allowCreate={false} clearable onChange={(value) => setFilter("companyId", value)} placeholder="Все компании" /></div>
         <OwnerScopeSelect id="tasks-owner" scope={scope} onChange={changeScope} owners={refs.owners} />
         {bucket === "all" && <>
           <div className="grid gap-1.5"><Label htmlFor="tasks-status">Состояние</Label><Select value={status} onValueChange={(value) => setFilter("status", value)}><SelectTrigger id="tasks-status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все состояния</SelectItem>{Object.entries(TASK_STATUS_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
@@ -62,7 +62,7 @@ export default function TasksPage() {
       </div>
       {leadId && <Link to={`/leads/${leadId}`} className="text-sm text-primary hover:underline">Задачи выбранного лида</Link>}{dealId && <Link to={`/deals/${dealId}`} className="text-sm text-primary hover:underline">Задачи выбранной сделки</Link>}
       {refs.error && <p className="text-sm text-destructive">{refs.error}</p>}
-      {scope.error ? <p className="text-sm text-destructive" role="alert">{scope.error}</p> : invalidRange ? <p className="text-sm text-destructive">Дата начала должна быть не позже даты окончания</p> : <TaskList filters={filters} filtered={filtered} onResetFilters={resetFilters} initialOwnerId={scope.ownerId} emptyMessage={bucket === "today" ? "На сегодня задач нет" : bucket === "overdue" ? "Просроченных задач нет" : bucket === "upcoming" ? "Предстоящих задач нет" : undefined} context={{ companyId: contextCompany || companyId || undefined, leadId, dealId, ownerId: contextOwner }} ownerNames={Object.fromEntries(refs.owners.map((item) => [item.id ?? item._id ?? "", userName(item)]))} companyNames={Object.fromEntries(refs.companies.map((item) => [item._id, item.name]))} />}
+      {scope.error ? <p className="text-sm text-destructive" role="alert">{scope.error}</p> : invalidRange ? <p className="text-sm text-destructive">Дата начала должна быть не позже даты окончания</p> : <TaskList filters={filters} filtered={filtered} onResetFilters={resetFilters} initialOwnerId={scope.ownerId} emptyMessage={bucket === "today" ? "На сегодня задач нет" : bucket === "overdue" ? "Просроченных задач нет" : bucket === "upcoming" ? "Предстоящих задач нет" : undefined} context={{ companyId: contextCompany || companyId || undefined, leadId, dealId, ownerId: contextOwner }} ownerNames={Object.fromEntries(refs.owners.map((item) => [item.id ?? item._id ?? "", userName(item)]))} />}
     </div>
   </Page>;
 }

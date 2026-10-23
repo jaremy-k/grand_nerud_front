@@ -8,6 +8,8 @@ export type ContactPerson = {
   position?: string;
   phone?: string;
   email?: string;
+  phones?: string[];
+  emails?: string[];
   comment?: string;
   isPrimary?: boolean;
 };
@@ -28,6 +30,7 @@ export default interface CompanyDto {
   source?: string;
   segments?: string[];
   materialsWithPrices?: CompanyMaterialDto[];
+  addresses?: import("./address").default[];
   comment?: string;
   createdAt?: string;
   created_at?: string;

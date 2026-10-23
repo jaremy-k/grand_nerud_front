@@ -18,7 +18,7 @@ type Record = LeadDto | DealDto;
 type RecordPage = { items: Record[]; total: number; page: number; totalPages: number };
 type Query = { kind: Props["kind"]; companyId?: string; ownerId?: string; search: string; page: number };
 const label = (item: Record) => "title" in item ? item.title
-  : `${item.customer?.name || "Сделка"} · ${item.material?.name || "Без материала"}${item.provider?.name ? ` · ${item.provider.name}` : ""}`;
+  : `${item.number ? `${item.number} · ` : ""}${item.customer?.name || "Сделка"} · ${item.material?.name || "Без материала"}${item.provider?.name ? ` · ${item.provider.name}` : ""}`;
 const loadRecords = (query: Query, signal: AbortSignal): Promise<RecordPage> => query.kind === "lead"
   ? getLeads({ page: query.page, pageSize: 20, search: query.search, companyId: query.companyId, ownerId: query.ownerId }, { signal })
   : dealsService.getDeals({ page: query.page, pageSize: 20, search: query.search,

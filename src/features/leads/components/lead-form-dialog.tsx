@@ -4,7 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addressesService } from "@/services";
+import { addressesService, companiesService } from "@/services";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import { personPhones, personEmails } from "@/lib/company-contacts";
 import { createLead, updateLead } from "@/services/leads";
 import type LeadDto from "@/definitions/dto/lead";
 import type { LeadPriority } from "@/definitions/dto/lead";
@@ -13,6 +16,7 @@ import { useEffect, useState } from "react";
 import ReferenceSelect from "@/features/crm/reference-select";
 import { useCrmReferences } from "@/features/crm/use-references";
 import { fromMoscowInput, leadIsLocked, PRIORITY_LABELS, splitContactValues, toMoscowInput, userName, validateLeadStage } from "@/features/crm/utils";
+const loadCompany = (id: string, signal: AbortSignal) => id ? companiesService.getCompany(id, { signal }) : Promise.resolve(null);
 
 export default function LeadFormDialog({ open, onClose, onSaved, lead, initialCompanyId, initialOwnerId }: {
   open: boolean; onClose: () => void; onSaved: (lead: LeadDto) => void; lead?: LeadDto; initialCompanyId?: string; initialOwnerId?: string;
@@ -41,7 +45,7 @@ export default function LeadFormDialog({ open, onClose, onSaved, lead, initialCo
   const [emails, setEmails] = useState(lead?.contactPerson?.emails?.join("; ") ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const selectedCompany = refs.companies.find((item) => item._id === companyId);
+  const selectedCompany = useLatestRequest(companyId, loadCompany).data;
   const selectedStage = refs.stages.find((item) => item._id === stageId);
 
   useEffect(() => {
@@ -89,14 +93,14 @@ export default function LeadFormDialog({ open, onClose, onSaved, lead, initialCo
         <DialogHeader><DialogTitle>{lead ? "Редактирование лида" : "Новый лид"}</DialogTitle></DialogHeader>
         <fieldset disabled={saving} className="grid min-w-0 gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor="lead-title">Название потребности *</Label><Input id="lead-title" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label htmlFor="lead-company">Компания</Label><ReferenceSelect id="lead-company" value={companyId} placeholder="Без компании" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} onChange={(id) => { setCompanyId(id); setAddressId(""); }} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="lead-company">Компания</Label><CompanyCombobox id="lead-company" value={companyId} role="all" clearable placeholder="Без компании" onChange={(id) => { setCompanyId(id); setAddressId(""); }} /></div>
           <div className="grid gap-1.5"><Label htmlFor="lead-priority">Приоритет</Label><Select value={priority} onValueChange={(value) => setPriority(value as LeadPriority)}><SelectTrigger id="lead-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(PRIORITY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
           <div className="grid gap-1.5"><Label htmlFor="lead-stage">Этап</Label><ReferenceSelect id="lead-stage" value={stageId} placeholder="Новый (по умолчанию)" options={refs.stages.filter((item) => item.kind !== "converted").map((item) => ({ value: item._id, label: item.name }))} onChange={setStageId} /></div>
           {refs.elevated && <div className="grid gap-1.5"><Label htmlFor="lead-owner">Ответственный</Label><ReferenceSelect id="lead-owner" value={ownerId} placeholder="Я" options={refs.owners.map((item) => ({ value: item.id ?? item._id ?? "", label: userName(item) }))} onChange={setOwnerId} /></div>}
           <div className="grid gap-1.5"><Label htmlFor="lead-source">Источник</Label><Input id="lead-source" value={source} onChange={(e) => setSource(e.target.value)} /></div>
           <section className="grid gap-3 border-t pt-4 sm:col-span-2">
             <h3 className="text-sm font-medium">Контактное лицо</h3>
-            {selectedCompany?.contactPersons?.length ? <ReferenceSelect value="" placeholder="Выбрать контактное лицо компании" options={selectedCompany.contactPersons.map((item, index) => ({ value: String(index), label: item.name }))} onChange={(value) => { const person = selectedCompany.contactPersons[Number(value)]; if (!value || !person) return; setContactName(person.name); setPosition(person.position ?? ""); setPhones(person.phone ?? ""); setEmails(person.email ?? ""); }} /> : null}
+            {selectedCompany?.contactPersons?.length ? <ReferenceSelect value="" placeholder="Выбрать контактное лицо компании" options={selectedCompany.contactPersons.map((item, index) => ({ value: String(index), label: item.name }))} onChange={(value) => { const person = selectedCompany.contactPersons[Number(value)]; if (!value || !person) return; setContactName(person.name); setPosition(person.position ?? ""); setPhones(personPhones(person).join("; ")); setEmails(personEmails(person).join("; ")); }} /> : null}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5"><Label htmlFor="lead-contact-name">Имя</Label><Input id="lead-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label htmlFor="lead-position">Должность</Label><Input id="lead-position" value={position} onChange={(e) => setPosition(e.target.value)} /></div>

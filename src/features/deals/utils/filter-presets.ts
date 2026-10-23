@@ -1,57 +1,41 @@
 import type { DealFilters } from "@features/deals/definitions";
+import { normalizeDealListState, type DealListState } from "./list-state";
 
-const STORAGE_KEY = "deals-filter-presets";
-const LAST_USED_KEY = "deals-filter-last-used";
+export interface FilterPreset { id: string; name: string; view: DealListState; createdAt: number }
+const key = (base: string, user?: string) => user ? `${base}:${user}` : base;
+const read = (name: string): unknown => { try { const raw = localStorage.getItem(name); return raw ? JSON.parse(raw) : null; } catch { return null; } };
 
-export interface FilterPreset {
-  id: string;
-  name: string;
-  filters: DealFilters;
-  createdAt: number;
+export function getFilterPresets(user?: string): FilterPreset[] {
+  const value = read(key("deals-filter-presets", user));
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 30).flatMap((item) => {
+    if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.name !== "string" || !item.name.trim()) return [];
+    return [{ id: item.id, name: item.name.trim().slice(0, 80), view: normalizeDealListState(item.view ?? { filters: item.filters }), createdAt: typeof item.createdAt === "number" ? item.createdAt : 0 }];
+  });
 }
 
-export function getFilterPresets(): FilterPreset[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveFilterPreset(name: string, filters: DealFilters): FilterPreset {
-  const presets = getFilterPresets();
-  const preset: FilterPreset = {
-    id: crypto.randomUUID(),
-    name,
-    filters: { ...filters },
-    createdAt: Date.now(),
-  };
-  presets.push(preset);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+export function saveFilterPreset(name: string, view: DealListState, user?: string): FilterPreset {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.length > 80) throw new Error("Укажите название до 80 символов");
+  const presets = getFilterPresets(user);
+  const existing = presets.find((item) => item.name.toLowerCase() === trimmed.toLowerCase());
+  if (!existing && presets.length >= 30) throw new Error("Можно сохранить до 30 представлений");
+  const preset = { id: existing?.id ?? crypto.randomUUID(), name: trimmed, view: normalizeDealListState(view), createdAt: existing?.createdAt ?? Date.now() };
+  localStorage.setItem(key("deals-filter-presets", user), JSON.stringify(existing ? presets.map((item) => item.id === existing.id ? preset : item) : [...presets, preset]));
   return preset;
 }
 
-export function deleteFilterPreset(id: string): void {
-  const presets = getFilterPresets().filter((p) => p.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+export function deleteFilterPreset(id: string, user?: string): void {
+  localStorage.setItem(key("deals-filter-presets", user), JSON.stringify(getFilterPresets(user).filter((item) => item.id !== id)));
 }
 
-export function getLastUsedFilters(): DealFilters | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(LAST_USED_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as DealFilters;
-  } catch {
-    return null;
-  }
+export function getLastUsedView(user?: string): DealListState | null {
+  const value = read(key("deals-filter-last-used", user));
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return normalizeDealListState("filters" in value ? value : { filters: value });
 }
-
-export function saveLastUsedFilters(filters: DealFilters): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(LAST_USED_KEY, JSON.stringify(filters));
+export function saveLastUsedView(view: DealListState, user?: string): void {
+  try { localStorage.setItem(key("deals-filter-last-used", user), JSON.stringify(view)); } catch { /* Filtering remains available without browser storage. */ }
 }
+export function getLastUsedFilters(): DealFilters | null { return getLastUsedView()?.filters ?? null; }
+export function saveLastUsedFilters(filters: DealFilters): void { saveLastUsedView(normalizeDealListState({ filters })); }

@@ -12,6 +12,7 @@ import type TaskDto from "@/definitions/dto/task";
 import type { TaskType } from "@/definitions/dto/task";
 import { createTask, updateTask } from "@/services/tasks";
 import { useState } from "react";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
 
 export type TaskContext = { companyId?: string; leadId?: string; dealId?: string; ownerId?: string };
 export default function TaskFormDialog({ open, onClose, onSaved, task, context = {}, initialOwnerId }: {
@@ -51,7 +52,7 @@ export default function TaskFormDialog({ open, onClose, onSaved, task, context =
           <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor="task-title">Название *</Label><Input id="task-title" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div className="grid gap-1.5"><Label htmlFor="task-due">Срок (МСК) *</Label><Input id="task-due" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} /></div>
           <div className="grid gap-1.5"><Label htmlFor="task-type">Тип</Label><Select value={type} onValueChange={(value) => setType(value as TaskType)}><SelectTrigger id="task-type"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(TASK_TYPE_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-          <div className="grid gap-1.5"><Label htmlFor="task-company">Компания</Label><ReferenceSelect id="task-company" value={companyId} disabled={Boolean(context.companyId || context.leadId || context.dealId)} onChange={(id) => { setCompanyId(id); setLeadId(""); setDealId(""); }} placeholder="Самостоятельная задача" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="task-company">Компания</Label><CompanyCombobox id="task-company" value={companyId} role="all" clearable disabled={Boolean(context.companyId || context.leadId || context.dealId)} onChange={(id) => { setCompanyId(id); setLeadId(""); setDealId(""); }} placeholder="Самостоятельная задача" /></div>
           {refs.elevated && <div className="grid gap-1.5"><Label htmlFor="task-owner">Ответственный</Label><ReferenceSelect id="task-owner" value={ownerId} disabled={Boolean(context.ownerId)} onChange={(id) => { setOwnerId(id); if (!context.leadId) setLeadId(""); if (!context.dealId) setDealId(""); }} placeholder="Я" options={refs.owners.map((item) => ({ value: item.id ?? item._id ?? "", label: userName(item) }))} /></div>}
           {!context.leadId && !context.dealId && <>
             <RelatedRecordSelect kind="lead" value={leadId} companyId={companyId || undefined} ownerId={ownerId || undefined} onChange={(id, company, owner) => { setLeadId(id); setDealId(""); if (id) { setCompanyId(company ?? ""); if (refs.elevated && owner) setOwnerId(owner); } }} />

@@ -108,7 +108,7 @@ function LeadRow({ lead }: { lead: LeadDto }) {
   </article>;
 }
 function DealRow({ deal }: { deal: DealDto }) {
-  return <article className="grid min-w-0 gap-1 py-4"><Link to={`/deals/${deal._id}`} className="break-words text-sm font-medium text-primary hover:underline">{deal.material?.name || "Сделка без материала"} · {deal.customer?.name || "Заказчик"}</Link>
+  return <article className="grid min-w-0 gap-1 py-4"><Link to={`/deals/${deal._id}`} className="break-words text-sm font-medium text-primary hover:underline">{deal.number ? `${deal.number} · ` : ""}{deal.material?.name || "Сделка без материала"} · {deal.customer?.name || "Заказчик"}</Link>
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"><span>{deal.stage?.name || "Без этапа"}</span><span>{deal.quantity?.toLocaleString("ru-RU") ?? "Объём не указан"} {deal.unitMeasurement}</span><span>{deal.amountSalesTotal == null ? "Сумма не указана" : formatCurrency(deal.amountSalesTotal)}</span>
       {deal.provider?.name && <span>Исполнитель: {deal.provider.name}</span>}
     </div>

@@ -27,18 +27,21 @@ import {
   getStageDotClass,
 } from "@features/deals/utils/stage-colors";
 import { CheckIcon, MoreHorizontal } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { normalizeMaterialUnit } from "@/lib/company-materials";
 
 export default function DealRow({
   deal,
   stages,
   onStageChange,
   isUpdatingStage,
+  customerName,
 }: {
   deal: DealDto;
   stages: StageDto[];
   onStageChange: (dealId: string, stageId: string) => Promise<void>;
   isUpdatingStage: string | null;
+  customerName?: string;
 }) {
   const navigate = useNavigate();
   const isUpdating = isUpdatingStage === deal._id;
@@ -52,14 +55,17 @@ export default function DealRow({
 
   return (
     <TableRow key={deal._id}>
-      <TableCell>
-        {deal.service ? capitalizeFirstLetter(deal.service.name) : "Не указано"}
+      <TableCell className="min-w-48 max-w-72">
+        <Link to={`/deals/${deal._id}`} className="font-medium text-primary hover:underline">{deal.number || "Сделка"}</Link>
+        <Link to={`/companies/${deal.customerId}`} className="mt-1 block break-words text-sm hover:underline">{deal.customer?.name || customerName || "Заказчик не указан"}</Link>
       </TableCell>
-      <TableCell>
+      <TableCell className="min-w-36">
         {deal.material
           ? capitalizeFirstLetter(deal.material.name)
           : "Не указано"}
+        <p className="mt-1 text-xs text-muted-foreground">{deal.service ? capitalizeFirstLetter(deal.service.name) : ""}</p>
       </TableCell>
+      <TableCell className="whitespace-nowrap tabular-nums">{deal.quantity?.toLocaleString("ru-RU") ?? "Не указан"} {normalizeMaterialUnit(deal.unitMeasurement || "")}</TableCell>
       <TableCell>
         <Popover open={stagePopoverOpen} onOpenChange={setStagePopoverOpen}>
           <PopoverTrigger asChild>
@@ -111,11 +117,11 @@ export default function DealRow({
       <TableCell>{formatCurrency(deal.managerProfit ?? 0)}</TableCell>
       <TableCell>
         <div className="inline-flex w-full justify-between items-center gap-2">
-          {new Date(deal.createdAt).toLocaleDateString()}
+          {new Date(deal.createdAt).toLocaleDateString("ru-RU", { timeZone: "Europe/Moscow" })}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Действия со сделкой</span>
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>

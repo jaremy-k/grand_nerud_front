@@ -9,8 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { companiesService, dealsService } from "@/services";
-import { Columns3Icon, ListIcon, RotateCwIcon } from "lucide-react";
+import { dealsService } from "@/services";
+import { Columns3Icon, FilePlus2Icon, ListIcon, RotateCwIcon, XIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
+import { useCompanyNames } from "@/features/crm/use-company-names";
+import SavedViews from "./saved-views";
 import { useStages } from "@features/deals/hooks/use-stages";
 import { useDealsQuery } from "@features/deals/hooks/use-deals-query";
 import { useNavigate } from "react-router-dom";
@@ -30,46 +36,20 @@ import {
 } from "../filters";
 import DealsDataLoading from "./data-loading";
 
-export default function DealsDataTable({
-  viewMode,
-  setViewMode,
-}: {
-  viewMode: "table" | "kanban";
-  setViewMode: (mode: "table" | "kanban") => void;
-}) {
+export default function DealsDataTable() {
   const navigate = useNavigate();
   const { stages } = useStages();
-  const { deals, totalPages, currentPage, setCurrentPage, loading, error, retry, filters, changeFilter } = useDealsQuery(viewMode === "kanban" ? 50 : 15);
+  const { deals, total, totalPages, currentPage, setCurrentPage, loading, error, retry, filters, changeFilter,
+    view, applyView, userKey, viewMode, setViewMode, search, setSearch, setSort, reset } = useDealsQuery();
+  const filtered = Boolean(search || Object.values(filters).some((value) => value && value !== "all"));
   const [stageError, setStageError] = useState("");
   const [updatingStageId, setUpdatingStageId] = useState<string | null>(null);
-  const [customerNames, setCustomerNames] = useState<Record<string, string>>(
-    {}
-  );
+  const names = useCompanyNames(deals.filter((deal) => !deal.customer?.name).map((deal) => deal.customerId));
+  const customerNames = names.data ?? {};
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
-
-  useEffect(() => {
-    const ids = [...new Set(deals.map((d) => d.customerId).filter(Boolean))];
-    if (ids.length === 0) return;
-    let cancelled = false;
-    Promise.all(ids.map((id) => companiesService.getCompany(id)))
-      .then((companies) => {
-        if (cancelled) return;
-        const map: Record<string, string> = {};
-        companies.forEach((c) => {
-          map[c._id] = c.name || c.abbreviatedName || "";
-        });
-        setCustomerNames((prev) => ({ ...prev, ...map }));
-      })
-      .catch(() => {
-        // не очищаем при ошибке — сохраняем предыдущие данные
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [deals]);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const bottomScrollRef = useRef<HTMLDivElement>(null);
@@ -124,15 +104,15 @@ export default function DealsDataTable({
   );
 
   const handleViewModeChange = (mode: "table" | "kanban") => {
-    setCurrentPage(1);
     setViewMode(mode);
   };
 
   return (
     <div className="flex min-w-0 flex-col">
-      <div className="sticky top-0 z-10 flex-shrink-0 space-y-3 border-b bg-background/95 pb-4 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="relative top-0 z-10 flex-shrink-0 space-y-3 border-b bg-background/95 pb-4 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:sticky">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button onClick={() => navigate("/deals/create")} variant="default">
+            <FilePlus2Icon />
             Создать сделку
           </Button>
           <div
@@ -164,15 +144,22 @@ export default function DealsDataTable({
             </Button>
           </div>
         </div>
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
-          <ServiceFilter value={filters.serviceId ?? "all"} onChange={(value) => changeFilter("serviceId", value)} />
-          <StageFilter value={filters.stageId ?? "all"} onChange={(value) => changeFilter("stageId", value)} />
-            <ManagerFilter
-              deals={deals}
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-1.5 sm:col-span-2"><Label htmlFor="deals-search">Поиск</Label><Input id="deals-search" value={search} maxLength={200} placeholder="Номер, компания, ИНН или материал" onChange={(event) => setSearch(event.target.value)} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="deals-customer">Заказчик</Label><CompanyCombobox id="deals-customer" value={filters.customerId === "all" ? "" : filters.customerId} role="customer" allowCreate={false} clearable placeholder="Все заказчики" onChange={(value) => changeFilter("customerId", value)} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="deals-sort">Сортировка</Label><Select value={`${view.sortBy}:${view.sortOrder}`} onValueChange={setSort}><SelectTrigger id="deals-sort"><SelectValue /></SelectTrigger><SelectContent>
+            <SelectItem value="createdAt:desc">Новые сначала</SelectItem><SelectItem value="createdAt:asc">Старые сначала</SelectItem><SelectItem value="numberSequence:desc">Номер по убыванию</SelectItem><SelectItem value="numberSequence:asc">Номер по возрастанию</SelectItem>
+          </SelectContent></Select></div>
+          <div className="[&>button]:w-full"><ServiceFilter value={filters.serviceId ?? "all"} onChange={(value) => changeFilter("serviceId", value)} /></div>
+          <div className="[&>button]:w-full"><StageFilter value={filters.stageId ?? "all"} onChange={(value) => changeFilter("stageId", value)} /></div>
+          <div className="[&>button]:w-full"><ManagerFilter
               value={filters.userId ?? "all"}
               onChange={(value) => changeFilter("userId", value)}
-            />
-          <MaterialFilter value={filters.materialId ?? "all"} onChange={(value) => changeFilter("materialId", value)} />
+            /></div>
+          <div className="[&>button]:w-full"><MaterialFilter value={filters.materialId ?? "all"} onChange={(value) => changeFilter("materialId", value)} /></div>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted-foreground">Сделок: {total ?? "..."}{totalPages > 1 ? ` · Страница ${currentPage} из ${totalPages}` : ""}</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">{filtered && <Button type="button" size="sm" variant="ghost" onClick={reset}><XIcon />Сбросить фильтры</Button>}<SavedViews key={userKey || "anonymous"} view={view} userKey={userKey} onApply={applyView} /></div>
         </div>
       </div>
       {stageError && <p className="py-3 text-sm text-destructive" role="alert">{stageError}</p>}
@@ -213,10 +200,11 @@ export default function DealsDataTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Услуга</TableHead>
-              <TableHead>Материал</TableHead>
+              <TableHead>Сделка / заказчик</TableHead>
+              <TableHead>Материал / услуга</TableHead>
+              <TableHead>Объём</TableHead>
               <TableHead>Статус</TableHead>
-              <TableHead>Менеджер</TableHead>
+              <TableHead>Ответственный</TableHead>
               <TableHead>Сумма</TableHead>
               <TableHead>Доход менеджера</TableHead>
               <TableHead>Дата создания</TableHead>
@@ -224,13 +212,14 @@ export default function DealsDataTable({
           </TableHeader>
           <TableBody>
             {loading && <DealsDataLoading />}
-            {!loading && deals.length === 0 && <DealsDataEmpty />}
+            {!loading && deals.length === 0 && <DealsDataEmpty filtered={filtered} onReset={reset} />}
             {!loading &&
               deals.length > 0 &&
               deals.map((deal) => (
                 <DealRow
                   key={deal._id}
                   deal={deal}
+                  customerName={customerNames[deal.customerId]}
                   stages={stages}
                   onStageChange={handleStageChange}
                   isUpdatingStage={updatingStageId}

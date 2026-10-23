@@ -12,12 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { companiesService } from "@/services";
 import { CompanyDto, CompanyRole, ContactPerson } from "@definitions/dto";
 import { useEffect, useState } from "react";
-import ContactPersonsEditor, {
-  isValidContactPersons,
-} from "./contact-persons-editor";
+import ContactPersonsEditor from "./contact-persons-editor";
 import AddressesSection from "./addresses-section";
 import CompanyRoleSelector from "./company-role-selector";
 import CompanyMaterialsSection from "./company-materials-section";
+import ContactValuesEditor from "./contact-values-editor";
+import { contactValues, personPhones, personEmails, validEmails, isValidContactPersons } from "@/lib/company-contacts";
 
 export function EditingCompanyModal({
   company,
@@ -37,6 +37,8 @@ export function EditingCompanyModal({
   const [roles, setRoles] = useState<CompanyRole[]>([]);
   const [comment, setComment] = useState("");
   const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
+  const [phones, setPhones] = useState<string[]>([]);
+  const [emails, setEmails] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,7 +50,9 @@ export function EditingCompanyModal({
     setKpp(company.kpp ?? "");
     setRoles(company.roles?.length ? [...company.roles] : []);
     setComment(company.comment ?? "");
-    setContactPersons(company.contactPersons?.map((person) => ({ ...person })) ?? []);
+    setContactPersons(company.contactPersons?.map((person) => ({ ...person, phones: personPhones(person), emails: personEmails(person), phone: undefined, email: undefined })) ?? []);
+    setPhones([...(company.phones ?? [])]);
+    setEmails([...(company.emails ?? [])]);
     setError("");
   }, [company, open]);
 
@@ -66,6 +70,10 @@ export function EditingCompanyModal({
       setError("Укажите имя и корректный email для каждого контактного лица");
       return;
     }
+    if (!validEmails(contactValues(emails, true))) {
+      setError("Проверьте email компании");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -78,6 +86,8 @@ export function EditingCompanyModal({
         roles,
         comment: comment.trim(),
         contactPersons,
+        phones,
+        emails,
       });
       onUpdate(updatedCompany);
       onClose();
@@ -91,8 +101,8 @@ export function EditingCompanyModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && !submitting && onClose()}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Редактирование компании</DialogTitle>
         </DialogHeader>
@@ -169,6 +179,10 @@ export function EditingCompanyModal({
             </details>
           ) : null}
 
+          <div className="grid min-w-0 gap-4 border-t pt-4 sm:grid-cols-2">
+            <ContactValuesEditor label="Телефоны компании" type="tel" value={phones} onChange={setPhones} disabled={submitting} />
+            <ContactValuesEditor label="Email компании" type="email" value={emails} onChange={setEmails} disabled={submitting} />
+          </div>
           <ContactPersonsEditor
             value={contactPersons}
             onChange={setContactPersons}

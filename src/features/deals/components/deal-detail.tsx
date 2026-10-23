@@ -93,7 +93,7 @@ function DealDetail({ deal }: { deal: DealDto }) {
   return <div className="grid min-w-0 gap-5 py-5">
     <header className="flex min-w-0 flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 space-y-2">
-        <h1 className="break-words text-xl font-semibold">{deal.customer?.name || "Сделка"}</h1>
+        <h1 className="break-words text-xl font-semibold">{deal.number ? `${deal.number} · ` : ""}{deal.customer?.name || "Сделка"}</h1>
         <p className="break-words text-sm text-muted-foreground">{deal.material?.name || "Материал не указан"} · {quantity(deal.quantity)} {unit}</p>
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {deal.stage && <span className={`rounded px-2 py-1 ${getStageBadgeClass(deal.stage._id)}`}>{deal.stage.name}</span>}

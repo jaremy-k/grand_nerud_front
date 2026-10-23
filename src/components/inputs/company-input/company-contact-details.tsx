@@ -9,6 +9,7 @@ import {
   PhoneIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { personPhones as getPhones, personEmails as getEmails } from "@/lib/company-contacts";
 
 function unique(values: Array<string | undefined>): string[] {
   return [
@@ -76,10 +77,10 @@ export default function CompanyContactDetails({
   const [showAll, setShowAll] = useState(false);
   const people = company.contactPersons ?? [];
   const personPhones = new Set(
-    people.map((person) => person.phone?.trim()).filter(Boolean)
+    people.flatMap(getPhones)
   );
   const personEmails = new Set(
-    people.map((person) => person.email?.trim().toLowerCase()).filter(Boolean)
+    people.flatMap(getEmails).map((email) => email.toLowerCase())
   );
   const companyPhones = unique(company.phones ?? []).filter(
     (phone) => !personPhones.has(phone)
@@ -133,20 +134,22 @@ export default function CompanyContactDetails({
             )}
           </div>
           <div className="mt-1 grid gap-1">
-            {person.phone && (
+            {getPhones(person).map((phone) => (
               <ContactValue
+                key={phone}
                 type="phone"
-                value={person.phone}
+                value={phone}
                 interactive={interactive}
               />
-            )}
-            {person.email && (
+            ))}
+            {getEmails(person).map((email) => (
               <ContactValue
+                key={email}
                 type="email"
-                value={person.email}
+                value={email}
                 interactive={interactive}
               />
-            )}
+            ))}
           </div>
         </div>
       ))}

@@ -6,9 +6,8 @@ import { DialogClose, DialogFooter } from "../../ui/dialog";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
-import ContactPersonsEditor, {
-  isValidContactPersons,
-} from "./contact-persons-editor";
+import ContactPersonsEditor from "./contact-persons-editor";
+import { isValidContactPersons } from "@/lib/company-contacts";
 
 export default function ManualForm({
   disabled = false,

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import LeadFormDialog from "@/features/leads/components/lead-form-dialog";
 import ReferenceSelect from "@/features/crm/reference-select";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
 import { useCrmReferences } from "@/features/crm/use-references";
 import OwnerScopeSelect from "@/features/crm/owner-scope-select";
 import { crmPage, updateCrmParams } from "@/features/crm/owner-scope";
@@ -72,7 +73,7 @@ export default function LeadsPage() {
   };
   const changeMode = (value: "table" | "kanban") => { setMode(value); try { localStorage.setItem("leads-view-mode", value); } catch { /* Storage may be unavailable. */ } };
   const ownerName = (id: string) => { const owner = refs.owners.find((item) => (item.id ?? item._id) === id); return owner ? userName(owner) : ""; };
-  const companyName = (lead: LeadDto) => lead.company?.name || refs.companies.find((item) => item._id === lead.companyId)?.name || "Без компании";
+  const companyName = (lead: LeadDto) => lead.company?.name || "Без компании";
   const columns = refs.stages.map((stage) => ({ id: stage._id, name: stage.name, kind: stage.kind, leads: (result?.items ?? []).filter((lead) => lead.stageId === stage._id) }));
   const other = (result?.items ?? []).filter((lead) => !refs.stages.some((stage) => stage._id === lead.stageId));
   if (other.length) columns.push({ id: "other", name: "Без этапа", kind: "new", leads: other });
@@ -91,7 +92,7 @@ export default function LeadsPage() {
           <div className="grid gap-1.5"><Label htmlFor="leads-stage">Этап</Label><ReferenceSelect id="leads-stage" value={stageId} onChange={(value) => setFilter("stageId", value)} placeholder="Все этапы" options={refs.stages.map((stage) => ({ value: stage._id, label: stage.name }))} /></div>
           <div className="grid gap-1.5"><Label htmlFor="leads-status">Состояние</Label><Select value={status || "all"} onValueChange={(value) => setFilter("status", value === "all" ? "" : value)}><SelectTrigger id="leads-status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все состояния</SelectItem>{Object.entries(LEAD_STAGE_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
           <div className="grid gap-1.5"><Label htmlFor="leads-priority">Приоритет</Label><Select value={priority || "all"} onValueChange={(value) => setFilter("priority", value === "all" ? "" : value)}><SelectTrigger id="leads-priority"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Все приоритеты</SelectItem>{Object.entries(PRIORITY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>
-          <div className="grid gap-1.5"><Label htmlFor="leads-company">Компания</Label><ReferenceSelect id="leads-company" value={companyId} onChange={(value) => setFilter("companyId", value)} placeholder="Все компании" options={refs.companies.map((item) => ({ value: item._id, label: item.name }))} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="leads-company">Компания</Label><CompanyCombobox id="leads-company" value={companyId} role="all" allowCreate={false} clearable onChange={(value) => setFilter("companyId", value)} placeholder="Все компании" /></div>
           <OwnerScopeSelect id="leads-owner" scope={scope} onChange={changeScope} owners={refs.owners} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted-foreground">{result ? `Лидов: ${result.total}` : "Лиды"}{result && result.totalPages > 1 ? ` · Страница ${page} из ${result.totalPages}` : ""}</p>{filtered && <Button size="sm" variant="ghost" onClick={resetFilters}>Сбросить фильтры</Button>}</div>

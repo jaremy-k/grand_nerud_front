@@ -1,6 +1,6 @@
 "use client";
 
-import { Page } from "@/components/blocks";
+import { Page, Pagination } from "@/components/blocks";
 import { CreatingModal } from "@/components/inputs/company-input/creating-modal";
 import { EditingCompanyModal } from "@/components/inputs/company-input/editing-modal";
 import { ImportCompaniesModal } from "@/components/inputs/company-input/import-modal";
@@ -26,9 +26,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatINN } from "@/lib/formatters";
-import { compareCompanyPrices, getComparablePrice, getMaterialUnits, normalizeMaterialUnit } from "@/lib/company-materials";
+import { getMaterialUnits, normalizeMaterialUnit } from "@/lib/company-materials";
 import { parseDecimalInput } from "@/lib/number-input";
-import { addressesService, companiesService, materialsService } from "@/services";
+import { companiesService, materialsService } from "@/services";
+import type { CompanyPageFilters } from "@/services/companies";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import RequestError from "@/features/crm/request-error";
 import {
   AddressDto,
   CompanyDto,
@@ -56,11 +59,13 @@ import { Link, useNavigate } from "react-router-dom";
 const priceFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
 });
+const EMPTY_COMPANIES: CompanyDto[] = [];
+const loadCompanyPage = (query: { filters: CompanyPageFilters; page: number; invalid: boolean }, signal: AbortSignal) => query.invalid
+  ? Promise.reject(new Error("Укажите корректную неотрицательную цену"))
+  : companiesService.getCompaniesPage({ ...query.filters, page: query.page, pageSize: 25 }, { signal });
 
 export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const navigate = useNavigate();
-  const [companies, setCompanies] = useState<CompanyDto[]>([]);
-  const [addresses, setAddresses] = useState<AddressDto[]>([]);
   const [materials, setMaterials] = useState<MaterialDto[]>([]);
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
@@ -70,8 +75,6 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   const [priceUnit, setPriceUnit] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [priceSort, setPriceSort] = useState("default");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyDto | null>(null);
@@ -81,10 +84,30 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
 
   const title = role === "provider" ? "Исполнители" : "Заказчики";
   const selectedMaterial = materials.find((item) => item._id === materialId);
-  const materialUnits = useMemo(() => getMaterialUnits(companies, materialId), [companies, materialId]);
   const selectedPriceUnit = priceUnit;
-  const priceUnitOptions = priceUnit && !materialUnits.includes(priceUnit) ? [...materialUnits, priceUnit] : materialUnits;
   const canComparePrices = Boolean(materialId && selectedPriceUnit);
+  const ceiling = canComparePrices ? parseDecimalInput(maxPrice) : null;
+  const invalidPrice = Boolean(canComparePrices && maxPrice.trim() && (ceiling == null || ceiling < 0));
+  const filters = useMemo<CompanyPageFilters>(() => ({ role, includeDetails: true, search: search.trim() || undefined,
+    city: city.trim() || undefined, administrativeDistrict: administrativeDistrict || undefined, district: district.trim() || undefined,
+    materialId: role === "provider" ? materialId || undefined : undefined,
+    priceUnit: role === "provider" && materialId ? priceUnit || undefined : undefined,
+    maxPrice: role === "provider" && canComparePrices && ceiling != null ? ceiling : undefined,
+    priceSort: role === "provider" && canComparePrices && (priceSort === "asc" || priceSort === "desc") ? priceSort : "default",
+  }), [role, search, city, administrativeDistrict, district, materialId, priceUnit, canComparePrices, ceiling, priceSort]);
+  const [pagination, setPagination] = useState({ filters, page: 1 });
+  const page = pagination.filters === filters ? pagination.page : 1;
+  const query = useMemo(() => ({ filters, page, invalid: invalidPrice }), [filters, page, invalidPrice]);
+  const request = useLatestRequest(query, loadCompanyPage, 300);
+  const { loading, error } = request;
+  const companies = request.data?.items ?? EMPTY_COMPANIES;
+  const filteredCompanies = companies;
+  const addresses = useMemo(() => companies.flatMap((company) => company.addresses ?? []), [companies]);
+  const materialUnits = useMemo(() => getMaterialUnits(companies, materialId), [companies, materialId]);
+  const priceUnitOptions = [...new Set(["т", "м³", "шт", ...materialUnits, ...(priceUnit ? [priceUnit] : [])])];
+  useEffect(() => {
+    if (request.data && page > Math.max(1, request.data.totalPages)) setPagination({ filters, page: Math.max(1, request.data.totalPages) });
+  }, [request.data, page, filters]);
 
   useEffect(() => {
     if (role !== "provider") return;
@@ -93,71 +116,6 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
       .then((items) => setMaterials(items.filter((item) => !item.is_deleted)))
       .catch(() => setMaterials([]));
   }, [role]);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError("");
-    Promise.all([
-      companiesService.getCompanies({
-        role,
-        includeDetails: true,
-        city: city.trim() || undefined,
-        administrativeDistrict: administrativeDistrict || undefined,
-        district: district.trim() || undefined,
-      }),
-      addressesService.getAddresses(),
-    ])
-      .then(([companyData, addressData]) => {
-        if (!active) return;
-        setCompanies(companyData);
-        setAddresses(addressData);
-      })
-      .catch((err) => {
-        if (active) setError(
-          err instanceof Error ? err.message : "Не удалось загрузить компании"
-        );
-      })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [role, city, administrativeDistrict, district]);
-
-  const filteredCompanies = useMemo(() => {
-    const value = search.trim().toLowerCase();
-    const ceiling = canComparePrices ? parseDecimalInput(maxPrice) : null;
-
-    const filtered = companies.filter((company) => {
-      const matchesSearch =
-        !value ||
-        company.name.toLowerCase().includes(value) ||
-        company.abbreviatedName?.toLowerCase().includes(value) ||
-        company.inn?.includes(value) ||
-        company.kpp?.includes(value) ||
-        company.phones?.some((item) => item.toLowerCase().includes(value)) ||
-        company.emails?.some((item) => item.toLowerCase().includes(value)) ||
-        company.websites?.some((item) => item.toLowerCase().includes(value)) ||
-        company.segments?.some((item) => item.toLowerCase().includes(value)) ||
-        company.source?.toLowerCase().includes(value) ||
-        company.contactPersons?.some((person) =>
-          [person.name, person.inn, person.position, person.phone, person.email].some(
-            (field) => field?.toLowerCase().includes(value)
-          )
-        );
-      if (!matchesSearch) return false;
-      if (role !== "provider") return true;
-
-      if (materialId && !(company.materialsWithPrices ?? []).some((item) => item.materialId === materialId)) return false;
-      const comparablePrice = getComparablePrice(company, materialId, selectedPriceUnit);
-      if (canComparePrices && comparablePrice === null) return false;
-      if (ceiling !== null && (comparablePrice === null || comparablePrice > ceiling)) {
-        return false;
-      }
-      return true;
-    });
-
-    if (role !== "provider" || priceSort === "default" || !canComparePrices) return filtered;
-    return [...filtered].sort((left, right) => compareCompanyPrices(left, right, materialId, selectedPriceUnit, priceSort));
-  }, [companies, materialId, maxPrice, priceSort, role, search, canComparePrices, selectedPriceUnit]);
 
   const addressesByCompany = useMemo(() => {
     const grouped = new Map<string, AddressDto[]>();
@@ -178,6 +136,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
   );
 
   const resetProviderFilters = () => {
+    setSearch("");
     setCity("");
     setAdministrativeDistrict("");
     setDistrict("");
@@ -274,33 +233,14 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="company-district-filter">Район</Label>
-            {role === "provider" ? (
-              <Select
-                value={district || "all"}
-                onValueChange={(value) =>
-                  setDistrict(value === "all" ? "" : value)
-                }
-              >
-                <SelectTrigger id="company-district-filter">
-                  <SelectValue placeholder="Все районы" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все районы</SelectItem>
-                  {availableDistricts.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
+            <Input
                 id="company-district-filter"
+                list="company-district-suggestions"
                 value={district}
                 onChange={(event) => setDistrict(event.target.value)}
                 placeholder="Даниловский"
               />
-            )}
+            <datalist id="company-district-suggestions">{availableDistricts.map((item) => <option key={item} value={item} />)}</datalist>
           </div>
 
           {role === "provider" && (
@@ -312,10 +252,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
                   value={materialId}
                   onChange={(value) => {
                     setMaterialId(value);
-                    const units = getMaterialUnits(companies, value);
-                    setPriceUnit(units.length === 1 ? units[0] : "");
+                    setPriceUnit("");
                     setMaxPrice("");
-                    if (value) setPriceSort("asc");
+                    setPriceSort("default");
                   }}
                 />
               </div>
@@ -361,9 +300,9 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         {role === "provider" && (
           <div className="flex min-h-8 items-center justify-between gap-3 text-sm">
             <p className="text-muted-foreground">
-              Найдено исполнителей: {filteredCompanies.length}
+              Найдено исполнителей: {request.data?.total ?? "..."}
             </p>
-            {(city ||
+            {(search || city ||
               administrativeDistrict ||
               district ||
               materialId ||
@@ -385,7 +324,8 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         {loading && (
           <p className="py-10 text-center text-muted-foreground">Загрузка...</p>
         )}
-        {error && <p className="py-10 text-center text-destructive">{error}</p>}
+        {role === "customer" && <p className="text-sm text-muted-foreground">Найдено заказчиков: {request.data?.total ?? "..."}</p>}
+        {error && <RequestError error={error} onRetry={request.retry} />}
         {!loading && !error && (
           <Table>
             <TableHeader>
@@ -762,6 +702,7 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
             </TableBody>
           </Table>
         )}
+        {request.data && !loading && !error && <Pagination total={request.data.totalPages} current={page} onClick={(value) => setPagination({ filters, page: value })} />}
       </div>
 
       <CreatingModal
@@ -769,44 +710,19 @@ export default function CompaniesPage({ role }: { role: CompanyRole }) {
         initialRole={role}
         onClose={() => setCreating(false)}
         onCancel={() => setCreating(false)}
-        onCreate={(company) =>
-          setCompanies((current) =>
-            !company.roles?.length || company.roles.includes(role)
-              ? [...current, company]
-              : current
-          )
-        }
+        onCreate={request.retry}
       />
       <ImportCompaniesModal
         open={importOpen}
         role={role}
         onClose={() => setImportOpen(false)}
-        onImported={() =>
-          companiesService
-            .getCompanies({ role, includeDetails: true })
-            .then(setCompanies)
-            .catch(() => {})
-        }
+        onImported={request.retry}
       />
       <EditingCompanyModal
         company={editingCompany}
         open={editingCompany !== null}
         onClose={() => setEditingCompany(null)}
-        onUpdate={(updatedCompany) =>
-          setCompanies((current) => {
-            const belongsToSection =
-              !updatedCompany.roles?.length ||
-              updatedCompany.roles.includes(role);
-            if (!belongsToSection) {
-              return current.filter((item) => item._id !== updatedCompany._id);
-            }
-            return current.map((item) =>
-              item._id === updatedCompany._id
-                ? { ...item, ...updatedCompany }
-                : item
-            );
-          })
-        }
+        onUpdate={request.retry}
       />
     </Page>
   );

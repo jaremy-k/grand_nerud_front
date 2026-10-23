@@ -17,7 +17,7 @@ export default function EditDealPage() {
           href: "/deals",
         },
         {
-          label: `Редактирование сделки #${dealId}`,
+          label: "Редактирование сделки",
           href: `/deals/${dealId}/edit`,
         },
       ]}

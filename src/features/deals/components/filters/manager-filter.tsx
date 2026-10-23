@@ -1,71 +1,21 @@
-"use client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import useAuthContext from "@/contexts/auth-context";
+import { usersService } from "@/services";
+import { useLatestRequest } from "@/hooks/use-latest-request";
+import { userName } from "@/features/crm/utils";
+import { Button } from "@/components/ui/button";
+import { RotateCwIcon } from "lucide-react";
 
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { capitalizeFirstLetter } from "@/lib/typography";
-import { DealDto } from "@definitions/dto";
-import { useEffect, useState } from "react";
-
-function getUniqueManagers(deals: DealDto[]) {
-  const managerMap: Record<string, string> = {};
-  deals.forEach((deal) => {
-    if (deal.user) {
-      const userId = deal.user._id ?? deal.user.id;
-      if (userId) {
-        managerMap[userId] = deal.user.name || "Без имени";
-      }
-    }
-  });
-  return Object.entries(managerMap).map(([value, label]) => ({
-    value,
-    label: label ? capitalizeFirstLetter(label) : "Без имени",
-  }));
-}
-
-export default function ManagerFilter({
-  deals,
-  value,
-  onChange,
-}: {
-  deals: DealDto[];
-  value: string;
-  onChange: (val: string) => void;
-}) {
-  const [options, setOptions] = useState<{ label: string; value: string }[]>(
-    []
-  );
-
-  useEffect(() => {
-    setOptions(getUniqueManagers(deals));
-  }, [deals]);
-
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[180px] shadow-none">
-        <SelectValue placeholder="Выберите менеджера" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          <SelectLabel>Менеджеры</SelectLabel>
-          <SelectItem key="all" value="all">
-            Все менеджеры
-          </SelectItem>
-          {options.map((option) =>
-            option ? (
-              <SelectItem key={`manager-${option.value}`} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ) : null
-          )}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-  );
+const loadOwners = (elevated: boolean) => elevated ? usersService.getUsers() : Promise.resolve([]);
+export default function ManagerFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { user } = useAuthContext();
+  const elevated = Boolean(user?.admin || user?.manager);
+  const request = useLatestRequest(elevated, loadOwners);
+  const owners = elevated ? request.data ?? [] : user ? [user] : [];
+  return <div className="flex min-w-0 items-center gap-1"><Select value={value} onValueChange={onChange}>
+    <SelectTrigger aria-label="Ответственный" className="w-full min-w-0 shadow-none"><SelectValue placeholder="Ответственный" /></SelectTrigger>
+    <SelectContent><SelectItem value="all">{elevated ? "Все сотрудники" : "Мои сделки"}</SelectItem>{owners.filter((owner) => !owner.is_deleted && !owner.isDeleted).map((owner) => {
+      const id = owner.id ?? owner._id; return id ? <SelectItem key={id} value={id}>{userName(owner)}</SelectItem> : null;
+    })}</SelectContent>
+  </Select>{request.error && <Button type="button" size="icon-sm" variant="ghost" title="Повторить загрузку сотрудников" aria-label="Повторить загрузку сотрудников" onClick={request.retry}><RotateCwIcon /></Button>}</div>;
 }

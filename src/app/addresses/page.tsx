@@ -20,13 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { addressesService, companiesService } from "@/services";
-import { AddressDto, CompanyDto } from "@definitions/dto";
+import { addressesService } from "@/services";
+import { CompanyCombobox } from "@/components/inputs/company-input/company-combobox";
+import { useCompanyNames } from "@/features/crm/use-company-names";
+import { AddressDto } from "@definitions/dto";
 import { useEffect, useMemo, useState } from "react";
 
 export default function AddressesPage() {
   const [addresses, setAddresses] = useState<AddressDto[]>([]);
-  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
@@ -36,29 +37,24 @@ export default function AddressesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
-    Promise.all([
-      addressesService.getAddresses({
+    setError("");
+    addressesService.getAddresses({
         city: city.trim() || undefined,
         administrativeDistrict: administrativeDistrict || undefined,
         district: district.trim() || undefined,
-      }),
-      companiesService.getCompanies(),
-    ])
-      .then(([addressData, companyData]) => {
-        setAddresses(addressData);
-        setCompanies(companyData);
       })
+      .then((addressData) => { if (active) setAddresses(addressData); })
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Не удалось загрузить адреса")
+        active && setError(err instanceof Error ? err.message : "Не удалось загрузить адреса")
       )
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [city, administrativeDistrict, district]);
 
-  const companyNames = useMemo(
-    () => new Map(companies.map((company) => [company._id, company.name])),
-    [companies]
-  );
+  const names = useCompanyNames(addresses.map((address) => address.companyId));
+  const companyNames = useMemo(() => new Map(Object.entries(names.data ?? {})), [names.data]);
 
   const filteredAddresses = useMemo(() => {
     const value = search.trim().toLowerCase();
@@ -81,18 +77,7 @@ export default function AddressesPage() {
       <div className="grid gap-6 py-4">
         <section className="grid gap-3">
           <Label htmlFor="address-company">Компания</Label>
-          <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
-            <SelectTrigger id="address-company" className="max-w-md">
-              <SelectValue placeholder="Выберите компанию" />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((company) => (
-                <SelectItem key={company._id} value={company._id}>
-                  {company.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="max-w-md"><CompanyCombobox id="address-company" value={selectedCompanyId} onChange={setSelectedCompanyId} role="all" clearable /></div>
           {selectedCompanyId && (
             <AddressesSection
               key={selectedCompanyId}

@@ -8,6 +8,8 @@ export default interface CreateCompanyRequest {
   roles: CompanyRole[];
   contacts: Record<string, unknown>[];
   contactPersons: ContactPerson[];
+  phones?: string[];
+  emails?: string[];
   comment?: string;
   type?: string;
   deleted_at?: string;

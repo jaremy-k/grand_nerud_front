@@ -9,12 +9,14 @@ import {
   CompanyDto,
   CompanyImportResult,
   CompanyRole,
-  ContactPerson,
 } from "@definitions/dto";
 import {
   CreateCompanyRequest,
   UpdateCompanyRequest,
 } from "@definitions/requests";
+import { contactValues, normalizeContactPersons } from "@/lib/company-contacts";
+import type { PaginatedResult } from "@/definitions/dto/lead";
+import { crmQuery } from "./crm-query";
 
 type CompaniesResponse =
   | CompanyDto[]
@@ -25,11 +27,18 @@ type CompaniesResponse =
     };
 
 function normalizeCompanies(response: CompaniesResponse): CompanyDto[] {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response.items)) return response.items;
-  if (Array.isArray(response.data)) return response.data;
-  if (Array.isArray(response.companies)) return response.companies;
+  if (Array.isArray(response)) return response.map(normalizeCompany);
+  if (Array.isArray(response.items)) return response.items.map(normalizeCompany);
+  if (Array.isArray(response.data)) return response.data.map(normalizeCompany);
+  if (Array.isArray(response.companies)) return response.companies.map(normalizeCompany);
   return [];
+}
+
+function normalizeCompany(company: CompanyDto): CompanyDto {
+  return { ...company, inn: company.inn == null ? undefined : String(company.inn), kpp: company.kpp == null ? undefined : String(company.kpp),
+    roles: company.roles ?? [], contacts: company.contacts ?? [],
+    contactPersons: (company.contactPersons ?? []).map((person) => ({ ...person, inn: person.inn == null ? undefined : String(person.inn) })),
+  };
 }
 
 export type CompanyFilters = {
@@ -40,24 +49,14 @@ export type CompanyFilters = {
   district?: string;
 };
 
-function normalizeContactPersons(
-  contactPersons: ContactPerson[]
-): ContactPerson[] {
-  return contactPersons.map((person) => {
-    const optionalFields = {
-      position: person.position?.trim() || undefined,
-      inn: person.inn?.replace(/\D/g, "") || undefined,
-      phone: person.phone?.trim() || undefined,
-      email: person.email?.trim() || undefined,
-      comment: person.comment?.trim() || undefined,
-      isPrimary: person.isPrimary || undefined,
-    };
+export type CompanyPageFilters = CompanyFilters & {
+  page?: number; pageSize?: number; search?: string; sortBy?: "recent" | "name";
+  materialId?: string; priceUnit?: string; maxPrice?: number; priceSort?: "default" | "asc" | "desc";
+};
 
-    return {
-      name: person.name.trim(),
-      ...optionalFields,
-    };
-  });
+export async function getCompaniesPage(filters: CompanyPageFilters = {}, options: RequestInit = {}) {
+  const response = await secureGetData<PaginatedResult<CompanyDto>>(apiPath(`/companies/page${crmQuery({ page: 1, pageSize: 15, ...filters })}`), options);
+  return { ...response, items: response.items.map(normalizeCompany) };
 }
 
 export async function importCompanies(
@@ -114,7 +113,7 @@ export async function getCompanies(
 }
 
 export async function getCompany(id: string, options: RequestInit = {}): Promise<CompanyDto> {
-  return secureGetData(apiPath(`/companies/${id}`), options);
+  return normalizeCompany(await secureGetData<CompanyDto>(apiPath(`/companies/${id}`), options));
 }
 
 function innLookupErrorMessage(err: unknown, inn: string): string {
@@ -153,12 +152,14 @@ export async function createCompany(
   const payload: CreateCompanyRequest = {
     ...data,
     contactPersons: normalizeContactPersons(data.contactPersons),
+    phones: data.phones ? contactValues(data.phones) : undefined,
+    emails: data.emails ? contactValues(data.emails, true) : undefined,
     inn:
       data.inn != null && data.inn !== ""
         ? data.inn.replace(/\D/g, "")
         : data.inn,
   };
-  return securePostData(apiPath("/companies"), payload);
+  return normalizeCompany(await securePostData<CompanyDto>(apiPath("/companies"), payload));
 }
 
 export async function updateCompany(
@@ -170,10 +171,12 @@ export async function updateCompany(
     contactPersons: data.contactPersons
       ? normalizeContactPersons(data.contactPersons)
       : undefined,
+    phones: data.phones ? contactValues(data.phones) : undefined,
+    emails: data.emails ? contactValues(data.emails, true) : undefined,
     inn:
       data.inn != null && data.inn !== ""
         ? data.inn.replace(/\D/g, "")
         : data.inn,
   };
-  return securePatchData(apiPath(`/companies/${id}`), payload);
+  return normalizeCompany(await securePatchData<CompanyDto>(apiPath(`/companies/${id}`), payload));
 }

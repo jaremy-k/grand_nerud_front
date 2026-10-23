@@ -6,9 +6,10 @@ import { capitalizeFirstLetter } from "@/lib/typography";
 import { DealDto, StageDto } from "@definitions/dto";
 import { getStageBadgeClass, getStageDotClass } from "@features/deals/utils/stage-colors";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, LoaderCircleIcon } from "lucide-react";
+import { normalizeMaterialUnit } from "@/lib/company-materials";
 
-export function getCustomerName(
+function getCustomerName(
   deal: DealDto,
   customerNames: Record<string, string>
 ): string {
@@ -30,6 +31,7 @@ export function KanbanCardOverlay({
   const customerName = getCustomerName(deal, customerNames);
   return (
     <div className="rounded-lg border bg-card p-3 shadow-lg">
+      {deal.number && <p className="mb-1 text-xs text-muted-foreground">{deal.number}</p>}
       <p className="truncate font-medium text-foreground">{customerName}</p>
       <p className="mt-0.5 truncate text-xs text-muted-foreground">
         {deal.service ? capitalizeFirstLetter(deal.service.name) : ""}
@@ -82,6 +84,7 @@ export function KanbanCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 select-none">
+          {deal.number && <p className="mb-1 text-xs text-muted-foreground">{deal.number}</p>}
           <p className="truncate font-medium text-foreground">{customerName}</p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {deal.service ? capitalizeFirstLetter(deal.service.name) : ""}
@@ -90,16 +93,19 @@ export function KanbanCard({
           <p className="mt-1 text-sm font-semibold text-primary">
             {formatCurrency(deal.totalAmount)}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">{deal.quantity?.toLocaleString("ru-RU")} {normalizeMaterialUnit(deal.unitMeasurement || "")}{deal.user?.name ? ` · ${deal.user.name}` : ""}</p>
         </div>
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
               disabled={isUpdating}
+              title="Изменить этап"
+              aria-label="Изменить этап"
               onClick={(e) => e.stopPropagation()}
               className={`shrink-0 rounded px-2 py-1 text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50 ${getStageBadgeClass(deal.stageId)}`}
             >
-              {isUpdating ? "…" : "▼"}
+              {isUpdating ? <LoaderCircleIcon className="size-3.5 animate-spin" /> : <ChevronDownIcon className="size-3.5" />}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-1" align="end">

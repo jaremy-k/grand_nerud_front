@@ -15,5 +15,5 @@ export default function EditDealForm({ dealId }: { dealId: string }) {
   if (error) return <RequestError error={error} onRetry={retry} />;
   if (!deal) return <div className="p-8">Сделка не найдена</div>;
 
-  return <DealForm key={deal._id} defaultDeal={deal} />;
+  return <div className="py-3"><h1 className="text-xl font-semibold">{deal.number ? `Редактирование ${deal.number}` : "Редактирование сделки"}</h1><DealForm key={deal._id} defaultDeal={deal} /></div>;
 }

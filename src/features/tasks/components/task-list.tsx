@@ -8,6 +8,7 @@ import { deleteTask, getTasks, TaskFilters } from "@/services/tasks";
 import { crmQuery } from "@/services/crm-query";
 import { useLatestRequest } from "@/hooks/use-latest-request";
 import RequestError from "@/features/crm/request-error";
+import { useCompanyNames } from "@/features/crm/use-company-names";
 import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -34,6 +35,7 @@ function TaskListContent({ filters = {}, context, onChanged, ownerNames = {}, co
   const query = useMemo(() => ({ filters: initialFilters, page }), [initialFilters, page]);
   const request = useLatestRequest(query, loadTasks);
   const { data: result, loading } = request;
+  const names = useCompanyNames((result?.items ?? []).filter((task) => !task.company?.name).map((task) => task.companyId || ""));
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TaskDto | null>(null);
@@ -60,7 +62,7 @@ function TaskListContent({ filters = {}, context, onChanged, ownerNames = {}, co
           <div className="min-w-0 space-y-1">
             <p className="break-words text-sm font-medium">{task.title}</p>
             <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"><span className={task.status === "open" && new Date(task.dueAt).getTime() < Date.now() ? "text-red-700 dark:text-red-300" : ""}>{formatCrmDate(task.dueAt)} МСК</span><span>{TASK_TYPE_LABELS[task.type]}</span><span>{TASK_STATUS_LABELS[task.status]}</span>{ownerNames[task.ownerId] && <span>{ownerNames[task.ownerId]}</span>}</p>
-            <div className="flex flex-wrap gap-3 text-xs">{task.companyId && <Link className="text-primary hover:underline" to={`/companies/${task.companyId}`}>{task.company?.name || companyNames[task.companyId] || "Открыть компанию"}</Link>}{task.leadId && <Link className="text-primary hover:underline" to={`/leads/${task.leadId}`}>{task.lead?.title || "Открыть лид"}</Link>}{task.dealId && <Link className="text-primary hover:underline" to={`/deals/${task.dealId}`}>Открыть сделку</Link>}</div>
+            <div className="flex flex-wrap gap-3 text-xs">{task.companyId && <Link className="text-primary hover:underline" to={`/companies/${task.companyId}`}>{task.company?.name || companyNames[task.companyId] || names.data?.[task.companyId] || "Открыть компанию"}</Link>}{task.leadId && <Link className="text-primary hover:underline" to={`/leads/${task.leadId}`}>{task.lead?.title || "Открыть лид"}</Link>}{task.dealId && <Link className="text-primary hover:underline" to={`/deals/${task.dealId}`}>Открыть сделку</Link>}</div>
             {task.comment && <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{task.comment}</p>}
             {task.result && <p className="whitespace-pre-wrap break-words text-xs">Результат: {task.result}</p>}
           </div>
