@@ -204,6 +204,8 @@ export default function DealsDataTable() {
               <TableHead>Материал / услуга</TableHead>
               <TableHead>Объём</TableHead>
               <TableHead>Статус</TableHead>
+              <TableHead>Оплата</TableHead>
+              <TableHead>Исполнение</TableHead>
               <TableHead>Ответственный</TableHead>
               <TableHead>Сумма</TableHead>
               <TableHead>Доход менеджера</TableHead>

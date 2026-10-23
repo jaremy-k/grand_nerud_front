@@ -29,17 +29,18 @@ export default function useDataFormHook(
     return () => { active = false; };
   }, []);
 
-  const unitLocked = initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(dealFormData);
+  const operationsLocked = Boolean(defaultDeal?.operationsSummary && ((defaultDeal.operationsSummary.plannedQuantity ?? 0) > 0 || (defaultDeal.operationsSummary.deliveredQuantity ?? 0) > 0));
+  const unitLocked = operationsLocked || initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(dealFormData);
   const editing = Boolean(defaultDeal);
   const updateField = useCallback(
     <K extends keyof DealFormData>(key: K, value: DealFormData[K]) => {
       if (editing && (key === "serviceId" || key === "customerId")) return;
       setDealFormData((current) => changeDealField(
         current, key, value, services,
-        initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(current)
+        operationsLocked || initialFormData.deliveredQuantity.length > 0 || hasActualDeliveries(current)
       ));
     },
-    [services, initialFormData, editing]
+    [services, initialFormData, editing, operationsLocked]
   );
 
   const previewPayload = useMemo<PreviewDealRequest>(() => ({

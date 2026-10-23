@@ -38,11 +38,14 @@ import { ru } from "react-day-picker/locale";
 import { format } from "date-fns";
 import { FormSectionCard } from "./form-section-card";
 import { numberInputFormatter } from "@/lib/input-formatters";
+import { Link } from "react-router-dom";
 
 export default function AdditionalInformationSection({
   formData,
+  deliveriesUrl,
 }: {
   formData: DealDataFormHook;
+  deliveriesUrl?: string;
 }) {
   const { dealFormData, updateField } = formData;
   const [datePickerOpen, setDatePickerOpen] = useState<number | null>(null);
@@ -177,7 +180,7 @@ export default function AdditionalInformationSection({
           </div>
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+        {deliveriesUrl ? <Button asChild type="button" variant="outline" className="justify-self-start"><Link to={deliveriesUrl}>Открыть поставки</Link></Button> : <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
           <FieldLabel className="mb-3 block text-sm font-medium">
             Доставленные количества
           </FieldLabel>
@@ -371,7 +374,7 @@ export default function AdditionalInformationSection({
               </TableBody>
             </Table>
           </div>
-        </div>
+        </div>}
       </FieldGroup>
     </FormSectionCard>
   );

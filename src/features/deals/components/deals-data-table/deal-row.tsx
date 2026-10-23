@@ -29,6 +29,7 @@ import {
 import { CheckIcon, MoreHorizontal } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { normalizeMaterialUnit } from "@/lib/company-materials";
+import OperationStatus from "../operation-status";
 
 export default function DealRow({
   deal,
@@ -112,6 +113,8 @@ export default function DealRow({
           </PopoverContent>
         </Popover>
       </TableCell>
+      <TableCell className="min-w-32"><OperationStatus summary={deal.operationsSummary} kind="payment" /></TableCell>
+      <TableCell className="min-w-36"><OperationStatus summary={deal.operationsSummary} kind="execution" /></TableCell>
       <TableCell>{deal.user?.name}</TableCell>
       <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>
       <TableCell>{formatCurrency(deal.managerProfit ?? 0)}</TableCell>

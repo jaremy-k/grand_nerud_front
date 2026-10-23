@@ -8,6 +8,7 @@ import { getStageBadgeClass, getStageDotClass } from "@features/deals/utils/stag
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CheckIcon, ChevronDownIcon, LoaderCircleIcon } from "lucide-react";
 import { normalizeMaterialUnit } from "@/lib/company-materials";
+import OperationStatus from "../operation-status";
 
 function getCustomerName(
   deal: DealDto,
@@ -94,6 +95,7 @@ export function KanbanCard({
             {formatCurrency(deal.totalAmount)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{deal.quantity?.toLocaleString("ru-RU")} {normalizeMaterialUnit(deal.unitMeasurement || "")}{deal.user?.name ? ` · ${deal.user.name}` : ""}</p>
+          {deal.operationsSummary && <div className="mt-2 flex flex-wrap gap-1"><OperationStatus summary={deal.operationsSummary} kind="payment" /><OperationStatus summary={deal.operationsSummary} kind="execution" /></div>}
         </div>
         <Popover>
           <PopoverTrigger asChild>

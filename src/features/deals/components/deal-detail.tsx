@@ -16,9 +16,12 @@ import type { AddressDto, CompanyDto, DealDto } from "@definitions/dto";
 import { formatCurrency } from "@/lib/formatters";
 import { normalizeMaterialUnit } from "@/lib/company-materials";
 import { getStageBadgeClass } from "@features/deals/utils/stage-colors";
+import DealOperations from "./deal-operations";
+import OperationStatus from "./operation-status";
 
 const TABS = [ { value: "overview", label: "Обзор" }, { value: "finance", label: "Финансы" },
-  { value: "deliveries", label: "Доставленные объёмы" }, { value: "tasks", label: "Задачи" } ] as const;
+  { value: "payments", label: "Оплаты" }, { value: "deliveries", label: "Поставки" },
+  { value: "history", label: "История операций" }, { value: "tasks", label: "Задачи" } ] as const;
 const loadDeal = (id: string, signal: AbortSignal) => dealsService.getDeal(id, { signal });
 const loadCompany = (id: string, signal: AbortSignal) => companiesService.getCompany(id, { signal });
 const loadAddress = (id: string) => addressesService.getAddress(id);
@@ -64,11 +67,11 @@ export default function DealDetailPage() {
   return <Page breadcrumbLinks={[{ label: "Сделки", href: "/deals" }, { label: "Карточка сделки", href: `/deals/${id}` }]}>
     {request.loading ? <p role="status" className="py-10 text-sm text-muted-foreground">Загрузка сделки...</p>
       : request.error ? <RequestError error={request.error} onRetry={request.retry} />
-        : request.data && <DealDetail key={request.data._id} deal={request.data} />}
+        : request.data && <DealDetail key={request.data._id} deal={request.data} onChanged={request.retry} />}
   </Page>;
 }
 
-function DealDetail({ deal }: { deal: DealDto }) {
+function DealDetail({ deal, onChanged }: { deal: DealDto; onChanged: () => void }) {
   const navigate = useNavigate();
   const tab = useRecordTab(TABS);
   const [deleting, setDeleting] = useState(false);
@@ -81,15 +84,7 @@ function DealDetail({ deal }: { deal: DealDto }) {
     finally { setSaving(false); setDeleting(false); }
   };
   const deliveries = deal.deliveredQuantity ?? [];
-  const delivered = new Map<string, number>();
-  deliveries.forEach((item) => {
-    const unit = normalizeMaterialUnit(item.unit || "") || "Без единицы";
-    delivered.set(unit, (delivered.get(unit) ?? 0) + item.quantity);
-  });
   const unit = normalizeMaterialUnit(deal.unitMeasurement || "");
-  const planQuantity = Number.isFinite(deal.quantity) ? deal.quantity : null;
-  const comparable = Boolean(unit) && planQuantity != null && [...delivered.keys()].every((value) => value === unit);
-  const deliveredInUnit = comparable ? delivered.get(unit) ?? 0 : null;
   return <div className="grid min-w-0 gap-5 py-5">
     <header className="flex min-w-0 flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 space-y-2">
@@ -97,6 +92,7 @@ function DealDetail({ deal }: { deal: DealDto }) {
         <p className="break-words text-sm text-muted-foreground">{deal.material?.name || "Материал не указан"} · {quantity(deal.quantity)} {unit}</p>
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {deal.stage && <span className={`rounded px-2 py-1 ${getStageBadgeClass(deal.stage._id)}`}>{deal.stage.name}</span>}
+          {deal.operationsSummary && <><span className="flex items-center gap-1">Оплата <OperationStatus summary={deal.operationsSummary} kind="payment" /></span><span className="flex items-center gap-1">Исполнение <OperationStatus summary={deal.operationsSummary} kind="execution" /></span></>}
           <span className="text-muted-foreground">Создана {date(deal.createdAt)}</span>
           {deal.user?.name && <span className="text-muted-foreground">{deal.user.name}</span>}
         </div>
@@ -135,16 +131,7 @@ function DealDetail({ deal }: { deal: DealDto }) {
           ["Доставка", money(deal.amountDelivery)], ["НДС", money(deal.ndsAmount)], ["Доход менеджера", money(deal.managerProfit)], ["Итого по расчёту", money(deal.totalAmount)]]} />
         {Boolean(deal.addExpenses?.length) && <section className="grid gap-3 border-t pt-4"><h2 className="text-sm font-medium">Дополнительные расходы</h2><Fields rows={deal.addExpenses.map((item) => [item.name, money(item.amount)])} /></section>}
       </div>}
-      {tab.value === "deliveries" && <div className="grid gap-5">
-        <Fields rows={[["Плановый объём", `${quantity(deal.quantity)} ${unit}`],
-          ["Доставлено", delivered.size ? [...delivered].map(([key, total]) => `${quantity(total)} ${key}`).join("; ") : "Поставок пока нет"],
-          ["Остаток", planQuantity == null || !unit ? "Нет данных" : deliveredInUnit == null ? "Разные единицы измерения" : `${quantity(Math.max(0, planQuantity - deliveredInUnit))} ${unit}`],
-          ...(deliveredInUnit != null && deliveredInUnit > deal.quantity ? [["Сверх плана", `${quantity(deliveredInUnit - deal.quantity)} ${unit}`] as [string, ReactNode]] : [])]} />
-        {deliveries.length ? <Table><TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Объём</TableHead><TableHead className="text-right">Закупка</TableHead></TableRow></TableHeader>
-          <TableBody>{deliveries.map((item, index) => <TableRow key={`${item.date}-${index}`}><TableCell>{date(item.date)}</TableCell><TableCell>{quantity(item.quantity)} {item.unit}</TableCell><TableCell className="text-right tabular-nums">{money(item.amountPurchase)}</TableCell></TableRow>)}</TableBody></Table>
-          : <p className="py-5 text-sm text-muted-foreground">Доставленные объёмы ещё не добавлены</p>}
-        <Button asChild variant="outline" size="sm" className="justify-self-start"><Link to={`/deals/${deal._id}/edit`}><PencilIcon />Изменить объёмы</Link></Button>
-      </div>}
+      {(tab.value === "payments" || tab.value === "deliveries" || tab.value === "history") && <DealOperations key={tab.value} deal={deal} resource={tab.value === "deliveries" ? "shipments" : tab.value} onChanged={onChanged} />}
       {tab.value === "tasks" && <TaskList filters={{ dealId: deal._id }} context={{ dealId: deal._id, companyId: deal.customerId, ownerId: deal.userId }} />}
     </RecordTabs>
     <AlertDialog open={deleting} onOpenChange={(open) => !saving && setDeleting(open)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Удалить сделку?</AlertDialogTitle><AlertDialogDescription>Сделка будет удалена из активного списка.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={saving}>Отмена</AlertDialogCancel><Button variant="destructive" disabled={saving} onClick={remove}>{saving ? "Удаление..." : "Удалить"}</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>

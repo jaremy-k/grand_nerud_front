@@ -107,22 +107,20 @@ export default function DealForm({
           name: v.name,
           amount: Number(v.amount),
         })),
-        deliveredQuantity: formatDeliveredQuantity(
-          dealFormData.deliveredQuantity,
-          dealFormData.unitMeasurement
-        ),
       };
 
       if (!!defaultDeal && defaultDeal._id) {
         const dataToSend: UpdateDealRequest = {
           ...shared,
           providerId: dealFormData.providerId,
+          operationsRevision: defaultDeal.operationsRevision,
         };
         await dealsService.updateDeal(defaultDeal._id, dataToSend);
         openSavedDeal(defaultDeal._id);
       } else {
         const dataToSend: CreateDealRequest = {
           ...shared,
+          deliveredQuantity: formatDeliveredQuantity(dealFormData.deliveredQuantity, dealFormData.unitMeasurement),
           serviceId: dealFormData.serviceId,
           customerId: dealFormData.customerId,
           providerId: dealFormData.providerId,
@@ -174,7 +172,7 @@ export default function DealForm({
           />
           <FinancialInformationSection formData={formData} />
           <DeliveryInformationSection formData={formData} />
-          <AdditionalInformationSection formData={formData} />
+          <AdditionalInformationSection formData={formData} deliveriesUrl={defaultDeal ? `/deals/${defaultDeal._id}?tab=deliveries` : undefined} />
         </div>
 
         {showSummary && (

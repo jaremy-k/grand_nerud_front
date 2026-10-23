@@ -17,7 +17,7 @@ export default function DealsDataEmpty({ filtered = false, onReset }: { filtered
   const navigate = useNavigate();
   return (
     <TableRow className="hover:bg-transparent">
-      <TableCell colSpan={8}>
+      <TableCell colSpan={10}>
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">

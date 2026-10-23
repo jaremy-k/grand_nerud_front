@@ -8,6 +8,9 @@ import {
 } from "./";
 
 export default interface DealDto {
+  operationsRevision?: string;
+  operationsEnabled?: boolean;
+  operationsSummary?: import("./deal-operations").OperationSummary;
   _id: string;
   number?: string | null;
   numberSequence?: number | null;
